@@ -37,6 +37,14 @@ externalPort = 3001
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 5001
+externalPort = 3000
+
+[[ports]]
+localPort = 36735
+externalPort = 3002
+
 [deployment]
 deploymentTarget = "static"
 build = ["npm", "run", "build"]
@@ -45,5 +53,3 @@ publicDir = "dist"
 [userenv]
 
 [userenv.shared]
-VITE_CLERK_PUBLISHABLE_KEY = ""
-VITE_API_URL = ""

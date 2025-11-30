@@ -19,7 +19,8 @@ root.render(
   <React.StrictMode>
     <ClerkProvider 
       publishableKey={clerkPubKey || ''} 
-      afterSignOutUrl="/login"
+      signInFallbackRedirectUrl="/"
+      signUpFallbackRedirectUrl="/"
     >
       <App />
     </ClerkProvider>

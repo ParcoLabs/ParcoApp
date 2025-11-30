@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
         allowedHosts: true,
         hmr: {
           protocol: 'wss',
+          host: process.env.REPLIT_DEV_DOMAIN,
           clientPort: 443,
         },
       },
