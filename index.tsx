@@ -1,13 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { ClerkProvider } from '@clerk/clerk-react';
 import App from './App';
-
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
-
-if (!clerkPubKey) {
-  console.warn('Missing VITE_CLERK_PUBLISHABLE_KEY - authentication will not work');
-}
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -17,11 +10,6 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <ClerkProvider 
-      publishableKey={clerkPubKey || ''} 
-      afterSignOutUrl="/login"
-    >
-      <App />
-    </ClerkProvider>
+    <App />
   </React.StrictMode>
 );

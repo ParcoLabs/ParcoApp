@@ -11,8 +11,7 @@
     ],
     "skipLibCheck": true,
     "types": [
-      "node",
-      "vite/client"
+      "node"
     ],
     "moduleResolution": "bundler",
     "isolatedModules": true,
@@ -26,6 +25,5 @@
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
-  },
-  "include": ["src", "frontend", "server", "*.tsx", "*.ts"]
+  }
 }
