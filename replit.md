@@ -19,6 +19,10 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 5. Removed AI Studio importmap from index.html and added proper Vite script tag
 6. Configured workflow for frontend dev server on port 5000
 7. Set up static deployment configuration (builds to `dist/` folder)
+8. **Integrated Clerk authentication** with email/password, Google OAuth, and Apple OAuth
+9. Created Express backend server (port 3001) with JWT validation middleware
+10. Updated Login.tsx and Register.tsx to use Clerk while preserving Parco UI design
+11. Created /api/auth/sync endpoint for user registration to database (ready for DB)
 
 ## Project Architecture
 
@@ -40,27 +44,33 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 │   │   ├── defi/         # DeFi-specific components
 │   │   ├── Navigation.tsx
 │   │   └── PropertyCard.tsx
-│   ├── context/          # React context (Auth)
+│   ├── context/          # React context (Auth with Clerk)
 │   ├── mobile/           # Mobile-optimized views
 │   ├── pages/            # Page components
 │   │   ├── defi/        # DeFi pages
 │   │   ├── Dashboard.tsx
 │   │   ├── KYC.tsx
-│   │   ├── Login.tsx
+│   │   ├── Login.tsx     # Clerk email/Google/Apple login
 │   │   ├── Marketplace.tsx
 │   │   ├── Portfolio.tsx
-│   │   ├── Register.tsx
+│   │   ├── Register.tsx  # Clerk registration
 │   │   ├── Settings.tsx
 │   │   └── TokenDetails.tsx
 │   └── public/           # Static assets
 │       └── brand/        # Brand assets (logos)
+├── server/               # Express backend server
+│   ├── index.ts          # Server entry point (port 3001)
+│   ├── middleware/
+│   │   └── auth.ts       # Clerk JWT validation middleware
+│   └── routes/
+│       └── auth.ts       # Auth routes (/api/auth/sync)
 ├── backend/              # Backend architecture documentation
 │   └── architecture.ts   # Backend module manifest (not implemented)
-├── App.tsx              # Main app component with routing
+├── App.tsx              # Main app with Clerk provider & routing
 ├── index.tsx            # App entry point
 ├── index.html           # HTML template
 ├── types.ts             # TypeScript type definitions
-├── vite.config.ts       # Vite configuration
+├── vite.config.ts       # Vite configuration (proxy to backend)
 ├── tsconfig.json        # TypeScript configuration
 └── package.json         # Dependencies and scripts
 ```
