@@ -46,12 +46,13 @@ export const Login: React.FC = () => {
 
   const handleGoogleLogin = async () => {
     if (!isLoaded || !signIn) return;
+    setError('');
     
     try {
       await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
-        redirectUrl: window.location.origin + '/sso-callback',
-        redirectUrlComplete: window.location.origin + '/#/',
+        redirectUrl: '/sso-callback',
+        redirectUrlComplete: '/',
       });
     } catch (err: any) {
       console.error('Google sign in error:', err);
@@ -61,12 +62,13 @@ export const Login: React.FC = () => {
 
   const handleAppleLogin = async () => {
     if (!isLoaded || !signIn) return;
+    setError('');
     
     try {
       await signIn.authenticateWithRedirect({
         strategy: 'oauth_apple',
-        redirectUrl: window.location.origin + '/sso-callback',
-        redirectUrlComplete: window.location.origin + '/#/',
+        redirectUrl: '/sso-callback',
+        redirectUrlComplete: '/',
       });
     } catch (err: any) {
       console.error('Apple sign in error:', err);

@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { ClerkProvider, useClerk } from '@clerk/clerk-react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { ClerkProvider, AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import { Navigation } from './frontend/components/Navigation';
 import { Dashboard } from './frontend/pages/Dashboard';
 import { Marketplace } from './frontend/pages/Marketplace';
@@ -15,16 +15,16 @@ import { AuthProvider, useAuth } from './frontend/context/AuthContext';
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
-const SSOCallbackHandler: React.FC = () => {
-  const { handleRedirectCallback } = useClerk();
-
-  useEffect(() => {
-    if (window.location.pathname === '/sso-callback') {
-      handleRedirectCallback({}).catch(console.error);
-    }
-  }, [handleRedirectCallback]);
-
-  return null;
+const SSOCallbackPage: React.FC = () => {
+  return (
+    <div className="min-h-screen bg-brand-offWhite flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep mx-auto mb-4"></div>
+        <p className="text-brand-sage">Completing sign in...</p>
+        <AuthenticateWithRedirectCallback />
+      </div>
+    </div>
+  );
 };
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -60,6 +60,7 @@ const AppRoutes: React.FC = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/sso-callback" element={<SSOCallbackPage />} />
 
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
@@ -93,7 +94,6 @@ const App: React.FC = () => {
 
   return (
     <ClerkProvider publishableKey={clerkPubKey}>
-      <SSOCallbackHandler />
       <AppRoutes />
     </ClerkProvider>
   );

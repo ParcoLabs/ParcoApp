@@ -20,6 +20,7 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
+      appType: 'spa',
       plugins: [react()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
