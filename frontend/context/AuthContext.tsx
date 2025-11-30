@@ -1,94 +1,106 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, UserKycStatus } from '../../types';
+import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-react';
+
+interface UserData {
+  id: string;
+  clerkId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  kycStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
+  usdcBalance: number;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: UserData | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  loginWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock User Data for simulation
-const MOCK_USER: User = {
-  id: 'user_12345',
-  email: 'demo@parco.io',
-  firstName: 'John',
-  lastName: 'Doe',
-  kycStatus: UserKycStatus.APPROVED,
-  usdcBalance: 2450.00
-};
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { isSignedIn, isLoaded, signOut: clerkSignOut, getToken } = useClerkAuth();
+  const { user: clerkUser } = useUser();
+  const [user, setUser] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing session on mount
   useEffect(() => {
-    const storedUser = localStorage.getItem('parco_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
-    }
-    setIsLoading(false);
-  }, []);
+    const syncUser = async () => {
+      if (!isLoaded) return;
+      
+      if (isSignedIn && clerkUser) {
+        try {
+          const token = await getToken();
+          
+          const syncResponse = await fetch(`${API_BASE_URL}/api/auth/sync`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ userId: clerkUser.id }),
+          });
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Simulate successful login
-    const loggedInUser = { ...MOCK_USER, email };
-    setUser(loggedInUser);
-    setIsAuthenticated(true);
-    localStorage.setItem('parco_user', JSON.stringify(loggedInUser));
-    setIsLoading(false);
-  };
-
-  const register = async (email: string, password: string) => {
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Simulate registration syncing with backend
-    // POST /auth/sync would happen here
-    const newUser: User = {
-        id: `user_${Math.random().toString(36).substr(2, 9)}`,
-        email,
-        firstName: 'New',
-        lastName: 'User',
-        kycStatus: UserKycStatus.PENDING,
-        usdcBalance: 0
+          if (syncResponse.ok) {
+            const data = await syncResponse.json();
+            setUser({
+              id: data.user.id,
+              clerkId: data.user.clerkId || data.user.clerk_id,
+              email: data.user.email,
+              firstName: data.user.firstName || data.user.first_name || '',
+              lastName: data.user.lastName || data.user.last_name || '',
+              kycStatus: data.user.kycStatus || data.user.kyc_status || 'PENDING',
+              usdcBalance: parseFloat(data.user.usdcBalance || data.user.usdc_balance || '0'),
+            });
+          } else {
+            setUser({
+              id: clerkUser.id,
+              clerkId: clerkUser.id,
+              email: clerkUser.emailAddresses[0]?.emailAddress || '',
+              firstName: clerkUser.firstName || '',
+              lastName: clerkUser.lastName || '',
+              kycStatus: 'PENDING',
+              usdcBalance: 0,
+            });
+          }
+        } catch (error) {
+          console.error('Failed to sync user:', error);
+          setUser({
+            id: clerkUser.id,
+            clerkId: clerkUser.id,
+            email: clerkUser.emailAddresses[0]?.emailAddress || '',
+            firstName: clerkUser.firstName || '',
+            lastName: clerkUser.lastName || '',
+            kycStatus: 'PENDING',
+            usdcBalance: 0,
+          });
+        }
+      } else {
+        setUser(null);
+      }
+      
+      setIsLoading(false);
     };
-    
-    setUser(newUser);
-    setIsAuthenticated(true);
-    localStorage.setItem('parco_user', JSON.stringify(newUser));
-    setIsLoading(false);
-  };
 
-  const loginWithGoogle = async () => {
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setUser(MOCK_USER);
-    setIsAuthenticated(true);
-    localStorage.setItem('parco_user', JSON.stringify(MOCK_USER));
-    setIsLoading(false);
-  };
+    syncUser();
+  }, [isLoaded, isSignedIn, clerkUser, getToken]);
 
-  const logout = () => {
+  const signOut = async () => {
+    await clerkSignOut();
     setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('parco_user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, register, logout, loginWithGoogle }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated: isSignedIn ?? false, 
+      isLoading: !isLoaded || isLoading,
+      signOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );
