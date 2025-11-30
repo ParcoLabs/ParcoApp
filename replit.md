@@ -14,9 +14,11 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 ## Recent Changes (Nov 30, 2025)
 1. Installed Node.js dependencies via npm
 2. Updated vite.config.ts to use port 5000 (required for Replit webview)
-3. Removed AI Studio importmap from index.html and added proper Vite script tag
-4. Configured workflow for frontend dev server on port 5000
-5. Set up static deployment configuration (builds to `dist/` folder)
+3. Added `allowedHosts: true` to allow Replit proxy domains
+4. Configured HMR with WSS protocol for Replit's HTTPS proxy
+5. Removed AI Studio importmap from index.html and added proper Vite script tag
+6. Configured workflow for frontend dev server on port 5000
+7. Set up static deployment configuration (builds to `dist/` folder)
 
 ## Project Architecture
 
