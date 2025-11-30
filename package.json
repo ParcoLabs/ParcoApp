@@ -9,10 +9,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.57.0",
+    "@clerk/express": "^1.7.53",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
     "react": "^19.2.0",
-    "react-router-dom": "^7.9.6",
     "react-dom": "^19.2.0",
-    "recharts": "^3.5.1"
+    "react-router-dom": "^7.9.6",
+    "recharts": "^3.5.1",
+    "tsx": "^4.21.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
