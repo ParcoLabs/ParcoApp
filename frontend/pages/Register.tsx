@@ -37,8 +37,8 @@ export const Register: React.FC = () => {
               },
             }}
             routing="hash"
-            path="/register"
             signInUrl="/login"
+            afterSignUpUrl="/"
           />
         </div>
 

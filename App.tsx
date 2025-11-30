@@ -1,6 +1,6 @@
 import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { SignedIn, SignedOut } from '@clerk/clerk-react';
+import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { SignedIn, SignedOut, RedirectToSignIn } from '@clerk/clerk-react';
 import { Navigation } from './frontend/components/Navigation';
 import { Dashboard } from './frontend/pages/Dashboard';
 import { Marketplace } from './frontend/pages/Marketplace';
@@ -15,6 +15,7 @@ import { AuthProvider, useAuth } from './frontend/context/AuthContext';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -35,7 +36,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
         </div>
       </SignedIn>
       <SignedOut>
-        <Navigate to="/login" replace />
+        <RedirectToSignIn afterSignInUrl={location.pathname} />
       </SignedOut>
     </>
   );
