@@ -1,34 +1,93 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useSignIn, useAuth } from '@clerk/clerk-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login, loginWithGoogle, isLoading } = useAuth();
+  const [error, setError] = useState('');
+  const { signIn, isLoaded, setActive } = useSignIn();
+  const { isSignedIn } = useAuth();
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (isSignedIn) {
+      navigate('/');
+    }
+  }, [isSignedIn, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, password);
-    navigate('/');
+    if (!isLoaded || !signIn) return;
+    
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const result = await signIn.create({
+        identifier: email,
+        password,
+      });
+
+      if (result.status === 'complete') {
+        await setActive({ session: result.createdSessionId });
+        navigate('/');
+      } else {
+        console.log('Sign in result:', result);
+      }
+    } catch (err: any) {
+      console.error('Sign in error:', err);
+      setError(err.errors?.[0]?.message || 'Failed to sign in. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGoogleLogin = async () => {
-    await loginWithGoogle();
-    navigate('/');
+    if (!isLoaded || !signIn) return;
+    
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: 'oauth_google',
+        redirectUrl: window.location.origin + '/sso-callback',
+        redirectUrlComplete: window.location.origin + '/#/',
+      });
+    } catch (err: any) {
+      console.error('Google sign in error:', err);
+      setError(err.errors?.[0]?.message || 'Failed to sign in with Google.');
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    if (!isLoaded || !signIn) return;
+    
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: 'oauth_apple',
+        redirectUrl: window.location.origin + '/sso-callback',
+        redirectUrlComplete: window.location.origin + '/#/',
+      });
+    } catch (err: any) {
+      console.error('Apple sign in error:', err);
+      setError(err.errors?.[0]?.message || 'Failed to sign in with Apple.');
+    }
   };
 
   return (
     <div className="min-h-screen bg-brand-offWhite flex flex-col justify-center items-center p-6">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="mb-8 text-center md:text-left">
            <h1 className="text-3xl font-logo text-brand-deep uppercase mb-2">Parco Labs</h1>
            <h2 className="text-2xl font-bold text-brand-dark">Sign in to your Parco account</h2>
         </div>
 
-        {/* Form */}
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label className="block text-sm font-bold text-brand-black mb-2">Email</label>
@@ -58,7 +117,7 @@ export const Login: React.FC = () => {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !isLoaded}
             className="w-full bg-brand-deep text-white font-bold py-3.5 rounded-lg hover:bg-brand-dark transition-colors shadow-md disabled:opacity-70"
           >
             {isLoading ? 'Signing In...' : 'Sign In'}
@@ -70,7 +129,6 @@ export const Login: React.FC = () => {
              <button className="text-brand-sage font-medium hover:text-brand-dark">Forgot Password</button>
         </div>
 
-        {/* Divider */}
         <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-brand-sage/30"></div>
@@ -80,15 +138,25 @@ export const Login: React.FC = () => {
             </div>
         </div>
 
-        {/* Google Button */}
-        <button
-          onClick={handleGoogleLogin}
-          type="button"
-          className="w-full bg-white border border-brand-dark text-brand-dark font-semibold py-3.5 rounded-lg hover:bg-brand-lightGray transition-colors flex items-center justify-center gap-3"
-        >
-          <i className="fa-brands fa-google text-lg"></i>
-          Sign in with Google
-        </button>
+        <div className="space-y-3">
+          <button
+            onClick={handleGoogleLogin}
+            type="button"
+            className="w-full bg-white border border-brand-dark text-brand-dark font-semibold py-3.5 rounded-lg hover:bg-brand-lightGray transition-colors flex items-center justify-center gap-3"
+          >
+            <i className="fa-brands fa-google text-lg"></i>
+            Sign in with Google
+          </button>
+
+          <button
+            onClick={handleAppleLogin}
+            type="button"
+            className="w-full bg-black text-white font-semibold py-3.5 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-3"
+          >
+            <i className="fa-brands fa-apple text-lg"></i>
+            Sign in with Apple
+          </button>
+        </div>
       </div>
     </div>
   );

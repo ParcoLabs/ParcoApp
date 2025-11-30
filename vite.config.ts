@@ -13,6 +13,12 @@ export default defineConfig(({ mode }) => {
           protocol: 'wss',
           clientPort: 443,
         },
+        proxy: {
+          '/api': {
+            target: 'http://localhost:3001',
+            changeOrigin: true,
+          },
+        },
       },
       plugins: [react()],
       define: {
@@ -22,6 +28,7 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
+          '@assets': path.resolve(__dirname, 'attached_assets'),
         }
       }
     };

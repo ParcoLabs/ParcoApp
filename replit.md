@@ -89,7 +89,13 @@ The `backend/architecture.ts` file documents the intended backend modules:
 **Note**: The backend is currently not implemented. The app uses mock data defined in `frontend/api/`.
 
 ## Environment Variables
-This project expects a `GEMINI_API_KEY` environment variable for AI features (defined in vite.config.ts).
+
+### Required for Authentication (Clerk)
+- `VITE_CLERK_PUBLISHABLE_KEY` - Clerk frontend publishable key (get from https://dashboard.clerk.com)
+- `CLERK_SECRET_KEY` - Clerk backend secret key
+
+### Optional (AI Features)
+- `GEMINI_API_KEY` - For AI features (defined in vite.config.ts)
 
 ## Development
 
