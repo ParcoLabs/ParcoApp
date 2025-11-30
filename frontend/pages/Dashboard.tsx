@@ -44,7 +44,7 @@ export const Dashboard: React.FC = () => {
         </div>
         <button 
           className="bg-brand-deep hover:bg-brand-dark text-white px-6 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm"
-          onClick={() => alert('KYC Verification Required first')}
+          onClick={() => navigate('/kyc')}
         >
           Add Funds
         </button>
@@ -78,7 +78,7 @@ export const Dashboard: React.FC = () => {
       <div className="bg-white rounded-lg border border-brand-sage/20 shadow-sm h-64 flex items-center justify-center">
         <button 
           className="bg-brand-deep hover:bg-brand-dark text-white px-8 py-3 rounded-lg font-bold text-sm transition-all shadow-md"
-          onClick={() => alert('Starting KYC Flow...')}
+          onClick={() => navigate('/kyc')}
         >
           Verify Identity
         </button>

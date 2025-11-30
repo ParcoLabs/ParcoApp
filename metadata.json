@@ -1,5 +1,7 @@
 {
   "name": "Parco Architecture Demo",
   "description": "A Coinbase-inspired real estate investment ecosystem (RWA) prototype demonstrating the Parco architecture with Web + Mobile responsive design.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }

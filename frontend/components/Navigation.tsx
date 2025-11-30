@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -12,20 +13,15 @@ const navItems: NavItem[] = [
   { label: 'Home', icon: 'fa-house', path: '/' },
   { label: 'Market', icon: 'fa-shop', path: '/marketplace' },
   { label: 'Portfolio', icon: 'fa-chart-pie', path: '/portfolio' },
-  { label: 'Borrow', icon: 'fa-hand-holding-dollar', path: '/borrow' },
+  { label: 'DeFi', icon: 'fa-building-columns', path: '/defi' },
 ];
 
 export const Navigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const isActive = (path: string) => location.pathname === path;
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   return (
     <>
@@ -63,7 +59,10 @@ export const Navigation: React.FC = () => {
 
         <div className="p-4 border-t border-brand-lightGray">
            {user ? (
-             <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-brand-offWhite cursor-pointer group relative">
+             <div 
+                onClick={() => navigate('/settings')}
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-brand-offWhite cursor-pointer group transition-colors"
+             >
                 <div className="w-8 h-8 rounded-full bg-brand-lightGray flex items-center justify-center text-brand-dark font-bold">
                    {user.firstName ? user.firstName[0] : 'U'}
                 </div>
@@ -71,15 +70,7 @@ export const Navigation: React.FC = () => {
                    <p className="text-xs font-semibold text-brand-dark truncate">{user.firstName} {user.lastName}</p>
                    <p className="text-[10px] text-brand-sage truncate">{user.email}</p>
                 </div>
-                
-                {/* Logout Tooltip/Button */}
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleLogout(); }}
-                  className="hidden group-hover:block absolute right-2 text-brand-deep hover:text-red-600 bg-white p-1 rounded-full shadow-sm"
-                  title="Logout"
-                >
-                  <i className="fa-solid fa-right-from-bracket"></i>
-                </button>
+                <i className="fa-solid fa-gear text-brand-sage group-hover:text-brand-deep text-sm"></i>
              </div>
            ) : (
              <button onClick={() => navigate('/login')} className="w-full text-center text-sm font-semibold text-brand-deep">Sign In</button>
@@ -102,11 +93,13 @@ export const Navigation: React.FC = () => {
           </button>
         ))}
          <button
-            onClick={handleLogout}
-            className={`flex flex-col items-center gap-1 text-brand-sage`}
+            onClick={() => navigate('/settings')}
+            className={`flex flex-col items-center gap-1 ${
+                isActive('/settings') ? 'text-brand-deep' : 'text-brand-sage'
+            }`}
           >
-            <i className={`fa-solid fa-right-from-bracket text-lg mb-1`}></i>
-            <span className="text-[10px] font-medium">Logout</span>
+            <i className={`fa-solid fa-gear text-lg mb-1`}></i>
+            <span className="text-[10px] font-medium">Settings</span>
           </button>
       </div>
     </>
