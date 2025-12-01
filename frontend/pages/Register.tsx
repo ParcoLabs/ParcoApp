@@ -84,8 +84,8 @@ export const Register: React.FC = () => {
     try {
       await signUp.authenticateWithRedirect({
         strategy: 'oauth_google',
-        redirectUrl: window.location.origin + '/sso-callback',
-        redirectUrlComplete: window.location.origin + '/#/',
+        redirectUrl: '/sso-callback',
+        redirectUrlComplete: '/',
       });
     } catch (err: any) {
       console.error('Google sign up error:', err);
@@ -99,8 +99,8 @@ export const Register: React.FC = () => {
     try {
       await signUp.authenticateWithRedirect({
         strategy: 'oauth_apple',
-        redirectUrl: window.location.origin + '/sso-callback',
-        redirectUrlComplete: window.location.origin + '/#/',
+        redirectUrl: '/sso-callback',
+        redirectUrlComplete: '/',
       });
     } catch (err: any) {
       console.error('Apple sign up error:', err);

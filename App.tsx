@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { ClerkProvider, AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
+import { useAuth, AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import { Navigation } from './frontend/components/Navigation';
 import { Dashboard } from './frontend/pages/Dashboard';
 import { Marketplace } from './frontend/pages/Marketplace';
@@ -11,9 +11,7 @@ import { Register } from './frontend/pages/Register';
 import { KYC } from './frontend/pages/KYC';
 import { Settings } from './frontend/pages/Settings';
 import { DefiPage } from './frontend/pages/defi/DefiPage';
-import { AuthProvider, useAuth } from './frontend/context/AuthContext';
-
-const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+import { AuthProvider } from './frontend/context/AuthContext';
 
 const SSOCallbackPage: React.FC = () => {
   return (
@@ -28,10 +26,10 @@ const SSOCallbackPage: React.FC = () => {
 };
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isLoaded, isSignedIn } = useAuth();
   const location = useLocation();
 
-  if (isLoading) {
+  if (!isLoaded) {
     return (
       <div className="min-h-screen bg-brand-offWhite flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep"></div>
@@ -39,27 +37,45 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isSignedIn) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return (
     <div className="flex min-h-screen bg-brand-offWhite">
-        <Navigation />
-        <main className="flex-1 md:ml-64 pb-20 md:pb-0 overflow-y-auto h-screen">
-          {children}
-        </main>
+      <Navigation />
+      <main className="flex-1 md:ml-64 pb-20 md:pb-0 overflow-y-auto h-screen">
+        {children}
+      </main>
     </div>
   );
 };
 
-const AppRoutes: React.FC = () => {
+const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep"></div>
+      </div>
+    );
+  }
+
+  if (isSignedIn) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+const App: React.FC = () => {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
           <Route path="/sso-callback" element={<SSOCallbackPage />} />
 
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -76,26 +92,6 @@ const AppRoutes: React.FC = () => {
         </Routes>
       </Router>
     </AuthProvider>
-  );
-};
-
-const App: React.FC = () => {
-  if (!clerkPubKey) {
-    return (
-      <div className="min-h-screen bg-brand-offWhite flex flex-col items-center justify-center p-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-brand-dark mb-4">Configuration Required</h1>
-          <p className="text-brand-sage mb-2">Please set your Clerk Publishable Key</p>
-          <p className="text-sm text-brand-sage/70">Add VITE_CLERK_PUBLISHABLE_KEY to your environment variables</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <ClerkProvider publishableKey={clerkPubKey}>
-      <AppRoutes />
-    </ClerkProvider>
   );
 };
 
