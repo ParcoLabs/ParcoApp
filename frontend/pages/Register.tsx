@@ -1,6 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useSignUp, useAuth } from '@clerk/clerk-react';
+
+const isInIframe = (): boolean => {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
+};
 
 export const Register: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -15,6 +23,11 @@ export const Register: React.FC = () => {
   const { isSignedIn } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [inIframe, setInIframe] = useState(false);
+  
+  useEffect(() => {
+    setInIframe(isInIframe());
+  }, []);
 
   React.useEffect(() => {
     if (isSignedIn) {
@@ -81,6 +94,12 @@ export const Register: React.FC = () => {
   const handleGoogleSignUp = async () => {
     if (!isLoaded || !signUp) return;
     
+    if (inIframe) {
+      window.open(window.location.href, '_blank');
+      setError('For Google sign-up, please use the app in the new tab that just opened.');
+      return;
+    }
+    
     try {
       await signUp.authenticateWithRedirect({
         strategy: 'oauth_google',
@@ -95,6 +114,12 @@ export const Register: React.FC = () => {
 
   const handleAppleSignUp = async () => {
     if (!isLoaded || !signUp) return;
+    
+    if (inIframe) {
+      window.open(window.location.href, '_blank');
+      setError('For Apple sign-up, please use the app in the new tab that just opened.');
+      return;
+    }
     
     try {
       await signUp.authenticateWithRedirect({

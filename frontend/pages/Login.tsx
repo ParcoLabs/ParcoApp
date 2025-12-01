@@ -1,6 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useSignIn, useAuth, useClerk } from '@clerk/clerk-react';
+import { useSignIn, useAuth } from '@clerk/clerk-react';
+
+const isInIframe = (): boolean => {
+  try {
+    return window.self !== window.top;
+  } catch (e) {
+    return true;
+  }
+};
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -8,9 +16,14 @@ export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const { signIn, isLoaded, setActive } = useSignIn();
   const { isSignedIn } = useAuth();
-  const { openSignIn } = useClerk();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<string | null>(null);
+  const [inIframe, setInIframe] = useState(false);
+  
+  useEffect(() => {
+    setInIframe(isInIframe());
+  }, []);
 
   React.useEffect(() => {
     if (isSignedIn) {
@@ -45,32 +58,54 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    openSignIn({
-      appearance: {
-        elements: {
-          card: { 
-            boxShadow: 'none',
-            border: '1px solid #e5e7eb',
-            borderRadius: '1rem',
-          },
-        }
-      }
-    });
+  const handleGoogleLogin = async () => {
+    if (!isLoaded || !signIn) return;
+    
+    if (inIframe) {
+      window.open(window.location.href, '_blank');
+      setError('For Google sign-in, please use the app in the new tab that just opened.');
+      return;
+    }
+    
+    setOauthLoading('google');
+    setError('');
+    
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: 'oauth_google',
+        redirectUrl: '/sso-callback',
+        redirectUrlComplete: '/',
+      });
+    } catch (err: any) {
+      console.error('Google sign in error:', err);
+      setError(err.errors?.[0]?.message || 'Failed to sign in with Google.');
+      setOauthLoading(null);
+    }
   };
 
-  const handleAppleLogin = () => {
-    openSignIn({
-      appearance: {
-        elements: {
-          card: { 
-            boxShadow: 'none',
-            border: '1px solid #e5e7eb',
-            borderRadius: '1rem',
-          },
-        }
-      }
-    });
+  const handleAppleLogin = async () => {
+    if (!isLoaded || !signIn) return;
+    
+    if (inIframe) {
+      window.open(window.location.href, '_blank');
+      setError('For Apple sign-in, please use the app in the new tab that just opened.');
+      return;
+    }
+    
+    setOauthLoading('apple');
+    setError('');
+    
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: 'oauth_apple',
+        redirectUrl: '/sso-callback',
+        redirectUrlComplete: '/',
+      });
+    } catch (err: any) {
+      console.error('Apple sign in error:', err);
+      setError(err.errors?.[0]?.message || 'Failed to sign in with Apple.');
+      setOauthLoading(null);
+    }
   };
 
   return (
@@ -141,19 +176,39 @@ export const Login: React.FC = () => {
           <button
             onClick={handleGoogleLogin}
             type="button"
-            className="w-full bg-white border border-brand-dark text-brand-dark font-semibold py-3.5 rounded-lg hover:bg-brand-lightGray transition-colors flex items-center justify-center gap-3"
+            disabled={oauthLoading !== null}
+            className="w-full bg-white border border-brand-dark text-brand-dark font-semibold py-3.5 rounded-lg hover:bg-brand-lightGray transition-colors flex items-center justify-center gap-3 disabled:opacity-70"
           >
-            <i className="fa-brands fa-google text-lg"></i>
-            Sign in with Google
+            {oauthLoading === 'google' ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-brand-dark"></div>
+                Connecting...
+              </>
+            ) : (
+              <>
+                <i className="fa-brands fa-google text-lg"></i>
+                Sign in with Google
+              </>
+            )}
           </button>
 
           <button
             onClick={handleAppleLogin}
             type="button"
-            className="w-full bg-black text-white font-semibold py-3.5 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-3"
+            disabled={oauthLoading !== null}
+            className="w-full bg-black text-white font-semibold py-3.5 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-3 disabled:opacity-70"
           >
-            <i className="fa-brands fa-apple text-lg"></i>
-            Sign in with Apple
+            {oauthLoading === 'apple' ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                Connecting...
+              </>
+            ) : (
+              <>
+                <i className="fa-brands fa-apple text-lg"></i>
+                Sign in with Apple
+              </>
+            )}
           </button>
         </div>
       </div>
