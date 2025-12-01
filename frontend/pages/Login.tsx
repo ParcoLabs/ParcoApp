@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useSignIn, useAuth } from '@clerk/clerk-react';
+import { useSignIn, useAuth, useClerk } from '@clerk/clerk-react';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -8,6 +8,7 @@ export const Login: React.FC = () => {
   const [error, setError] = useState('');
   const { signIn, isLoaded, setActive } = useSignIn();
   const { isSignedIn } = useAuth();
+  const { openSignIn } = useClerk();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -44,36 +45,32 @@ export const Login: React.FC = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    if (!isLoaded || !signIn) return;
-    setError('');
-    
-    try {
-      await signIn.authenticateWithRedirect({
-        strategy: 'oauth_google',
-        redirectUrl: '/sso-callback',
-        redirectUrlComplete: '/',
-      });
-    } catch (err: any) {
-      console.error('Google sign in error:', err);
-      setError(err.errors?.[0]?.message || 'Failed to sign in with Google.');
-    }
+  const handleGoogleLogin = () => {
+    openSignIn({
+      appearance: {
+        elements: {
+          card: { 
+            boxShadow: 'none',
+            border: '1px solid #e5e7eb',
+            borderRadius: '1rem',
+          },
+        }
+      }
+    });
   };
 
-  const handleAppleLogin = async () => {
-    if (!isLoaded || !signIn) return;
-    setError('');
-    
-    try {
-      await signIn.authenticateWithRedirect({
-        strategy: 'oauth_apple',
-        redirectUrl: '/sso-callback',
-        redirectUrlComplete: '/',
-      });
-    } catch (err: any) {
-      console.error('Apple sign in error:', err);
-      setError(err.errors?.[0]?.message || 'Failed to sign in with Apple.');
-    }
+  const handleAppleLogin = () => {
+    openSignIn({
+      appearance: {
+        elements: {
+          card: { 
+            boxShadow: 'none',
+            border: '1px solid #e5e7eb',
+            borderRadius: '1rem',
+          },
+        }
+      }
+    });
   };
 
   return (
