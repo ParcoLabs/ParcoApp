@@ -1,59 +1,58 @@
 import { Router, Request, Response } from 'express';
 import { getAuth } from '@clerk/express';
 import { validateAuth } from '../middleware/auth';
+import { prisma } from '../lib/prisma';
 
 const router = Router();
-
-const users: Map<string, any> = new Map();
 
 router.post('/sync', validateAuth, async (req: Request, res: Response) => {
   try {
     const auth = getAuth(req);
-    const userId = auth.userId;
+    const clerkId = auth.userId;
     
-    if (!userId) {
+    if (!clerkId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { email, firstName, lastName } = req.body;
 
-    let user = users.get(userId);
-    
-    if (!user) {
-      user = {
-        id: userId,
-        clerkId: userId,
+    const user = await prisma.user.upsert({
+      where: { clerkId },
+      update: {
+        email: email || undefined,
+        firstName: firstName || undefined,
+        lastName: lastName || undefined,
+      },
+      create: {
+        clerkId,
         email: email || '',
-        firstName: firstName || '',
-        lastName: lastName || '',
-        kycStatus: 'PENDING',
-        usdcBalance: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      users.set(userId, user);
-      console.log(`New user synced: ${userId}`);
-    } else {
-      user = {
-        ...user,
-        email: email || user.email,
-        firstName: firstName || user.firstName,
-        lastName: lastName || user.lastName,
-        updatedAt: new Date().toISOString(),
-      };
-      users.set(userId, user);
-      console.log(`User updated: ${userId}`);
+        firstName: firstName || null,
+        lastName: lastName || null,
+      },
+      include: {
+        vaultAccount: true,
+      },
+    });
+
+    if (!user.vaultAccount) {
+      await prisma.vaultAccount.create({
+        data: {
+          userId: user.id,
+        },
+      });
     }
+
+    console.log(`User synced: ${clerkId} (${user.email})`);
 
     return res.json({ 
       success: true, 
       user: {
         id: user.id,
+        clerkId: user.clerkId,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
         kycStatus: user.kycStatus,
-        usdcBalance: user.usdcBalance,
       }
     });
   } catch (error) {
@@ -65,13 +64,24 @@ router.post('/sync', validateAuth, async (req: Request, res: Response) => {
 router.get('/me', validateAuth, async (req: Request, res: Response) => {
   try {
     const auth = getAuth(req);
-    const userId = auth.userId;
+    const clerkId = auth.userId;
     
-    if (!userId) {
+    if (!clerkId) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const user = users.get(userId);
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      include: {
+        vaultAccount: true,
+        holdings: {
+          include: {
+            property: true,
+          },
+        },
+        kycVerification: true,
+      },
+    });
     
     if (!user) {
       return res.status(404).json({ error: 'User not found. Please sync first.' });
@@ -80,11 +90,26 @@ router.get('/me', validateAuth, async (req: Request, res: Response) => {
     return res.json({ 
       user: {
         id: user.id,
+        clerkId: user.clerkId,
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
         kycStatus: user.kycStatus,
-        usdcBalance: user.usdcBalance,
+        kycVerification: user.kycVerification,
+        vaultAccount: user.vaultAccount ? {
+          id: user.vaultAccount.id,
+          usdcBalance: user.vaultAccount.usdcBalance,
+          lockedBalance: user.vaultAccount.lockedBalance,
+          walletAddress: user.vaultAccount.walletAddress,
+        } : null,
+        holdings: user.holdings.map(h => ({
+          id: h.id,
+          propertyId: h.propertyId,
+          propertyName: h.property.name,
+          quantity: h.quantity,
+          totalInvested: h.totalInvested,
+          rentEarned: h.rentEarned,
+        })),
       }
     });
   } catch (error) {
