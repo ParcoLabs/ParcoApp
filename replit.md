@@ -22,10 +22,15 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 8. **Integrated Clerk authentication** with email/password, Google OAuth, and Apple OAuth
 9. Created Express backend server (port 3001) with JWT validation middleware
 10. Updated Login.tsx and Register.tsx to use Clerk while preserving Parco UI design
-11. Created /api/auth/sync endpoint for user registration to database (ready for DB)
+11. Created /api/auth/sync endpoint for user registration to database
 12. Switched from HashRouter to BrowserRouter for OAuth compatibility
 13. Added /sso-callback route with AuthenticateWithRedirectCallback for OAuth flow
-14. OAuth uses Clerk modal pattern for seamless Google/Apple sign-in
+14. OAuth uses redirect flow - opens new tab if running in iframe (Replit webview)
+15. **Installed Prisma ORM 7** with PostgreSQL adapter (@prisma/adapter-pg)
+16. **Connected to Supabase PostgreSQL database** via pooler connection
+17. **Created database schema** with 9 models: User, KYCVerification, Property, Token, Holding, VaultAccount, BorrowPosition, Transaction, RentPayment
+18. Applied initial migration to Supabase database
+19. Updated auth routes to use Prisma for user persistence (upsert on sync, includes VaultAccount creation)
 
 ## Project Architecture
 
@@ -37,6 +42,10 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 - **Charts**: Recharts 3.5.1
 - **Fonts**: Google Fonts (Inter, Bungee)
 - **Icons**: Font Awesome 6.4.0
+- **Authentication**: Clerk (email/password, Google OAuth, Apple OAuth)
+- **Backend**: Express.js with TypeScript
+- **Database**: Supabase PostgreSQL with Prisma ORM 7
+- **ORM**: Prisma 7.0.1 with @prisma/adapter-pg driver
 
 ### Directory Structure
 ```
@@ -61,12 +70,18 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 │   │   └── TokenDetails.tsx
 │   └── public/           # Static assets
 │       └── brand/        # Brand assets (logos)
+├── prisma/               # Prisma ORM configuration
+│   ├── schema.prisma     # Database schema with all models
+│   ├── migrations/       # Database migrations
+│   └── ...
 ├── server/               # Express backend server
 │   ├── index.ts          # Server entry point (port 3001)
+│   ├── lib/
+│   │   └── prisma.ts     # Prisma client singleton
 │   ├── middleware/
 │   │   └── auth.ts       # Clerk JWT validation middleware
 │   └── routes/
-│       └── auth.ts       # Auth routes (/api/auth/sync)
+│       └── auth.ts       # Auth routes (/api/auth/sync, /api/auth/me)
 ├── backend/              # Backend architecture documentation
 │   └── architecture.ts   # Backend module manifest (not implemented)
 ├── App.tsx              # Main app with Clerk provider & routing
@@ -140,8 +155,9 @@ The app is configured for static deployment since it's a frontend-only applicati
 None documented yet.
 
 ## Notes
-- The app uses HashRouter for client-side routing
+- The app uses BrowserRouter for client-side routing (required for OAuth)
 - TailwindCSS is loaded via CDN (not ideal for production, but works for demo)
-- Mock data is used throughout the application
-- No real backend or database connections are implemented
-- No API integrations are currently configured
+- Mock data is used for marketplace/DeFi features
+- Database connected to Supabase PostgreSQL via Prisma ORM
+- Clerk authentication fully integrated
+- OAuth opens in new browser tab when accessed from Replit's iframe environment (browser security limitation)
