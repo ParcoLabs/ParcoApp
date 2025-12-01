@@ -11,8 +11,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.57.0",
-    "@clerk/express": "^1.7.53",
     "@neondatabase/serverless": "^1.0.2",
     "@types/connect-pg-simple": "^7.0.3",
     "@types/cors": "^2.8.19",
