@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, ReactNode } from 'react';
+import { useUser, useAuth as useClerkAuth, useClerk } from '@clerk/clerk-react';
 import { User, UserKycStatus } from '../../types';
 
 interface AuthContextType {
@@ -6,61 +7,99 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   logout: () => void;
-  refetchUser: () => Promise<void>;
+  getToken: () => Promise<string | null>;
+  syncUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+const API_BASE_URL = '';
 
-  const fetchUser = async () => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user: clerkUser, isLoaded: isClerkLoaded, isSignedIn } = useUser();
+  const { getToken } = useClerkAuth();
+  const { signOut } = useClerk();
+  const [user, setUser] = React.useState<User | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  const syncUser = async () => {
+    if (!clerkUser || !isSignedIn) return;
+
     try {
-      const response = await fetch('/api/auth/user', {
-        credentials: 'include',
+      const token = await getToken();
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/sync`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          email: clerkUser.primaryEmailAddress?.emailAddress || '',
+          firstName: clerkUser.firstName || '',
+          lastName: clerkUser.lastName || '',
+        }),
       });
+
       if (response.ok) {
-        const userData = await response.json();
+        const data = await response.json();
+        setUser(data.user);
+      } else {
         setUser({
-          id: userData.id,
-          email: userData.email || '',
-          firstName: userData.firstName || '',
-          lastName: userData.lastName || '',
+          id: clerkUser.id,
+          email: clerkUser.primaryEmailAddress?.emailAddress || '',
+          firstName: clerkUser.firstName || '',
+          lastName: clerkUser.lastName || '',
           kycStatus: UserKycStatus.PENDING,
           usdcBalance: 0,
         });
-      } else {
-        setUser(null);
       }
     } catch (error) {
-      console.error('Error fetching user:', error);
-      setUser(null);
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to sync user:', error);
+      setUser({
+        id: clerkUser.id,
+        email: clerkUser.primaryEmailAddress?.emailAddress || '',
+        firstName: clerkUser.firstName || '',
+        lastName: clerkUser.lastName || '',
+        kycStatus: UserKycStatus.PENDING,
+        usdcBalance: 0,
+      });
     }
   };
 
   useEffect(() => {
-    fetchUser();
-  }, []);
+    if (!isClerkLoaded) {
+      return;
+    }
+
+    if (isSignedIn && clerkUser) {
+      syncUser().finally(() => setIsLoading(false));
+    } else {
+      setUser(null);
+      setIsLoading(false);
+    }
+  }, [isClerkLoaded, isSignedIn, clerkUser]);
 
   const logout = () => {
-    window.location.href = '/api/logout';
+    signOut();
+    setUser(null);
   };
 
-  const refetchUser = async () => {
-    await fetchUser();
+  const getTokenAsync = async (): Promise<string | null> => {
+    return await getToken();
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      isAuthenticated: !!user,
-      isLoading,
-      logout,
-      refetchUser,
-    }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        isAuthenticated: !!isSignedIn && !!user, 
+        isLoading: !isClerkLoaded || isLoading, 
+        logout,
+        getToken: getTokenAsync,
+        syncUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

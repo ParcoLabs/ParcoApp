@@ -1,15 +1,31 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { ClerkProvider, AuthenticateWithRedirectCallback } from '@clerk/clerk-react';
 import { Navigation } from './frontend/components/Navigation';
 import { Dashboard } from './frontend/pages/Dashboard';
 import { Marketplace } from './frontend/pages/Marketplace';
 import { TokenDetails } from './frontend/pages/TokenDetails';
 import { Portfolio } from './frontend/pages/Portfolio';
-import { Landing } from './frontend/pages/Landing';
+import { Login } from './frontend/pages/Login';
+import { Register } from './frontend/pages/Register';
 import { KYC } from './frontend/pages/KYC';
 import { Settings } from './frontend/pages/Settings';
 import { DefiPage } from './frontend/pages/defi/DefiPage';
 import { AuthProvider, useAuth } from './frontend/context/AuthContext';
+
+const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+const SSOCallbackPage: React.FC = () => {
+  return (
+    <div className="min-h-screen bg-brand-offWhite flex items-center justify-center">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep mx-auto mb-4"></div>
+        <p className="text-brand-sage">Completing sign in...</p>
+        <AuthenticateWithRedirectCallback />
+      </div>
+    </div>
+  );
+};
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -24,7 +40,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/landing" state={{ from: location }} replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return (
@@ -38,44 +54,48 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 };
 
 const AppRoutes: React.FC = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/sso-callback" element={<SSOCallbackPage />} />
 
-  if (isLoading) {
+          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
+          <Route path="/marketplace/:id" element={<ProtectedRoute><TokenDetails /></ProtectedRoute>} />
+          <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
+          <Route path="/defi" element={<ProtectedRoute><DefiPage /></ProtectedRoute>} />
+          <Route path="/kyc" element={<ProtectedRoute><KYC /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          
+          <Route path="/borrow" element={<Navigate to="/defi" replace />} />
+          
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
+  );
+};
+
+const App: React.FC = () => {
+  if (!clerkPubKey) {
     return (
-      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep"></div>
+      <div className="min-h-screen bg-brand-offWhite flex flex-col items-center justify-center p-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-brand-dark mb-4">Configuration Required</h1>
+          <p className="text-brand-sage mb-2">Please set your Clerk Publishable Key</p>
+          <p className="text-sm text-brand-sage/70">Add VITE_CLERK_PUBLISHABLE_KEY to your environment variables</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <Routes>
-      <Route path="/landing" element={isAuthenticated ? <Navigate to="/" replace /> : <Landing />} />
-
-      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-      <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
-      <Route path="/marketplace/:id" element={<ProtectedRoute><TokenDetails /></ProtectedRoute>} />
-      <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
-      <Route path="/defi" element={<ProtectedRoute><DefiPage /></ProtectedRoute>} />
-      <Route path="/kyc" element={<ProtectedRoute><KYC /></ProtectedRoute>} />
-      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-      
-      <Route path="/borrow" element={<Navigate to="/defi" replace />} />
-      <Route path="/login" element={<Navigate to="/landing" replace />} />
-      <Route path="/register" element={<Navigate to="/landing" replace />} />
-      
-      <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/landing"} replace />} />
-    </Routes>
-  );
-};
-
-const App: React.FC = () => {
-  return (
-    <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </AuthProvider>
+    <ClerkProvider publishableKey={clerkPubKey}>
+      <AppRoutes />
+    </ClerkProvider>
   );
 };
 
