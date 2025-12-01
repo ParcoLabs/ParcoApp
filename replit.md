@@ -11,7 +11,7 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 - **Setup Date**: November 30, 2025
 - **Environment**: Development mode using Vite dev server
 
-## Recent Changes (Nov 30, 2025)
+## Recent Changes (Dec 1, 2025)
 1. Installed Node.js dependencies via npm
 2. Updated vite.config.ts to use port 5000 (required for Replit webview)
 3. Added `allowedHosts: true` to allow Replit proxy domains
@@ -23,6 +23,9 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 9. Created Express backend server (port 3001) with JWT validation middleware
 10. Updated Login.tsx and Register.tsx to use Clerk while preserving Parco UI design
 11. Created /api/auth/sync endpoint for user registration to database (ready for DB)
+12. Switched from HashRouter to BrowserRouter for OAuth compatibility
+13. Added /sso-callback route with AuthenticateWithRedirectCallback for OAuth flow
+14. OAuth uses Clerk modal pattern for seamless Google/Apple sign-in
 
 ## Project Architecture
 
