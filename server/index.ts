@@ -65,6 +65,10 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.get('/api/healthz', (req, res) => {
+  res.json({ status: 'ok', service: 'parco-backend', timestamp: new Date().toISOString() });
+});
+
 function getDatabaseUrl(): string | undefined {
   const { PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, DATABASE_URL } = process.env;
   if (PGHOST && PGUSER && PGPASSWORD && PGDATABASE) {
