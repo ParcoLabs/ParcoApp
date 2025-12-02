@@ -12,6 +12,15 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 - **Environment**: Development mode using Vite dev server
 
 ## Recent Changes (Dec 2, 2025)
+34. **Integrated Coinbase Commerce for Crypto Payments**:
+    - Support for BTC, ETH, SOL, USDC, USDT, DAI payments
+    - CryptoPayment database model for tracking crypto transactions
+    - Created crypto routes: /api/crypto/* endpoints
+    - Webhook receiver at /api/coinbase/webhook for payment confirmations
+    - Auto-credit USDC to user vault on confirmed payments
+    - Created CryptoDeposit component for frontend deposit flow
+35. Added /api/healthz endpoint for backend health checks
+
 32. **Integrated Stripe Payment Processing** with stripe-replit-sync:
     - ACH bank account linking via Financial Connections (instant verification)
     - Credit/debit card payments via Stripe Elements
