@@ -74,6 +74,7 @@ model User {
   lastName          String?
   phone             String?
   country           String?
+  stripeCustomerId  String?         @unique
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   
@@ -84,9 +85,11 @@ model User {
   holdings          Holding[]
   borrowPositions   BorrowPosition[]
   transactions      Transaction[]
+  paymentMethods    PaymentMethod[]
   
   @@index([clerkId])
   @@index([email])
+  @@index([stripeCustomerId])
 }
 
 model KYCVerification {
@@ -335,4 +338,48 @@ model RentPayment {
   @@index([propertyId])
   @@index([periodStart, periodEnd])
   @@index([status])
+}
+
+enum PaymentMethodType {
+  CARD
+  US_BANK_ACCOUNT
+}
+
+enum BankAccountStatus {
+  NEW
+  VALIDATED
+  VERIFIED
+  VERIFICATION_FAILED
+  ERRORED
+}
+
+model PaymentMethod {
+  id                    String              @id @default(cuid())
+  userId                String
+  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  stripePaymentMethodId String              @unique
+  stripeCustomerId      String
+  
+  type                  PaymentMethodType
+  isDefault             Boolean             @default(false)
+  
+  cardBrand             String?
+  cardLast4             String?
+  cardExpMonth          Int?
+  cardExpYear           Int?
+  
+  bankName              String?
+  bankLast4             String?
+  bankAccountType       String?
+  bankStatus            BankAccountStatus?
+  
+  nickname              String?
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  
+  @@index([userId])
+  @@index([stripePaymentMethodId])
+  @@index([stripeCustomerId])
 }
