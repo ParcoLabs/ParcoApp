@@ -32,6 +32,11 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
     - Summary: deposits, withdrawals, purchases, sales, rent received, borrowings, repayments
     - Daily summary: aggregated transactions by day
     - Full transaction history with all details
+31. **Connected TokenDetails to GET /api/properties/:id endpoint**:
+    - Created PropertyDetailsSkeleton component with animated loading states (shimmer effect)
+    - Updated TokenDetails.tsx to fetch property data from API
+    - Added graceful fallback to mock data when API is unavailable
+    - Responsive skeletons for both desktop and mobile views
 
 ## Recent Changes (Dec 1, 2025)
 1. Installed Node.js dependencies via npm

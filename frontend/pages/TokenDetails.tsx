@@ -54,6 +54,12 @@ const mapApiToProperty = (data: ApiPropertyResponse): Property => {
     type: (data.type as PropertyType) || PropertyType.RESIDENTIAL,
     chain: (data.chain as BlockchainNetwork) || 'polygon',
     contractAddress: data.contractAddress || '',
+    address: data.address,
+    squareFeet: data.squareFeet,
+    bedrooms: data.bedrooms,
+    bathrooms: data.bathrooms,
+    yearBuilt: data.yearBuilt,
+    monthlyRent: data.monthlyRent,
   };
 };
 

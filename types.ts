@@ -37,7 +37,13 @@ export interface Property {
   description?: string;
   type: PropertyType;
   chain: BlockchainNetwork;
-  contractAddress: string; 
+  contractAddress: string;
+  address?: string;
+  squareFeet?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  yearBuilt?: number;
+  monthlyRent?: number;
 }
 
 export interface Holding {
