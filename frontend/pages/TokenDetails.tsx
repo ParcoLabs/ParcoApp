@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getPropertyById } from '../api/mockData';
-import { Property } from '../../types';
+import { Property, PropertyType, BlockchainNetwork } from '../../types';
 import { TokenDetailsMobile } from '../mobile/TokenDetailsMobile';
 import { ChainIndicator } from '../components/ChainIndicator';
+import { PropertyDetailsSkeletonDesktop, PropertyDetailsSkeletonMobile } from '../components/PropertyDetailsSkeleton';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const CHART_DATA = [
@@ -15,44 +16,129 @@ const CHART_DATA = [
   { name: 'Jun', value: 750 },
 ];
 
+interface ApiPropertyResponse {
+  id: string;
+  name: string;
+  images: string[];
+  APY: number;
+  totalSupply: number;
+  remainingSupply: number;
+  description: string | null;
+  region: string;
+  tokenPrice: number;
+  chain: string;
+  type: string;
+  totalValue: number;
+  address?: string;
+  squareFeet?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  yearBuilt?: number;
+  monthlyRent?: number;
+  contractAddress?: string;
+}
+
+const mapApiToProperty = (data: ApiPropertyResponse): Property => {
+  return {
+    id: data.id,
+    title: data.name,
+    location: data.region,
+    totalValue: data.totalValue,
+    tokenPrice: data.tokenPrice,
+    tokensAvailable: data.remainingSupply,
+    tokensTotal: data.totalSupply,
+    rentalYield: data.APY,
+    image: data.images[0] || '',
+    images: data.images,
+    description: data.description || undefined,
+    type: (data.type as PropertyType) || PropertyType.RESIDENTIAL,
+    chain: (data.chain as BlockchainNetwork) || 'polygon',
+    contractAddress: data.contractAddress || '',
+  };
+};
+
 export const TokenDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('Overview');
 
   useEffect(() => {
-    // Simulate API Fetch
-    setTimeout(() => {
-        if (id) {
-            const data = getPropertyById(id);
-            setProperty(data || null);
+    const fetchProperty = async () => {
+      if (!id) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const response = await fetch(`/api/properties/${id}`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          setProperty(mapApiToProperty(result.data));
+        } else {
+          const mockData = getPropertyById(id);
+          if (mockData) {
+            setProperty(mockData);
+          } else {
+            setError('Property not found');
+          }
         }
+      } catch (err) {
+        console.warn('API fetch failed, falling back to mock data:', err);
+        const mockData = getPropertyById(id);
+        if (mockData) {
+          setProperty(mockData);
+        } else {
+          setError('Property not found');
+        }
+      } finally {
         setLoading(false);
-    }, 600);
+      }
+    };
+
+    fetchProperty();
   }, [id]);
 
   if (loading) {
-      return (
-          <div className="min-h-screen flex items-center justify-center">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-deep"></div>
-          </div>
-      );
+    return (
+      <>
+        <div className="md:hidden">
+          <PropertyDetailsSkeletonMobile />
+        </div>
+        <div className="hidden md:block">
+          <PropertyDetailsSkeletonDesktop />
+        </div>
+      </>
+    );
   }
 
-  if (!property) {
-      return <div className="p-8 text-center">Property not found</div>;
+  if (error || !property) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-8">
+        <div className="text-center">
+          <i className="fa-solid fa-building text-6xl text-brand-lightGray mb-4"></i>
+          <h2 className="text-2xl font-bold text-brand-dark mb-2">Property Not Found</h2>
+          <p className="text-brand-sage mb-6">{error || "We couldn't find the property you're looking for."}</p>
+          <button 
+            onClick={() => navigate('/marketplace')}
+            className="px-6 py-3 bg-brand-deep text-white font-bold rounded-lg hover:bg-brand-dark transition-colors"
+          >
+            Back to Marketplace
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <>
-      {/* Mobile View */}
       <div className="md:hidden">
           <TokenDetailsMobile property={property} />
       </div>
 
-      {/* Desktop View */}
       <div className="hidden md:block max-w-6xl mx-auto p-8">
         
         <button onClick={() => navigate('/marketplace')} className="text-brand-sage hover:text-brand-dark mb-6 flex items-center gap-2 font-medium">
@@ -60,10 +146,8 @@ export const TokenDetails: React.FC = () => {
         </button>
 
         <div className="grid grid-cols-3 gap-8">
-            {/* Left Column: Content */}
             <div className="col-span-2 space-y-8">
                 
-                {/* Hero */}
                 <div className="flex gap-6">
                     <img src={property.image} alt={property.title} className="w-32 h-32 object-cover rounded-xl bg-brand-lightGray shadow-sm" />
                     <div>
@@ -79,7 +163,6 @@ export const TokenDetails: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Tabs & Info */}
                 <div>
                     <div className="flex border-b border-brand-lightGray mb-6">
                         {['Overview', 'Insights', 'Financials'].map(tab => (
@@ -100,7 +183,6 @@ export const TokenDetails: React.FC = () => {
                     <div className="min-h-[200px]">
                         {activeTab === 'Overview' && (
                             <div className="space-y-6">
-                                {/* Chart Section (Moved Inside Overview) */}
                                 <div className="bg-white border border-brand-lightGray rounded-xl p-6 h-80">
                                    <h3 className="font-bold text-brand-dark mb-4">Price History</h3>
                                    <ResponsiveContainer width="100%" height="100%">
@@ -121,7 +203,6 @@ export const TokenDetails: React.FC = () => {
                                    </ResponsiveContainer>
                                 </div>
 
-                                {/* Financial Summary Card (Desktop Version) */}
                                 <div className="bg-brand-mint/20 border border-brand-mint rounded-xl p-6">
                                    <div className="grid grid-cols-3 gap-6">
                                        <div className="border-r border-brand-mint/50 pr-4">
@@ -150,8 +231,8 @@ export const TokenDetails: React.FC = () => {
 
                                 <div className="prose text-brand-dark max-w-none">
                                     <p>
-                                        This premium {property.type.toLowerCase()} asset in {property.location} offers a unique opportunity for fractional ownership.
-                                        With a projected rental yield of {property.rentalYield}%, investors can expect steady cash flow distributed directly to their USDC balance.
+                                        {property.description || `This premium ${property.type.toLowerCase()} asset in ${property.location} offers a unique opportunity for fractional ownership.
+                                        With a projected rental yield of ${property.rentalYield}%, investors can expect steady cash flow distributed directly to their USDC balance.`}
                                     </p>
                                     <h4 className="font-bold mt-4 mb-2 text-lg">Why Invest?</h4>
                                     <ul className="list-disc pl-5 space-y-2 text-brand-sage">
@@ -213,7 +294,6 @@ export const TokenDetails: React.FC = () => {
 
                         {activeTab === 'Financials' && (
                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                 {/* Left: Operating & Returns */}
                                  <div className="space-y-8">
                                      <div className="bg-brand-offWhite p-6 rounded-xl border border-brand-lightGray">
                                         <h3 className="font-bold text-brand-dark mb-4 border-b border-brand-lightGray pb-2">Projected Returns</h3>
@@ -260,7 +340,6 @@ export const TokenDetails: React.FC = () => {
                                      </div>
                                  </div>
 
-                                 {/* Right: Acquisition */}
                                  <div>
                                      <h3 className="font-bold text-brand-dark mb-4 border-b border-brand-lightGray pb-2">Acquisition Breakdown</h3>
                                      <div className="bg-white border border-brand-lightGray rounded-xl p-6 space-y-4">
@@ -287,7 +366,6 @@ export const TokenDetails: React.FC = () => {
                 </div>
             </div>
 
-            {/* Right Column: Buy Panel */}
             <div className="col-span-1">
                 <div className="bg-white border border-brand-lightGray rounded-xl p-6 shadow-sm sticky top-6">
                     <h3 className="font-bold text-xl text-brand-dark mb-4">Invest</h3>
