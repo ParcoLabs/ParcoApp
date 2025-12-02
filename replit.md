@@ -12,6 +12,15 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 - **Environment**: Development mode using Vite dev server
 
 ## Recent Changes (Dec 2, 2025)
+32. **Integrated Stripe Payment Processing** with stripe-replit-sync:
+    - ACH bank account linking via Financial Connections (instant verification)
+    - Credit/debit card payments via Stripe Elements
+    - PaymentMethod database model for saved payment methods
+    - Created payment routes: /api/payments/* endpoints
+    - Created PaymentMethods page (Settings → Payment methods)
+    - Automatic Stripe webhook handling via stripe-replit-sync
+33. Migrated database from Supabase to Replit Neon PostgreSQL for stripe-replit-sync compatibility
+
 20. Created GET /api/properties endpoint returning: id, name, images, APY, totalSupply, remainingSupply, description, region, tokenPrice, chain
 21. Added `BlockchainNetwork` type ('polygon' | 'solana') to types.ts
 22. Created ChainIndicator component with Polygon and Solana chain icons/badges
@@ -73,6 +82,7 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 - **Backend**: Express.js with TypeScript
 - **Database**: Supabase PostgreSQL with Prisma ORM 7
 - **ORM**: Prisma 7.0.1 with @prisma/adapter-pg driver
+- **Payments**: Stripe (stripe-replit-sync for managed webhooks)
 
 ### Directory Structure
 ```
@@ -95,6 +105,7 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 │   │   ├── Portfolio.tsx
 │   │   ├── Register.tsx  # Clerk registration
 │   │   ├── Settings.tsx
+│   │   ├── PaymentMethods.tsx  # Add cards and bank accounts
 │   │   └── TokenDetails.tsx
 │   └── public/           # Static assets
 │       └── brand/        # Brand assets (logos)
@@ -111,7 +122,8 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 │   └── routes/
 │       ├── auth.ts       # Auth routes (/api/auth/sync, /api/auth/me)
 │       ├── properties.ts # Properties routes (/api/properties)
-│       └── portfolio.ts  # Portfolio routes (/api/portfolio, /api/portfolio/history)
+│       ├── portfolio.ts  # Portfolio routes (/api/portfolio, /api/portfolio/history)
+│       └── payments.ts   # Stripe payment routes (/api/payments/*)
 ├── backend/              # Backend architecture documentation
 │   └── architecture.ts   # Backend module manifest (not implemented)
 ├── App.tsx              # Main app with Clerk provider & routing
