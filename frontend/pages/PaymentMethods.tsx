@@ -232,14 +232,24 @@ const PaymentMethodsContent: React.FC = () => {
   const handleLinkBank = async () => {
     setLinkingBank(true);
     try {
+      const configResponse = await fetch('/api/payments/config');
+      const configData = await configResponse.json();
+      
+      if (!configData.success || !configData.publishableKey) {
+        throw new Error('Could not load Stripe configuration');
+      }
+
       const response = await fetch('/api/payments/financial-connections/session', {
         method: 'POST',
         credentials: 'include',
       });
-      const { clientSecret } = await response.json();
+      const { clientSecret, error: sessionError } = await response.json();
 
-      const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
-      const stripe = await stripePromise;
+      if (sessionError) {
+        throw new Error(sessionError);
+      }
+
+      const stripe = await loadStripe(configData.publishableKey);
 
       if (!stripe) throw new Error('Stripe not loaded');
 
