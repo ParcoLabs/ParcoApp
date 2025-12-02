@@ -7,6 +7,7 @@ import authRoutes from './routes/auth';
 import propertiesRoutes from './routes/properties';
 import portfolioRoutes from './routes/portfolio';
 import paymentsRoutes from './routes/payments';
+import cryptoRoutes, { handleCryptoWebhook } from './routes/crypto';
 import { getStripeSync } from './lib/stripeClient';
 import { WebhookHandlers } from './lib/webhookHandlers';
 
@@ -49,6 +50,34 @@ app.post(
   }
 );
 
+app.post(
+  '/api/coinbase/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    const signature = req.headers['x-cc-webhook-signature'];
+
+    if (!signature) {
+      return res.status(400).json({ error: 'Missing x-cc-webhook-signature' });
+    }
+
+    try {
+      const sig = Array.isArray(signature) ? signature[0] : signature;
+
+      if (!Buffer.isBuffer(req.body)) {
+        console.error('COINBASE WEBHOOK ERROR: req.body is not a Buffer');
+        return res.status(500).json({ error: 'Webhook processing error' });
+      }
+
+      await handleCryptoWebhook(req.body as Buffer, sig);
+
+      res.status(200).json({ received: true });
+    } catch (error: any) {
+      console.error('Coinbase webhook error:', error.message);
+      res.status(400).json({ error: 'Webhook verification failed' });
+    }
+  }
+);
+
 app.use(express.json());
 
 app.use(clerkMiddleware({
@@ -60,6 +89,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertiesRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/payments', paymentsRoutes);
+app.use('/api/crypto', cryptoRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
