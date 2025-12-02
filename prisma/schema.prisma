@@ -86,6 +86,7 @@ model User {
   borrowPositions   BorrowPosition[]
   transactions      Transaction[]
   paymentMethods    PaymentMethod[]
+  cryptoPayments    CryptoPayment[]
   
   @@index([clerkId])
   @@index([email])
@@ -353,6 +354,23 @@ enum BankAccountStatus {
   ERRORED
 }
 
+enum CryptoPaymentStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+  EXPIRED
+  RESOLVED
+}
+
+enum CryptoCurrency {
+  BTC
+  ETH
+  SOL
+  USDC
+  USDT
+  DAI
+}
+
 model PaymentMethod {
   id                    String              @id @default(cuid())
   userId                String
@@ -382,4 +400,37 @@ model PaymentMethod {
   @@index([userId])
   @@index([stripePaymentMethodId])
   @@index([stripeCustomerId])
+}
+
+model CryptoPayment {
+  id                  String              @id @default(cuid())
+  userId              String
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  coinbaseChargeId    String              @unique
+  coinbaseChargeCode  String              @unique
+  
+  amount              Decimal             @db.Decimal(18, 2)
+  currency            String              @default("USD")
+  
+  cryptoCurrency      CryptoCurrency?
+  cryptoAmount        Decimal?            @db.Decimal(28, 18)
+  
+  status              CryptoPaymentStatus @default(PENDING)
+  
+  hostedUrl           String?
+  expiresAt           DateTime?
+  
+  confirmedAt         DateTime?
+  txHash              String?
+  
+  metadata            Json?
+  
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  @@index([userId])
+  @@index([coinbaseChargeId])
+  @@index([status])
+  @@index([createdAt])
 }
