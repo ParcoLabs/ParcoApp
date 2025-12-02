@@ -11,6 +11,7 @@ import { Register } from './frontend/pages/Register';
 import { KYC } from './frontend/pages/KYC';
 import { Settings } from './frontend/pages/Settings';
 import { DefiPage } from './frontend/pages/defi/DefiPage';
+import { PaymentMethods } from './frontend/pages/PaymentMethods';
 import { AuthProvider } from './frontend/context/AuthContext';
 
 const SSOCallbackPage: React.FC = () => {
@@ -85,6 +86,7 @@ const App: React.FC = () => {
           <Route path="/defi" element={<ProtectedRoute><DefiPage /></ProtectedRoute>} />
           <Route path="/kyc" element={<ProtectedRoute><KYC /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethods /></ProtectedRoute>} />
           
           <Route path="/borrow" element={<Navigate to="/defi" replace />} />
           

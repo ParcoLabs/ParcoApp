@@ -1,7 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
-const connectionString = process.env.DATABASE_URL!;
+function getDatabaseUrl(): string {
+  const { PGHOST, PGUSER, PGPASSWORD, PGDATABASE, PGPORT, DATABASE_URL } = process.env;
+  if (PGHOST && PGUSER && PGPASSWORD && PGDATABASE) {
+    const password = encodeURIComponent(PGPASSWORD);
+    return `postgresql://${PGUSER}:${password}@${PGHOST}:${PGPORT || '5432'}/${PGDATABASE}?sslmode=require`;
+  }
+  return DATABASE_URL!;
+}
+
+const connectionString = getDatabaseUrl();
 
 const adapter = new PrismaPg({ connectionString });
 

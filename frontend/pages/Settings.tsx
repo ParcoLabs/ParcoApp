@@ -48,6 +48,17 @@ export const Settings: React.FC = () => {
             </div>
         </div>
 
+        {/* Payment Methods */}
+        <div className="mb-8">
+            <h2 className="font-bold text-brand-dark mb-2 text-lg px-2">Payments</h2>
+            <div className="bg-white rounded-2xl border border-brand-lightGray px-4 shadow-sm">
+                <div className="divide-y divide-brand-lightGray">
+                    <SettingRow label="Payment methods" onClick={() => navigate('/payment-methods')} />
+                    <SettingRow label="Transaction history" onClick={() => navigate('/portfolio')} />
+                </div>
+            </div>
+        </div>
+
         {/* Account Link */}
         <div className="mb-8">
              <div className="bg-white rounded-2xl border border-brand-lightGray px-4 shadow-sm">

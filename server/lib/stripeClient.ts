@@ -60,6 +60,15 @@ export async function getStripeSecretKey() {
   return secretKey;
 }
 
+function getDatabaseUrl(): string {
+  const { PGHOST, PGUSER, PGPASSWORD, PGDATABASE, PGPORT, DATABASE_URL } = process.env;
+  if (PGHOST && PGUSER && PGPASSWORD && PGDATABASE) {
+    const password = encodeURIComponent(PGPASSWORD);
+    return `postgresql://${PGUSER}:${password}@${PGHOST}:${PGPORT || '5432'}/${PGDATABASE}?sslmode=require`;
+  }
+  return DATABASE_URL!;
+}
+
 let stripeSync: any = null;
 
 export async function getStripeSync() {
@@ -69,7 +78,7 @@ export async function getStripeSync() {
 
     stripeSync = new StripeSync({
       poolConfig: {
-        connectionString: process.env.DATABASE_URL!,
+        connectionString: getDatabaseUrl(),
         max: 2,
       },
       stripeSecretKey: secretKey,

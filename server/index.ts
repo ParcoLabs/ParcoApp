@@ -65,11 +65,19 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+function getDatabaseUrl(): string | undefined {
+  const { PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE, DATABASE_URL } = process.env;
+  if (PGHOST && PGUSER && PGPASSWORD && PGDATABASE) {
+    return `postgresql://${PGUSER}:${encodeURIComponent(PGPASSWORD)}@${PGHOST}:${PGPORT || '5432'}/${PGDATABASE}?sslmode=require`;
+  }
+  return DATABASE_URL;
+}
+
 async function initStripe() {
-  const databaseUrl = process.env.DATABASE_URL;
+  const databaseUrl = getDatabaseUrl();
 
   if (!databaseUrl) {
-    console.warn('DATABASE_URL not set, skipping Stripe initialization');
+    console.warn('DATABASE_URL not set, skipping Stripe sync initialization');
     return;
   }
 
@@ -98,8 +106,9 @@ async function initStripe() {
       .catch((err: any) => {
         console.error('Error syncing Stripe data:', err);
       });
-  } catch (error) {
-    console.error('Failed to initialize Stripe:', error);
+  } catch (error: any) {
+    console.error('Failed to initialize Stripe sync (non-fatal):', error.message);
+    console.log('Stripe payments will still work, but sync features may be limited');
   }
 }
 

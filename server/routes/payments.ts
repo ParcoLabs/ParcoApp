@@ -415,7 +415,7 @@ router.post('/deposit', requireAuth, async (req, res) => {
 router.post('/verify-microdeposits', requireAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
-    const { paymentMethodId, amounts } = req.body;
+    const { paymentMethodId, amounts, setupIntentId } = req.body;
 
     if (!clerkId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
@@ -440,9 +440,11 @@ router.post('/verify-microdeposits', requireAuth, async (req, res) => {
 
     const stripe = await getUncachableStripeClient();
 
-    await stripe.paymentMethods.verifyMicrodeposits(paymentMethod.stripePaymentMethodId, {
-      amounts,
-    });
+    if (setupIntentId) {
+      await stripe.setupIntents.verifyMicrodeposits(setupIntentId, {
+        amounts,
+      });
+    }
 
     await prisma.paymentMethod.update({
       where: { id: paymentMethodId },
