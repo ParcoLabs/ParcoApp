@@ -113,11 +113,18 @@ model KYCVerification {
   
   rejectionReason   String?
   
+  sumsubApplicantId String?     @unique
+  sumsubExternalId  String?
+  sumsubLevelName   String?
+  sumsubReviewStatus String?
+  sumsubReviewResult Json?
+  
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   
   @@index([userId])
   @@index([status])
+  @@index([sumsubApplicantId])
 }
 
 model Property {

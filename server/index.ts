@@ -8,6 +8,7 @@ import propertiesRoutes from './routes/properties';
 import portfolioRoutes from './routes/portfolio';
 import paymentsRoutes from './routes/payments';
 import cryptoRoutes, { handleCryptoWebhook } from './routes/crypto';
+import kycRoutes, { handleSumsubWebhook } from './routes/kyc';
 import { getStripeSync } from './lib/stripeClient';
 import { WebhookHandlers } from './lib/webhookHandlers';
 
@@ -78,6 +79,34 @@ app.post(
   }
 );
 
+app.post(
+  '/api/kyc/sumsub/webhook',
+  express.raw({ type: 'application/json' }),
+  async (req, res) => {
+    const signature = req.headers['x-payload-digest'];
+
+    if (!signature) {
+      return res.status(400).json({ error: 'Missing x-payload-digest' });
+    }
+
+    try {
+      const sig = Array.isArray(signature) ? signature[0] : signature;
+
+      if (!Buffer.isBuffer(req.body)) {
+        console.error('SUMSUB WEBHOOK ERROR: req.body is not a Buffer');
+        return res.status(500).json({ error: 'Webhook processing error' });
+      }
+
+      await handleSumsubWebhook(req.body as Buffer, sig);
+
+      res.status(200).json({ received: true });
+    } catch (error: any) {
+      console.error('Sumsub webhook error:', error.message);
+      res.status(400).json({ error: 'Webhook verification failed' });
+    }
+  }
+);
+
 app.use(express.json());
 
 app.use(clerkMiddleware({
@@ -90,6 +119,7 @@ app.use('/api/properties', propertiesRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/payments', paymentsRoutes);
 app.use('/api/crypto', cryptoRoutes);
+app.use('/api/kyc', kycRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

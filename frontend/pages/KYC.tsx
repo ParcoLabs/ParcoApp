@@ -1,14 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import SumsubWebSdk from '@sumsub/websdk-react';
+import { useSumsubKyc } from '../hooks/useSumsubKyc';
 
-type KYCStep = 'intro' | 'identity' | 'phone' | 'otp' | 'address' | 'document_type' | 'scan_front' | 'scan_back' | 'review';
+type KYCStep = 'intro' | 'identity' | 'phone' | 'otp' | 'address' | 'document_type' | 'scan_front' | 'scan_back' | 'review' | 'sumsub_verify';
 
 export const KYC: React.FC = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState<KYCStep>('intro');
   const [loading, setLoading] = useState(false);
+  const [showSumsubWidget, setShowSumsubWidget] = useState(false);
+  const [verificationComplete, setVerificationComplete] = useState(false);
 
-  // Form State
+  const {
+    token: sumsubToken,
+    loading: sumsubLoading,
+    error: sumsubError,
+    kycStatus,
+    config: sumsubConfig,
+    initSumsub,
+    refreshToken,
+    startPolling,
+    stopPolling,
+  } = useSumsubKyc();
+
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -25,12 +40,60 @@ export const KYC: React.FC = () => {
     setTimeout(() => {
         setStep(target);
         setLoading(false);
-    }, 400); // Simulate subtle transition delay
+    }, 400);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  const handleStartSumsubVerification = useCallback(async () => {
+    setLoading(true);
+    const token = await initSumsub();
+    if (token) {
+      setShowSumsubWidget(true);
+    }
+    setLoading(false);
+  }, [initSumsub]);
+
+  const handleSumsubMessage = useCallback((type: string, payload: any) => {
+    console.log('Sumsub message:', type, payload);
+    
+    if (type === 'idCheck.onApplicantSubmitted') {
+      setVerificationComplete(true);
+      startPolling((status) => {
+        if (status.status === 'APPROVED' || status.status === 'REJECTED') {
+          stopPolling();
+          setShowSumsubWidget(false);
+          nextStep('review');
+        }
+      });
+    }
+    
+    if (type === 'idCheck.onStepCompleted') {
+      console.log('Step completed:', payload);
+    }
+  }, [startPolling, stopPolling]);
+
+  const handleSumsubError = useCallback((error: any) => {
+    console.error('Sumsub error:', error);
+  }, []);
+
+  const accessTokenExpirationHandler = useCallback(async () => {
+    try {
+      const newToken = await refreshToken();
+      return newToken;
+    } catch (error) {
+      console.error('Failed to refresh token:', error);
+      return '';
+    }
+  }, [refreshToken]);
+
+  useEffect(() => {
+    return () => {
+      stopPolling();
+    };
+  }, [stopPolling]);
 
   // --- STEP COMPONENTS ---
 
@@ -293,45 +356,96 @@ export const KYC: React.FC = () => {
     </div>
   );
 
-  // 7. Scan Front (Matches "Scan the Front" Screenshot)
+  // 7. Scan Front (Matches "Scan the Front" Screenshot) - With Sumsub Integration
   const ScanFrontStep = () => (
     <div className="max-w-md mx-auto text-center h-full flex flex-col">
         <div className="mb-4">
-            <button onClick={() => setStep('document_type')} className="absolute left-4 text-brand-dark"><i className="fa-solid fa-arrow-left text-xl"></i></button>
+            <button onClick={() => { setShowSumsubWidget(false); setStep('document_type'); }} className="absolute left-4 text-brand-dark"><i className="fa-solid fa-arrow-left text-xl"></i></button>
             <h1 className="text-xl font-bold text-brand-dark">Verify Your Identity</h1>
         </div>
 
-        <div className="flex-1 flex flex-col justify-center items-center">
-            <h2 className="font-bold text-brand-dark mb-4 text-lg">Scan the Front</h2>
-            <p className="text-brand-sage text-sm mb-8 px-8">Take a photo of the front of your identity card</p>
+        {showSumsubWidget && sumsubToken ? (
+            <div className="flex-1 flex flex-col">
+                <div className="flex-1 min-h-[400px] bg-white rounded-xl overflow-hidden">
+                    <SumsubWebSdk
+                        accessToken={sumsubToken}
+                        expirationHandler={accessTokenExpirationHandler}
+                        config={{
+                            lang: 'en',
+                            theme: 'light',
+                        }}
+                        options={{
+                            addViewportTag: false,
+                            adaptIframeHeight: true,
+                        }}
+                        onMessage={handleSumsubMessage}
+                        onError={handleSumsubError}
+                    />
+                </div>
+                {verificationComplete && (
+                    <div className="mt-4 p-4 bg-brand-offWhite rounded-xl">
+                        <p className="text-brand-sage text-sm">
+                            <i className="fa-solid fa-spinner fa-spin mr-2"></i>
+                            Verifying your documents...
+                        </p>
+                    </div>
+                )}
+            </div>
+        ) : (
+            <>
+                <div className="flex-1 flex flex-col justify-center items-center">
+                    <h2 className="font-bold text-brand-dark mb-4 text-lg">Scan the Front</h2>
+                    <p className="text-brand-sage text-sm mb-8 px-8">Take a photo of the front of your identity card</p>
 
-            <div className="relative w-64 h-40 border-2 border-brand-medium border-dashed rounded-xl bg-brand-offWhite flex items-center justify-center mb-8">
-                {/* Mock Card UI */}
-                <div className="w-56 h-32 bg-white rounded-lg shadow-sm p-4 flex flex-col gap-2 opacity-50">
-                    <div className="w-full flex justify-end"><div className="w-20 h-2 bg-gray-200 rounded"></div></div>
-                    <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
-                    <div className="w-32 h-2 bg-gray-200 rounded"></div>
-                    <div className="w-24 h-2 bg-gray-200 rounded"></div>
+                    <div className="relative w-64 h-40 border-2 border-brand-medium border-dashed rounded-xl bg-brand-offWhite flex items-center justify-center mb-8">
+                        <div className="w-56 h-32 bg-white rounded-lg shadow-sm p-4 flex flex-col gap-2 opacity-50">
+                            <div className="w-full flex justify-end"><div className="w-20 h-2 bg-gray-200 rounded"></div></div>
+                            <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+                            <div className="w-32 h-2 bg-gray-200 rounded"></div>
+                            <div className="w-24 h-2 bg-gray-200 rounded"></div>
+                        </div>
+                        
+                        <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-brand-medium -mt-1 -ml-1"></div>
+                        <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-brand-medium -mt-1 -mr-1"></div>
+                        <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-brand-medium -mb-1 -ml-1"></div>
+                        <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-brand-medium -mb-1 -mr-1"></div>
+                    </div>
+
+                    {sumsubError && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                            <p className="text-red-600 text-sm">{sumsubError}</p>
+                        </div>
+                    )}
+
+                    {sumsubConfig?.configured ? (
+                        <button 
+                            onClick={handleStartSumsubVerification}
+                            disabled={loading || sumsubLoading}
+                            className="bg-brand-deep text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-brand-dark flex items-center gap-2 disabled:opacity-50"
+                        >
+                            {loading || sumsubLoading ? (
+                                <><i className="fa-solid fa-spinner fa-spin"></i> Loading...</>
+                            ) : (
+                                <><i className="fa-solid fa-camera"></i> Start Verification</>
+                            )}
+                        </button>
+                    ) : (
+                        <button 
+                            onClick={() => nextStep('scan_back')}
+                            className="bg-brand-deep text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-brand-dark flex items-center gap-2"
+                        >
+                            <i className="fa-solid fa-camera"></i> Take Photo
+                        </button>
+                    )}
                 </div>
                 
-                {/* Corner Markers */}
-                <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-brand-medium -mt-1 -ml-1"></div>
-                <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-brand-medium -mt-1 -mr-1"></div>
-                <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-brand-medium -mb-1 -ml-1"></div>
-                <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-brand-medium -mb-1 -mr-1"></div>
-            </div>
-
-            <button 
-                onClick={() => nextStep('scan_back')}
-                className="bg-brand-deep text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-brand-dark flex items-center gap-2"
-            >
-                <i className="fa-solid fa-camera"></i> Take Photo
-            </button>
-        </div>
-        
-        <button onClick={() => nextStep('scan_back')} className="w-full bg-brand-medium/20 text-brand-deep font-bold py-3.5 rounded-full mt-auto mb-4">
-            Continue
-        </button>
+                {!sumsubConfig?.configured && (
+                    <button onClick={() => nextStep('scan_back')} className="w-full bg-brand-medium/20 text-brand-deep font-bold py-3.5 rounded-full mt-auto mb-4">
+                        Continue
+                    </button>
+                )}
+            </>
+        )}
     </div>
   );
 
@@ -374,41 +488,73 @@ export const KYC: React.FC = () => {
     </div>
   );
 
-  // 9. Review & Success
-  const ReviewStep = () => (
-    <div className="max-w-md mx-auto text-center pt-12">
-        <div className="w-20 h-20 bg-brand-medium rounded-full flex items-center justify-center text-white text-3xl mx-auto mb-6 shadow-lg shadow-brand-medium/20">
-            <i className="fa-solid fa-check"></i>
-        </div>
-        <h1 className="text-2xl font-bold text-brand-dark mb-2">Verification Pending</h1>
-        <p className="text-brand-sage mb-8">Thanks {formData.firstName}! We are reviewing your documents. This usually takes less than 2 minutes.</p>
+  // 9. Review & Success - Shows real KYC status
+  const ReviewStep = () => {
+    const statusIcon = kycStatus?.status === 'APPROVED' 
+      ? 'fa-solid fa-check' 
+      : kycStatus?.status === 'REJECTED' 
+        ? 'fa-solid fa-xmark'
+        : 'fa-solid fa-clock';
+    
+    const statusColor = kycStatus?.status === 'APPROVED'
+      ? 'bg-brand-medium'
+      : kycStatus?.status === 'REJECTED'
+        ? 'bg-red-500'
+        : 'bg-yellow-500';
+    
+    const statusTitle = kycStatus?.status === 'APPROVED'
+      ? 'Verification Complete'
+      : kycStatus?.status === 'REJECTED'
+        ? 'Verification Failed'
+        : 'Verification Pending';
+    
+    const statusMessage = kycStatus?.status === 'APPROVED'
+      ? `Congratulations ${formData.firstName}! Your identity has been verified. You can now trade on Parco.`
+      : kycStatus?.status === 'REJECTED'
+        ? `Sorry ${formData.firstName}, we couldn't verify your identity. Please try again or contact support.`
+        : `Thanks ${formData.firstName}! We are reviewing your documents. This usually takes less than 2 minutes.`;
 
-        <div className="bg-white border border-brand-lightGray rounded-xl p-4 text-left mb-8">
-            <h3 className="font-bold text-brand-dark mb-4 border-b border-brand-lightGray pb-2">Submitted Info</h3>
-            <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                    <span className="text-brand-sage">Name</span>
-                    <span className="font-bold text-brand-dark">{formData.firstName} {formData.lastName}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-brand-sage">Phone</span>
-                    <span className="font-bold text-brand-dark">{formData.phone}</span>
-                </div>
-                <div className="flex justify-between">
-                    <span className="text-brand-sage">Document</span>
-                    <span className="font-bold text-brand-dark uppercase">{formData.docType.replace('_', ' ')}</span>
-                </div>
-            </div>
-        </div>
+    return (
+      <div className="max-w-md mx-auto text-center pt-12">
+          <div className={`w-20 h-20 ${statusColor} rounded-full flex items-center justify-center text-white text-3xl mx-auto mb-6 shadow-lg`}>
+              <i className={statusIcon}></i>
+          </div>
+          <h1 className="text-2xl font-bold text-brand-dark mb-2">{statusTitle}</h1>
+          <p className="text-brand-sage mb-8">{statusMessage}</p>
 
-        <button 
-            onClick={() => navigate('/')} 
-            className="w-full bg-brand-deep text-white py-3.5 rounded-full font-bold shadow-md hover:bg-brand-dark"
-        >
-            Return to Dashboard
-        </button>
-    </div>
-  );
+          <div className="bg-white border border-brand-lightGray rounded-xl p-4 text-left mb-8">
+              <h3 className="font-bold text-brand-dark mb-4 border-b border-brand-lightGray pb-2">Submitted Info</h3>
+              <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                      <span className="text-brand-sage">Name</span>
+                      <span className="font-bold text-brand-dark">{formData.firstName} {formData.lastName}</span>
+                  </div>
+                  <div className="flex justify-between">
+                      <span className="text-brand-sage">Phone</span>
+                      <span className="font-bold text-brand-dark">{formData.phone}</span>
+                  </div>
+                  <div className="flex justify-between">
+                      <span className="text-brand-sage">Document</span>
+                      <span className="font-bold text-brand-dark uppercase">{formData.docType.replace('_', ' ')}</span>
+                  </div>
+                  <div className="flex justify-between">
+                      <span className="text-brand-sage">Status</span>
+                      <span className={`font-bold ${kycStatus?.status === 'APPROVED' ? 'text-brand-medium' : kycStatus?.status === 'REJECTED' ? 'text-red-500' : 'text-yellow-600'}`}>
+                          {kycStatus?.status || 'PENDING'}
+                      </span>
+                  </div>
+              </div>
+          </div>
+
+          <button 
+              onClick={() => navigate('/')} 
+              className="w-full bg-brand-deep text-white py-3.5 rounded-full font-bold shadow-md hover:bg-brand-dark"
+          >
+              Return to Dashboard
+          </button>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-brand-offWhite p-6 pb-20">
