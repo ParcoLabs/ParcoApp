@@ -112,7 +112,10 @@ export const Login: React.FC = () => {
     <div className="min-h-screen bg-brand-offWhite flex flex-col justify-center items-center p-6">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center md:text-left">
-           <h1 className="text-3xl font-logo text-brand-deep uppercase mb-2">Parco Labs</h1>
+           <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+             <img src="/brand/ParcoLogoGreen.png" alt="Parco Logo" className="w-10 h-10 object-contain" />
+             <h1 className="text-3xl font-logo text-brand-deep uppercase">Parco Labs</h1>
+           </div>
            <h2 className="text-2xl font-bold text-brand-dark">Sign in to your Parco account</h2>
         </div>
 

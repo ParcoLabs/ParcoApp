@@ -28,15 +28,7 @@ export const Navigation: React.FC = () => {
       {/* Desktop Sidebar */}
       <div className="hidden md:flex flex-col w-64 bg-white border-r border-brand-lightGray h-screen fixed left-0 top-0 z-50">
         <div className="p-6 border-b border-brand-lightGray flex items-center gap-3">
-            {/* Logo SVG */}
-            <div className="w-10 h-10">
-               <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
-                <path d="M50 5L93.3013 30V80L50 105L6.69873 80V30L50 5Z" fill="#056052"/>
-                <path d="M50 15L85 35V75L50 95L15 75V35L50 15Z" fill="white"/>
-                <path d="M50 25V85" stroke="#056052" strokeWidth="8" strokeLinecap="round"/>
-                <rect x="42" y="30" width="16" height="50" rx="4" fill="#056052"/>
-              </svg>
-            </div>
+            <img src="/brand/ParcoLogoGreen.png" alt="Parco Logo" className="w-10 h-10 object-contain" />
             <span className="text-2xl font-logo text-brand-deep tracking-wider uppercase">Parco</span>
         </div>
         
