@@ -11,10 +11,10 @@ let Webhook: any = null;
 async function initCoinbase() {
   if (!coinbaseClient) {
     const coinbase = await import('coinbase-commerce-node');
-    const apiKey = process.env.COINBASE_COMMERCE_API_KEY;
+    const apiKey = process.env.COINBASE_API_KEY;
     
     if (!apiKey) {
-      throw new Error('COINBASE_COMMERCE_API_KEY not configured');
+      throw new Error('COINBASE_API_KEY not configured');
     }
     
     coinbase.Client.init(apiKey);
@@ -26,7 +26,7 @@ async function initCoinbase() {
 }
 
 router.get('/config', async (req, res) => {
-  const isConfigured = !!process.env.COINBASE_COMMERCE_API_KEY;
+  const isConfigured = !!process.env.COINBASE_API_KEY;
   res.json({
     success: true,
     configured: isConfigured,
@@ -200,10 +200,10 @@ export default router;
 
 export async function handleCryptoWebhook(rawBody: Buffer, signature: string) {
   const { Webhook: WebhookVerifier } = await initCoinbase();
-  const webhookSecret = process.env.COINBASE_COMMERCE_WEBHOOK_SECRET;
+  const webhookSecret = process.env.COINBASE_WEBHOOK_SECRET;
 
   if (!webhookSecret) {
-    throw new Error('COINBASE_COMMERCE_WEBHOOK_SECRET not configured');
+    throw new Error('COINBASE_WEBHOOK_SECRET not configured');
   }
 
   const rawBodyString = rawBody.toString('utf8');
