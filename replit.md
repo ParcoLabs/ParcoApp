@@ -12,6 +12,14 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 - **Environment**: Development mode using Vite dev server
 
 ## Recent Changes (Dec 2, 2025)
+36. **Integrated Sumsub KYC Verification**:
+    - Sumsub WebSDK embedded in Document Upload step (scan_front screen)
+    - Backend KYC routes: /api/kyc/sumsub/init, /api/kyc/sumsub/status, /api/kyc/sumsub/webhook
+    - useSumsubKyc hook for frontend token management and status polling
+    - KycGatedButton component blocks purchases until KYC = APPROVED
+    - Updated KYCVerification model with Sumsub tracking fields
+    - Graceful fallback to mock flow when SUMSUB_APP_TOKEN/SUMSUB_SECRET_KEY not configured
+    - Real-time verification status on Review screen
 34. **Integrated Coinbase Commerce for Crypto Payments**:
     - Support for BTC, ETH, SOL, USDC, USDT, DAI payments
     - CryptoPayment database model for tracking crypto transactions
