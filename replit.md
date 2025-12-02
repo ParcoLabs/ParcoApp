@@ -21,6 +21,17 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 26. Updated mock data with chain='polygon' and descriptions for all properties
 27. Replaced logo-green.svg with ParcoLogoGreen.png in Navigation, Login, and Register pages
 28. Configured Vite publicDir to serve brand assets from frontend/public
+29. **Created GET /api/portfolio endpoint** returning:
+    - Summary: total portfolio value, net worth, total invested, gains
+    - Vault: USDC balance, locked balance, available balance, deposits/withdrawals
+    - Holdings: property token balances with current value, gains, rent earned
+    - Loans: active borrow positions with principal, interest, collateral info
+    - Rent distributions: recent rent payment transactions
+30. **Created GET /api/portfolio/history endpoint** with:
+    - Query params: period (7d, 30d, 90d, 1y, all), type (transaction type filter)
+    - Summary: deposits, withdrawals, purchases, sales, rent received, borrowings, repayments
+    - Daily summary: aggregated transactions by day
+    - Full transaction history with all details
 
 ## Recent Changes (Dec 1, 2025)
 1. Installed Node.js dependencies via npm
@@ -94,7 +105,8 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 │   │   └── auth.ts       # Clerk JWT validation middleware
 │   └── routes/
 │       ├── auth.ts       # Auth routes (/api/auth/sync, /api/auth/me)
-│       └── properties.ts # Properties routes (/api/properties)
+│       ├── properties.ts # Properties routes (/api/properties)
+│       └── portfolio.ts  # Portfolio routes (/api/portfolio, /api/portfolio/history)
 ├── backend/              # Backend architecture documentation
 │   └── architecture.ts   # Backend module manifest (not implemented)
 ├── App.tsx              # Main app with Clerk provider & routing

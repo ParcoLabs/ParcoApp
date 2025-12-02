@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { clerkMiddleware } from '@clerk/express';
 import authRoutes from './routes/auth';
 import propertiesRoutes from './routes/properties';
+import portfolioRoutes from './routes/portfolio';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.use(clerkMiddleware({
 
 app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertiesRoutes);
+app.use('/api/portfolio', portfolioRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
