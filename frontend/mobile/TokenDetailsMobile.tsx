@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Property } from '../../types';
+import { ChainIndicator } from '../components/ChainIndicator';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
 interface TokenDetailsMobileProps {
@@ -135,12 +136,17 @@ export const TokenDetailsMobile: React.FC<TokenDetailsMobileProps> = ({ property
 
                   <div className="flex justify-between items-center py-3 border-b border-brand-lightGray/50">
                       <span className="text-brand-dark font-bold text-sm">Asset Type</span>
-                      <span className="text-brand-sage font-medium text-sm text-right uppercase">RESIDENTIAL</span>
+                      <span className="text-brand-sage font-medium text-sm text-right uppercase">{property.type}</span>
                   </div>
 
                   <div className="flex justify-between items-center py-3 border-b border-brand-lightGray/50">
                       <span className="text-brand-dark font-bold text-sm">Location</span>
-                      <span className="text-brand-sage font-medium text-sm text-right">New York, NY</span>
+                      <span className="text-brand-sage font-medium text-sm text-right">{property.location}</span>
+                  </div>
+
+                  <div className="flex justify-between items-center py-3 border-b border-brand-lightGray/50">
+                      <span className="text-brand-dark font-bold text-sm">Blockchain</span>
+                      <ChainIndicator chain={property.chain} size="sm" />
                   </div>
 
                   <div className="pt-6">

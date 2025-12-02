@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { clerkMiddleware } from '@clerk/express';
 import authRoutes from './routes/auth';
+import propertiesRoutes from './routes/properties';
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use(clerkMiddleware({
 }));
 
 app.use('/api/auth', authRoutes);
+app.use('/api/properties', propertiesRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

@@ -21,6 +21,8 @@ export enum PropertyType {
   STR = 'STR'
 }
 
+export type BlockchainNetwork = 'polygon' | 'solana';
+
 export interface Property {
   id: string;
   title: string;
@@ -31,8 +33,10 @@ export interface Property {
   tokensTotal: number;
   rentalYield: number; // APY
   image: string;
+  images?: string[];
+  description?: string;
   type: PropertyType;
-  // Phase 1: Polygon
+  chain: BlockchainNetwork;
   contractAddress: string; 
 }
 

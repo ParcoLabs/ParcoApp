@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getPropertyById } from '../api/mockData';
 import { Property } from '../../types';
 import { TokenDetailsMobile } from '../mobile/TokenDetailsMobile';
+import { ChainIndicator } from '../components/ChainIndicator';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const CHART_DATA = [
@@ -68,6 +69,7 @@ export const TokenDetails: React.FC = () => {
                     <div>
                         <div className="flex items-center gap-3 mb-2">
                              <span className="bg-brand-mint text-brand-deep px-2 py-1 rounded text-xs font-bold uppercase tracking-wide">{property.type}</span>
+                             <ChainIndicator chain={property.chain} size="sm" />
                              <span className="text-brand-sage text-sm"><i className="fa-solid fa-location-dot"></i> {property.location}</span>
                         </div>
                         <h1 className="text-3xl font-bold text-brand-dark mb-1">{property.title}</h1>

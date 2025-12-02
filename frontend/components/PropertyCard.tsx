@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Property } from '../../types';
+import { ChainIndicator } from './ChainIndicator';
 
 interface PropertyCardProps {
   property: Property;
@@ -15,11 +16,16 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
       className="bg-white border border-brand-lightGray rounded-2xl p-3 flex gap-4 hover:shadow-lg transition-all cursor-pointer group h-full items-center"
     >
       {/* Image (Left) */}
-      <img 
-        src={property.image} 
-        alt={property.title} 
-        className="w-32 h-32 object-cover rounded-xl bg-brand-lightGray shrink-0" 
-      />
+      <div className="relative shrink-0">
+        <img 
+          src={property.image} 
+          alt={property.title} 
+          className="w-32 h-32 object-cover rounded-xl bg-brand-lightGray" 
+        />
+        <div className="absolute bottom-2 left-2">
+          <ChainIndicator chain={property.chain} size="sm" showLabel={false} />
+        </div>
+      </div>
 
       {/* Middle Content (Title, Loc, Trade Button) */}
       <div className="flex-1 flex flex-col justify-between h-32 py-1">

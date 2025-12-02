@@ -11,6 +11,17 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 - **Setup Date**: November 30, 2025
 - **Environment**: Development mode using Vite dev server
 
+## Recent Changes (Dec 2, 2025)
+20. Created GET /api/properties endpoint returning: id, name, images, APY, totalSupply, remainingSupply, description, region, tokenPrice, chain
+21. Added `BlockchainNetwork` type ('polygon' | 'solana') to types.ts
+22. Created ChainIndicator component with Polygon and Solana chain icons/badges
+23. Added chain indicator to TokenDetails page (desktop hero section)
+24. Added chain indicator to PropertyCard component (bottom-left of image)
+25. Added chain indicator to TokenDetailsMobile (in metrics section)
+26. Updated mock data with chain='polygon' and descriptions for all properties
+27. Replaced logo-green.svg with ParcoLogoGreen.png in Navigation, Login, and Register pages
+28. Configured Vite publicDir to serve brand assets from frontend/public
+
 ## Recent Changes (Dec 1, 2025)
 1. Installed Node.js dependencies via npm
 2. Updated vite.config.ts to use port 5000 (required for Replit webview)
@@ -54,6 +65,7 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 │   ├── api/               # Mock data for DeFi and marketplace
 │   ├── components/        # Reusable UI components
 │   │   ├── defi/         # DeFi-specific components
+│   │   ├── ChainIndicator.tsx  # Blockchain network badge (Polygon/Solana)
 │   │   ├── Navigation.tsx
 │   │   └── PropertyCard.tsx
 │   ├── context/          # React context (Auth with Clerk)
@@ -81,7 +93,8 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 │   ├── middleware/
 │   │   └── auth.ts       # Clerk JWT validation middleware
 │   └── routes/
-│       └── auth.ts       # Auth routes (/api/auth/sync, /api/auth/me)
+│       ├── auth.ts       # Auth routes (/api/auth/sync, /api/auth/me)
+│       └── properties.ts # Properties routes (/api/properties)
 ├── backend/              # Backend architecture documentation
 │   └── architecture.ts   # Backend module manifest (not implemented)
 ├── App.tsx              # Main app with Clerk provider & routing
