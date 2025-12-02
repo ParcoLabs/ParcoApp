@@ -5,7 +5,38 @@ import { Prisma } from '@prisma/client';
 
 const router = Router();
 
-async function creditUserVault(userId: string, usdcAmount: number, chargeId: string) {
+async function ensureVaultAccount(userId: string) {
+  const existing = await prisma.vaultAccount.findUnique({ where: { userId } });
+  if (existing) return existing;
+  
+  return prisma.vaultAccount.create({
+    data: {
+      userId,
+      usdcBalance: new Prisma.Decimal(0),
+      lockedBalance: new Prisma.Decimal(0),
+      totalDeposited: new Prisma.Decimal(0),
+      totalWithdrawn: new Prisma.Decimal(0),
+    },
+  });
+}
+
+async function creditUserVault(userId: string, usdcAmount: number, chargeId: string): Promise<boolean> {
+  const existingTransaction = await prisma.transaction.findFirst({
+    where: { 
+      userId,
+      reference: chargeId,
+      type: 'DEPOSIT',
+      status: 'COMPLETED',
+    },
+  });
+  
+  if (existingTransaction) {
+    console.log('Vault already credited for charge:', chargeId, '- skipping duplicate');
+    return false;
+  }
+  
+  await ensureVaultAccount(userId);
+  
   await prisma.$transaction(async (tx) => {
     await tx.vaultAccount.update({
       where: { userId },
@@ -28,6 +59,8 @@ async function creditUserVault(userId: string, usdcAmount: number, chargeId: str
       },
     });
   });
+  
+  return true;
 }
 
 router.post('/', async (req: Request, res: Response) => {
@@ -67,7 +100,6 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(200).json({ received: true });
     }
 
-    const metadata = chargeData.metadata || {};
     const userId = payment.userId;
 
     switch (event.type) {
@@ -76,14 +108,21 @@ router.post('/', async (req: Request, res: Response) => {
         break;
 
       case 'charge:pending':
-        await (prisma as any).cryptoPayment.update({
-          where: { id: payment.id },
-          data: { status: 'PENDING' },
-        });
+        if (payment.status !== 'PENDING') {
+          await (prisma as any).cryptoPayment.update({
+            where: { id: payment.id },
+            data: { status: 'PENDING' },
+          });
+        }
         console.log('Charge pending:', chargeId);
         break;
 
       case 'charge:confirmed':
+        if (payment.status === 'CONFIRMED' || payment.status === 'RESOLVED') {
+          console.log('Charge already confirmed, skipping:', chargeId);
+          return res.status(200).json({ received: true });
+        }
+        
         const payments = chargeData.payments || [];
         const confirmedPayment = payments.find((p: any) => p.status === 'CONFIRMED');
         
@@ -114,16 +153,22 @@ router.post('/', async (req: Request, res: Response) => {
           },
         });
 
-        await creditUserVault(userId, parseFloat(usdcEquivalent.toString()), chargeId);
+        const credited = await creditUserVault(userId, parseFloat(usdcEquivalent.toString()), chargeId);
         
-        console.log('Charge confirmed, vault credited:', chargeId, 'Amount:', usdcEquivalent);
+        if (credited) {
+          console.log('Charge confirmed, vault credited:', chargeId, 'Amount:', usdcEquivalent);
+        } else {
+          console.log('Charge confirmed, vault already credited:', chargeId);
+        }
         break;
 
       case 'charge:failed':
-        await (prisma as any).cryptoPayment.update({
-          where: { id: payment.id },
-          data: { status: 'FAILED' },
-        });
+        if (payment.status !== 'FAILED') {
+          await (prisma as any).cryptoPayment.update({
+            where: { id: payment.id },
+            data: { status: 'FAILED' },
+          });
+        }
         console.log('Charge failed:', chargeId);
         break;
 
@@ -132,10 +177,12 @@ router.post('/', async (req: Request, res: Response) => {
         break;
 
       case 'charge:resolved':
-        await (prisma as any).cryptoPayment.update({
-          where: { id: payment.id },
-          data: { status: 'RESOLVED' },
-        });
+        if (payment.status !== 'RESOLVED') {
+          await (prisma as any).cryptoPayment.update({
+            where: { id: payment.id },
+            data: { status: 'RESOLVED' },
+          });
+        }
         console.log('Charge resolved:', chargeId);
         break;
 

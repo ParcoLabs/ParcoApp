@@ -20,6 +20,12 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
     - Created PaymentMethods page (Settings → Payment methods)
     - Automatic Stripe webhook handling via stripe-replit-sync
 33. Migrated database from Supabase to Replit Neon PostgreSQL for stripe-replit-sync compatibility
+34. **Integrated Coinbase Commerce for crypto payments**:
+    - CryptoPayment database model for tracking BTC/ETH/SOL/USDC deposits
+    - Created crypto routes: /api/crypto/* endpoints
+    - Webhook receiver for charge:confirmed events → auto vault credit
+    - Created CryptoDeposit component for initiating crypto payments
+    - Supports: BTC, ETH, SOL, USDC, USDT, DAI
 
 20. Created GET /api/properties endpoint returning: id, name, images, APY, totalSupply, remainingSupply, description, region, tokenPrice, chain
 21. Added `BlockchainNetwork` type ('polygon' | 'solana') to types.ts
