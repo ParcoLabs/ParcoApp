@@ -7,6 +7,8 @@ import authRoutes from './routes/auth';
 import propertiesRoutes from './routes/properties';
 import portfolioRoutes from './routes/portfolio';
 import paymentsRoutes from './routes/payments';
+import cryptoRoutes from './routes/crypto';
+import cryptoWebhookRoutes from './routes/cryptoWebhook';
 import { getStripeSync } from './lib/stripeClient';
 import { WebhookHandlers } from './lib/webhookHandlers';
 
@@ -19,6 +21,14 @@ app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5000',
   credentials: true,
 }));
+
+app.post(
+  '/api/crypto/webhook',
+  express.raw({ type: 'application/json' }),
+  (req, res, next) => {
+    cryptoWebhookRoutes(req, res, next);
+  }
+);
 
 app.post(
   '/api/stripe/webhook/:uuid',
@@ -60,6 +70,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertiesRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/payments', paymentsRoutes);
+app.use('/api/crypto', cryptoRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
