@@ -10,6 +10,7 @@ import {
   setTokenPrice,
   getEVMClient
 } from '../blockchain/evm';
+import { isDemoMode, generateMockTxHash, simulateDelay } from '../lib/demoMode';
 
 const router = Router();
 
@@ -143,7 +144,9 @@ router.post('/', validateAuth, async (req, res) => {
     const netDisbursement = borrowAmount - originationFee;
     const ltvRatio = borrowAmount / totalCollateralValue;
 
-    if (!user.stripeCustomerId) {
+    const demoMode = isDemoMode();
+    
+    if (!demoMode && !user.stripeCustomerId) {
       return res.status(400).json({
         success: false,
         error: 'Stripe account setup required for payouts. Please add a payment method first.',
@@ -151,27 +154,35 @@ router.post('/', validateAuth, async (req, res) => {
       });
     }
 
-    const evmClient = getEVMClient();
     let lockTxHashes: string[] = [];
     let onChainLockSuccess = true;
 
-    if (evmClient.hasBorrowVault() && vaultAccount.walletAddress) {
+    if (demoMode) {
+      await simulateDelay('normal');
       for (const item of collateralItems) {
-        try {
-          const priceWithPrecision = Number(item.holding.property.tokenPrice).toFixed(6);
-          await setTokenPrice(item.tokenId, priceWithPrecision);
-        } catch (err) {
-          console.log('Token price set skipped (may already exist):', err);
-        }
+        lockTxHashes.push(generateMockTxHash());
       }
+    } else {
+      const evmClient = getEVMClient();
 
-      for (const item of collateralItems) {
-        try {
-          const { txHash } = await lockCollateral(vaultAccount.walletAddress!, item.tokenId, item.amount);
-          lockTxHashes.push(txHash);
-        } catch (err) {
-          console.error('Failed to lock collateral on-chain:', err);
-          onChainLockSuccess = false;
+      if (evmClient.hasBorrowVault() && vaultAccount.walletAddress) {
+        for (const item of collateralItems) {
+          try {
+            const priceWithPrecision = Number(item.holding.property.tokenPrice).toFixed(6);
+            await setTokenPrice(item.tokenId, priceWithPrecision);
+          } catch (err) {
+            console.log('Token price set skipped (may already exist):', err);
+          }
+        }
+
+        for (const item of collateralItems) {
+          try {
+            const { txHash } = await lockCollateral(vaultAccount.walletAddress!, item.tokenId, item.amount);
+            lockTxHashes.push(txHash);
+          } catch (err) {
+            console.error('Failed to lock collateral on-chain:', err);
+            onChainLockSuccess = false;
+          }
         }
       }
     }
@@ -238,31 +249,52 @@ router.post('/', validateAuth, async (req, res) => {
     let payoutId: string | null = null;
     let payoutStatus: string = 'pending';
 
-    try {
-      const stripe = await getUncachableStripeClient();
-
-      const paymentMethods = await stripe.paymentMethods.list({
-        customer: user.stripeCustomerId,
-        type: 'us_bank_account',
+    if (demoMode) {
+      await prisma.vaultAccount.update({
+        where: { id: vaultAccount!.id },
+        data: {
+          usdcBalance: { increment: netDisbursement },
+          totalDeposited: { increment: netDisbursement },
+        },
       });
+      payoutId = `demo_payout_${Date.now()}`;
+      payoutStatus = 'credited_to_vault';
+    } else {
+      try {
+        const stripe = await getUncachableStripeClient();
 
-      if (paymentMethods.data.length > 0) {
-        try {
-          const transfer = await stripe.transfers.create({
-            amount: Math.round(netDisbursement * 100),
-            currency: 'usd',
-            destination: 'default',
-            metadata: {
-              userId: user.id,
-              borrowPositionId: result.borrowPosition.id,
-              type: 'loan_disbursement',
-            },
-          });
+        const paymentMethods = await stripe.paymentMethods.list({
+          customer: user.stripeCustomerId!,
+          type: 'us_bank_account',
+        });
 
-          payoutId = transfer.id;
-          payoutStatus = 'pending';
-        } catch (transferErr: any) {
-          console.log('Transfer not available, crediting to vault:', transferErr.message);
+        if (paymentMethods.data.length > 0) {
+          try {
+            const transfer = await stripe.transfers.create({
+              amount: Math.round(netDisbursement * 100),
+              currency: 'usd',
+              destination: 'default',
+              metadata: {
+                userId: user.id,
+                borrowPositionId: result.borrowPosition.id,
+                type: 'loan_disbursement',
+              },
+            });
+
+            payoutId = transfer.id;
+            payoutStatus = 'pending';
+          } catch (transferErr: any) {
+            console.log('Transfer not available, crediting to vault:', transferErr.message);
+            await prisma.vaultAccount.update({
+              where: { id: vaultAccount!.id },
+              data: {
+                usdcBalance: { increment: netDisbursement },
+                totalDeposited: { increment: netDisbursement },
+              },
+            });
+            payoutStatus = 'credited_to_vault';
+          }
+        } else {
           await prisma.vaultAccount.update({
             where: { id: vaultAccount!.id },
             data: {
@@ -272,7 +304,8 @@ router.post('/', validateAuth, async (req, res) => {
           });
           payoutStatus = 'credited_to_vault';
         }
-      } else {
+      } catch (stripeError: any) {
+        console.error('Stripe operation failed, crediting to vault:', stripeError);
         await prisma.vaultAccount.update({
           where: { id: vaultAccount!.id },
           data: {
@@ -282,16 +315,6 @@ router.post('/', validateAuth, async (req, res) => {
         });
         payoutStatus = 'credited_to_vault';
       }
-    } catch (stripeError: any) {
-      console.error('Stripe operation failed, crediting to vault:', stripeError);
-      await prisma.vaultAccount.update({
-        where: { id: vaultAccount!.id },
-        data: {
-          usdcBalance: { increment: netDisbursement },
-          totalDeposited: { increment: netDisbursement },
-        },
-      });
-      payoutStatus = 'credited_to_vault';
     }
 
     await prisma.transaction.update({
@@ -303,11 +326,14 @@ router.post('/', validateAuth, async (req, res) => {
       },
     });
 
-    if (evmClient.hasBorrowVault() && vaultAccount.walletAddress && onChainLockSuccess) {
-      try {
-        await issueLoan(vaultAccount.walletAddress, borrowAmount.toString(), DEFAULT_INTEREST_RATE_BPS);
-      } catch (err) {
-        console.error('Failed to issue loan on-chain (non-fatal):', err);
+    if (!demoMode) {
+      const evmClient = getEVMClient();
+      if (evmClient.hasBorrowVault() && vaultAccount.walletAddress && onChainLockSuccess) {
+        try {
+          await issueLoan(vaultAccount.walletAddress, borrowAmount.toString(), DEFAULT_INTEREST_RATE_BPS);
+        } catch (err) {
+          console.error('Failed to issue loan on-chain (non-fatal):', err);
+        }
       }
     }
 
@@ -317,6 +343,7 @@ router.post('/', validateAuth, async (req, res) => {
 
     res.json({
       success: true,
+      demoMode,
       data: {
         borrowPosition: {
           id: result.borrowPosition.id,
@@ -439,8 +466,15 @@ router.post('/repay', validateAuth, async (req, res) => {
     let amountFromPayment = repayAmount;
 
     const vaultBalance = Number(user.vaultAccount?.usdcBalance || 0);
+    const demoMode = isDemoMode();
 
-    if (vaultBalance >= repayAmount) {
+    if (demoMode) {
+      await simulateDelay('normal');
+      amountFromVault = repayAmount;
+      amountFromPayment = 0;
+      paymentIntentId = `demo_repay_${Date.now()}`;
+      paymentStatus = 'completed';
+    } else if (vaultBalance >= repayAmount) {
       amountFromVault = repayAmount;
       amountFromPayment = 0;
       paymentStatus = 'completed';
@@ -590,22 +624,24 @@ router.post('/repay', validateAuth, async (req, res) => {
       return { updatedPosition, repayment, transaction };
     });
 
-    const evmClient = getEVMClient();
-    if (evmClient.hasBorrowVault() && borrowPosition.vaultAccount.walletAddress) {
-      try {
-        await recordRepayment(
-          borrowPosition.vaultAccount.walletAddress,
-          principalPaid.toString(),
-          interestPaid.toString()
-        );
+    if (!demoMode) {
+      const evmClient = getEVMClient();
+      if (evmClient.hasBorrowVault() && borrowPosition.vaultAccount.walletAddress) {
+        try {
+          await recordRepayment(
+            borrowPosition.vaultAccount.walletAddress,
+            principalPaid.toString(),
+            interestPaid.toString()
+          );
 
-        if (isFullRepayment) {
-          for (const col of borrowedCollaterals) {
-            await unlockCollateral(borrowPosition.vaultAccount.walletAddress, col.tokenId, col.amount);
+          if (isFullRepayment) {
+            for (const col of borrowedCollaterals) {
+              await unlockCollateral(borrowPosition.vaultAccount.walletAddress, col.tokenId, col.amount);
+            }
           }
+        } catch (err) {
+          console.error('Failed to record on-chain repayment (non-fatal):', err);
         }
-      } catch (err) {
-        console.error('Failed to record on-chain repayment (non-fatal):', err);
       }
     }
 
@@ -615,6 +651,7 @@ router.post('/repay', validateAuth, async (req, res) => {
 
     res.json({
       success: true,
+      demoMode,
       data: {
         repayment: {
           id: result.repayment.id,

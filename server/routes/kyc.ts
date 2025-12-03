@@ -2,6 +2,7 @@ import express from 'express';
 import crypto from 'crypto';
 import { validateAuth } from '../middleware/auth';
 import prisma from '../lib/prisma';
+import { isDemoMode, simulateDelay } from '../lib/demoMode';
 
 const router = express.Router();
 
@@ -45,11 +46,13 @@ async function sumsubRequest(method: string, path: string, body?: any): Promise<
 }
 
 router.get('/config', async (req, res) => {
-  const isConfigured = !!(SUMSUB_APP_TOKEN && SUMSUB_SECRET_KEY);
+  const demoMode = isDemoMode();
+  const isConfigured = demoMode || !!(SUMSUB_APP_TOKEN && SUMSUB_SECRET_KEY);
   res.json({
     success: true,
     configured: isConfigured,
     levelName: SUMSUB_LEVEL_NAME,
+    demoMode,
   });
 });
 
@@ -59,10 +62,6 @@ router.post('/sumsub/init', validateAuth, async (req, res) => {
     
     if (!clerkId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
-    }
-    
-    if (!SUMSUB_APP_TOKEN || !SUMSUB_SECRET_KEY) {
-      return res.status(500).json({ success: false, error: 'Sumsub not configured' });
     }
     
     const user = await prisma.user.findUnique({
@@ -75,6 +74,56 @@ router.post('/sumsub/init', validateAuth, async (req, res) => {
     }
     
     let externalUserId = user.id;
+    
+    if (isDemoMode()) {
+      await simulateDelay('fast');
+      
+      let kycVerification = user.kycVerification;
+      if (!kycVerification) {
+        kycVerification = await prisma.kYCVerification.create({
+          data: {
+            userId: user.id,
+            status: 'APPROVED',
+            level: 'VERIFIED',
+            sumsubExternalId: `demo_${externalUserId}`,
+            sumsubLevelName: SUMSUB_LEVEL_NAME,
+            sumsubApplicantId: `demo_applicant_${externalUserId}`,
+            verificationDate: new Date(),
+          },
+        });
+        
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { kycStatus: 'VERIFIED' },
+        });
+      } else if (kycVerification.status !== 'APPROVED') {
+        kycVerification = await prisma.kYCVerification.update({
+          where: { id: kycVerification.id },
+          data: {
+            status: 'APPROVED',
+            level: 'VERIFIED',
+            verificationDate: new Date(),
+          },
+        });
+        
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { kycStatus: 'VERIFIED' },
+        });
+      }
+      
+      return res.json({
+        success: true,
+        token: `demo_token_${Date.now()}`,
+        userId: `demo_applicant_${externalUserId}`,
+        demoMode: true,
+        autoApproved: true,
+      });
+    }
+    
+    if (!SUMSUB_APP_TOKEN || !SUMSUB_SECRET_KEY) {
+      return res.status(500).json({ success: false, error: 'Sumsub not configured' });
+    }
     
     let kycVerification = user.kycVerification;
     if (!kycVerification) {
@@ -151,6 +200,17 @@ router.get('/sumsub/status', validateAuth, async (req, res) => {
         status: 'NOT_STARTED',
         level: 'NONE',
         canTrade: false,
+        demoMode: isDemoMode(),
+      });
+    }
+    
+    if (isDemoMode()) {
+      return res.json({
+        success: true,
+        status: kycVerification.status,
+        level: kycVerification.level,
+        canTrade: kycVerification.status === 'APPROVED',
+        demoMode: true,
       });
     }
     

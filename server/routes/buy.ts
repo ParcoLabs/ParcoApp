@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { validateAuth } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import { getUncachableStripeClient } from '../lib/stripeClient';
+import { isDemoMode, generateMockTxHash, simulateDelay } from '../lib/demoMode';
 
 const router = Router();
 
@@ -89,7 +90,14 @@ router.post('/', validateAuth, async (req, res) => {
     let amountFromPayment = 0;
     let paymentIntentId: string | null = null;
 
-    if (useVaultBalance && vaultBalance >= totalAmount) {
+    const demoMode = isDemoMode();
+    
+    if (demoMode) {
+      await simulateDelay('normal');
+      paymentSource = 'vault';
+      amountFromVault = totalAmount;
+      paymentIntentId = `demo_pi_${Date.now()}`;
+    } else if (useVaultBalance && vaultBalance >= totalAmount) {
       paymentSource = 'vault';
       amountFromVault = totalAmount;
     } else if (paymentMethodId) {
@@ -255,7 +263,7 @@ router.post('/', validateAuth, async (req, res) => {
         });
       }
 
-      const mintTxHash = `0x${Buffer.from(Date.now().toString() + Math.random().toString()).toString('hex').slice(0, 64)}`;
+      const mintTxHash = demoMode ? generateMockTxHash() : `0x${Buffer.from(Date.now().toString() + Math.random().toString()).toString('hex').slice(0, 64)}`;
 
       const transaction = await tx.transaction.create({
         data: {
@@ -307,6 +315,7 @@ router.post('/', validateAuth, async (req, res) => {
 
     res.json({
       success: true,
+      demoMode,
       data: {
         transaction: {
           id: result.transaction.id,

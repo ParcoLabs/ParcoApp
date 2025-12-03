@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { validateAuth } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import { rentDistributionService } from '../services/rentDistribution';
+import { isDemoMode } from '../lib/demoMode';
 
 const router = Router();
 
@@ -38,6 +39,7 @@ router.post('/distribute', validateAuth, async (req, res) => {
 
     res.json({
       success: true,
+      demoMode: isDemoMode(),
       data: {
         runId: result.runId,
         status: result.status,
