@@ -75,13 +75,16 @@ None documented yet.
 
 ### Demo Mode
 The platform includes a comprehensive Demo Mode for testing and demonstration purposes:
-- **Environment Variable**: Set `DEMO_MODE=true` to enable demo mode.
+- **Server Environment Variable**: Set `DEMO_MODE=true` to enable demo mode availability on the server.
+- **Per-User Toggle**: Each user can enable/disable demo mode for themselves via Settings page toggle switch.
+- **Activation Logic**: Demo mode is active when BOTH server `DEMO_MODE=true` AND user has `isDemoUser=true`.
 - **Backend Simulation**: When enabled, the backend simulates all blockchain and payment operations without making real calls.
 - **KYC Auto-Approval**: Demo mode auto-approves KYC verification with mock Sumsub IDs.
 - **Mock Transactions**: All payment and blockchain transactions generate mock IDs and hashes.
 - **Frontend Indicator**: A "Demo Mode" badge displays in the navigation sidebar when demo mode is active.
 - **API Response Flag**: All API responses include a `demoMode: true` flag when demo mode is enabled.
 - **System Config Endpoint**: GET /api/system/config returns the current demo mode status and feature flags.
+- **User Demo Mode Endpoint**: GET/POST /api/user/demo-mode for reading/toggling user's demo preference.
 
 ### Isolated Demo Environment
 Complete sandbox environment for testing all platform features without real blockchain/payment interactions:
