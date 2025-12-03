@@ -556,3 +556,70 @@ model DistributionRun {
   @@index([status])
   @@index([startedAt])
 }
+
+enum ProposalStatus {
+  DRAFT
+  ACTIVE
+  PASSED
+  REJECTED
+  EXECUTED
+  CANCELLED
+}
+
+enum VoteChoice {
+  FOR
+  AGAINST
+  ABSTAIN
+}
+
+model Proposal {
+  id                String          @id @default(cuid())
+  
+  title             String
+  description       String
+  
+  proposerId        String
+  
+  status            ProposalStatus  @default(DRAFT)
+  
+  votingStartsAt    DateTime?
+  votingEndsAt      DateTime?
+  
+  forVotes          Int             @default(0)
+  againstVotes      Int             @default(0)
+  abstainVotes      Int             @default(0)
+  
+  quorumRequired    Int             @default(100)
+  passThreshold     Decimal         @db.Decimal(5, 2)  @default(50.00)
+  
+  executedAt        DateTime?
+  
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  
+  votes             Vote[]
+  
+  @@index([status])
+  @@index([proposerId])
+  @@index([votingEndsAt])
+}
+
+model Vote {
+  id                String      @id @default(cuid())
+  
+  proposalId        String
+  proposal          Proposal    @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  
+  userId            String
+  
+  choice            VoteChoice
+  votingPower       Int         @default(1)
+  
+  comment           String?
+  
+  createdAt         DateTime    @default(now())
+  
+  @@unique([proposalId, userId])
+  @@index([proposalId])
+  @@index([userId])
+}

@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BrandColors } from '../brand';
+import { useDemoMode } from '../context/DemoModeContext';
+import { useDemo } from '../hooks/useDemo';
+import { useAuth } from '../context/AuthContext';
 
 const PREVIEW_PROPERTIES = [
   {
@@ -32,23 +35,131 @@ const PREVIEW_PROPERTIES = [
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'properties' | 'crypto'>('properties');
+  const { demoMode } = useDemoMode();
+  const { setupDemoUser, runRentCycle, getDemoStatus, loading, error } = useDemo();
+  const { user, refreshUser } = useAuth();
+  const [demoStatus, setDemoStatus] = useState<any>(null);
+  const [rentResult, setRentResult] = useState<any>(null);
+  const [showRentModal, setShowRentModal] = useState(false);
+  const [isSettingUp, setIsSettingUp] = useState(false);
+
+  useEffect(() => {
+    if (demoMode && user) {
+      getDemoStatus().then(status => {
+        if (status) setDemoStatus(status);
+      });
+    }
+  }, [demoMode, user]);
+
+  const handleSetupDemo = async () => {
+    setIsSettingUp(true);
+    const result = await setupDemoUser();
+    if (result) {
+      const status = await getDemoStatus();
+      if (status) setDemoStatus(status);
+    }
+    setIsSettingUp(false);
+  };
+
+  const handleRunRentCycle = async () => {
+    const result = await runRentCycle();
+    if (result) {
+      setRentResult(result);
+      setShowRentModal(true);
+      const status = await getDemoStatus();
+      if (status) setDemoStatus(status);
+    }
+  };
+
+  const vaultBalance = demoStatus?.vault?.balance || 0;
+  const portfolioValue = demoStatus?.portfolio?.totalValue || 0;
+  const totalEarned = demoStatus?.vault?.totalEarned || 0;
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
       
+      {/* Demo Mode Setup Banner */}
+      {demoMode && !demoStatus?.vault?.balance && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-bold text-amber-800">Welcome to Demo Mode</h3>
+              <p className="text-sm text-amber-700">Setup your demo account with $25,000 USDC and auto-approved KYC.</p>
+            </div>
+            <button
+              onClick={handleSetupDemo}
+              disabled={isSettingUp}
+              className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-bold text-sm transition-all disabled:opacity-50"
+            >
+              {isSettingUp ? 'Setting Up...' : 'Start Demo'}
+            </button>
+          </div>
+        </div>
+      )}
+      
       {/* Top Header Section */}
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-4xl font-bold text-brand-black mb-1">$0.00</h1>
+          <h1 className="text-4xl font-bold text-brand-black mb-1">
+            ${portfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </h1>
           <p className="text-brand-black text-sm font-bold tracking-wide uppercase">Total Property Value</p>
+          {demoMode && vaultBalance > 0 && (
+            <p className="text-brand-sage text-xs mt-1">
+              Vault Balance: ${vaultBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })} USDC
+              {totalEarned > 0 && ` | Rent Earned: $${totalEarned.toFixed(2)}`}
+            </p>
+          )}
         </div>
-        <button 
-          className="bg-brand-deep hover:bg-brand-dark text-white px-6 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm"
-          onClick={() => navigate('/kyc')}
-        >
-          Add Funds
-        </button>
+        <div className="flex gap-2">
+          {demoMode && demoStatus?.vault?.balance > 0 && (
+            <button 
+              className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm"
+              onClick={handleRunRentCycle}
+              disabled={loading}
+            >
+              {loading ? 'Running...' : 'Run Rent Cycle'}
+            </button>
+          )}
+          <button 
+            className="bg-brand-deep hover:bg-brand-dark text-white px-6 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm"
+            onClick={() => navigate('/kyc')}
+          >
+            Add Funds
+          </button>
+        </div>
       </div>
+
+      {/* Rent Cycle Result Modal */}
+      {showRentModal && rentResult && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-brand-dark">Rent Distributed!</h3>
+              <button onClick={() => setShowRentModal(false)} className="text-brand-sage hover:text-brand-dark">
+                <i className="fa-solid fa-times text-xl"></i>
+              </button>
+            </div>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+              <p className="text-2xl font-bold text-green-700">
+                +${rentResult.totalDistributed.toFixed(2)} USDC
+              </p>
+              <p className="text-sm text-green-600">Total rent distributed this cycle</p>
+            </div>
+            <div className="space-y-2 mb-4">
+              {rentResult.distributions.map((dist: any) => (
+                <div key={dist.propertyId} className="flex justify-between text-sm">
+                  <span className="text-brand-dark">{dist.propertyName}</span>
+                  <span className="font-medium text-brand-deep">+${dist.rentAmount.toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+            <p className="text-xs text-brand-sage">
+              New vault balance: ${rentResult.vault.balance.toFixed(2)} USDC
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-8 border-b border-brand-sage/30">

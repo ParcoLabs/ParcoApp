@@ -9,11 +9,16 @@ interface NavItem {
   path: string;
 }
 
-const navItems: NavItem[] = [
+const baseNavItems: NavItem[] = [
   { label: 'Home', icon: 'fa-house', path: '/' },
   { label: 'Market', icon: 'fa-shop', path: '/marketplace' },
   { label: 'Portfolio', icon: 'fa-chart-pie', path: '/portfolio' },
   { label: 'DeFi', icon: 'fa-building-columns', path: '/defi' },
+];
+
+const demoNavItems: NavItem[] = [
+  ...baseNavItems,
+  { label: 'Governance', icon: 'fa-gavel', path: '/governance' },
 ];
 
 export const Navigation: React.FC = () => {
@@ -22,6 +27,7 @@ export const Navigation: React.FC = () => {
   const { user } = useAuth();
   const { demoMode } = useDemoMode();
 
+  const navItems = demoMode ? demoNavItems : baseNavItems;
   const isActive = (path: string) => location.pathname === path;
 
   return (

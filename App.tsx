@@ -12,6 +12,7 @@ import { KYC } from './frontend/pages/KYC';
 import { Settings } from './frontend/pages/Settings';
 import { DefiPage } from './frontend/pages/defi/DefiPage';
 import { PaymentMethods } from './frontend/pages/PaymentMethods';
+import { Governance } from './frontend/pages/Governance';
 import { AuthProvider } from './frontend/context/AuthContext';
 import { DemoModeProvider } from './frontend/context/DemoModeContext';
 
@@ -107,6 +108,7 @@ const App: React.FC = () => {
             <Route path="/marketplace/:id" element={<ViewableRoute><TokenDetails /></ViewableRoute>} />
             <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
             <Route path="/defi" element={<ProtectedRoute><DefiPage /></ProtectedRoute>} />
+            <Route path="/governance" element={<ProtectedRoute><Governance /></ProtectedRoute>} />
             <Route path="/kyc" element={<ProtectedRoute><KYC /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethods /></ProtectedRoute>} />

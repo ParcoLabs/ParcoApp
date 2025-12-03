@@ -13,6 +13,7 @@ import buyRoutes from './routes/buy';
 import borrowRoutes from './routes/borrow';
 import rentRoutes from './routes/rent';
 import systemRoutes from './routes/system';
+import demoRoutes from './routes/demo';
 import { isDemoMode } from './lib/demoMode';
 import { getStripeSync } from './lib/stripeClient';
 import { WebhookHandlers } from './lib/webhookHandlers';
@@ -130,6 +131,7 @@ app.use('/api/buy', buyRoutes);
 app.use('/api/borrow', borrowRoutes);
 app.use('/api/rent', rentRoutes);
 app.use('/api/system', systemRoutes);
+app.use('/api/demo', demoRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

@@ -7,6 +7,8 @@ import { ChainIndicator } from '../components/ChainIndicator';
 import { PropertyDetailsSkeletonDesktop, PropertyDetailsSkeletonMobile } from '../components/PropertyDetailsSkeleton';
 import { PaymentMethodModal } from '../components/PaymentMethodModal';
 import { useBuyFlow } from '../hooks/useBuyFlow';
+import { useDemoMode } from '../context/DemoModeContext';
+import { useDemo } from '../hooks/useDemo';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const CHART_DATA = [
@@ -84,6 +86,34 @@ export const TokenDetails: React.FC = () => {
     closeModal,
     selectPaymentMethod,
   } = useBuyFlow();
+  
+  const { demoMode } = useDemoMode();
+  const { demoBuy, loading: demoLoading } = useDemo();
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
+
+  const handlePurchaseConfirm = async () => {
+    if (!property || !selectedMethod) return;
+    
+    setPurchaseError(null);
+    
+    if (demoMode && selectedMethod.type === 'vault') {
+      const result = await demoBuy(property.id, tokenAmount);
+      if (result) {
+        setPurchaseSuccess(true);
+        closeModal();
+        setTimeout(() => {
+          setPurchaseSuccess(false);
+          navigate('/portfolio');
+        }, 2000);
+      } else {
+        setPurchaseError('Purchase failed. Please try again.');
+      }
+    } else {
+      console.log('Purchase confirmed with method:', selectedMethod);
+      closeModal();
+    }
+  };
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -468,14 +498,24 @@ export const TokenDetails: React.FC = () => {
         vaultBalance={vaultBalance}
         selectedMethod={selectedMethod}
         onSelectMethod={selectPaymentMethod}
-        onConfirm={() => {
-          console.log('Purchase confirmed with method:', selectedMethod);
-          closeModal();
-        }}
+        onConfirm={handlePurchaseConfirm}
         propertyName={property.title}
         tokenAmount={tokenAmount}
         tokenPrice={property.tokenPrice}
       />
+
+      {purchaseSuccess && (
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-[300] flex items-center gap-2">
+          <i className="fa-solid fa-circle-check"></i>
+          Purchase successful! Redirecting to portfolio...
+        </div>
+      )}
+
+      {purchaseError && (
+        <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-[300]">
+          {purchaseError}
+        </div>
+      )}
     </>
   );
 };

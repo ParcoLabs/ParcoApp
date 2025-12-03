@@ -82,3 +82,54 @@ The platform includes a comprehensive Demo Mode for testing and demonstration pu
 - **Frontend Indicator**: A "Demo Mode" badge displays in the navigation sidebar when demo mode is active.
 - **API Response Flag**: All API responses include a `demoMode: true` flag when demo mode is enabled.
 - **System Config Endpoint**: GET /api/system/config returns the current demo mode status and feature flags.
+
+### Isolated Demo Environment
+Complete sandbox environment for testing all platform features without real blockchain/payment interactions:
+
+#### 1. Demo User Setup (POST /api/demo/create-user)
+- Creates or updates user with auto-approved KYC (VERIFIED status)
+- Pre-funds vault with $25,000 USDC
+- Initializes empty holdings for all active properties
+- UI: "Start Demo" button on Dashboard when demo mode is active
+
+#### 2. Demo Buy Flow (POST /api/demo/buy)
+- Deducts from demo vault balance (no real payment)
+- Creates fake transaction with demo_tx_* hash
+- Updates holdings with purchased tokens
+- Decrements available property tokens
+
+#### 3. Demo Rent Cycle (POST /api/demo/run-rent-cycle)
+- Calculates rent based on property APY and token holdings
+- Formula: (tokenPrice * quantity * annualYield/12)
+- Creates RentPayment and RentDistribution records
+- Credits rent to vault balance and totalEarned
+- UI: "Run Rent Cycle" button on Dashboard (visible after setup)
+
+#### 4. Demo Borrow/Repay System
+- **Borrow (POST /api/demo/borrow)**: Lock tokens as collateral, receive USDC loan (50% max LTV, 8% interest, 1% origination fee)
+- **Repay (POST /api/demo/repay)**: Pay back principal + interest, unlock collateral on full repayment
+- All operations use demo transaction hashes
+
+#### 5. Demo Governance (Proposals & Voting)
+- **Create Proposal (POST /api/demo/proposals/create)**: Title, description, voting duration
+- **Vote (POST /api/demo/proposals/vote)**: FOR, AGAINST, or ABSTAIN with voting power based on token holdings
+- **View Proposals (GET /api/demo/proposals)**: List all proposals with vote counts
+- Proposal and Vote models in Prisma schema
+- UI: Governance page (only visible in demo mode) accessible from sidebar
+
+#### 6. Demo Reset (POST /api/demo/reset)
+- Clears all user transactions, holdings, borrow positions, rent distributions, and votes
+- Resets vault to $25,000 USDC initial balance
+- Recreates empty holdings for all properties
+- UI: "Reset Demo Environment" button in Settings (demo mode section)
+
+#### Demo Status (GET /api/demo/status)
+Returns comprehensive status including vault balance, portfolio value, active borrow positions, and transaction count.
+
+#### Frontend Components
+- **useDemo hook** (frontend/hooks/useDemo.ts): All demo API interactions
+- **DemoModeContext**: Global demo state and badge display
+- **Dashboard**: Start Demo button, Run Rent Cycle button, rent result modal
+- **Settings**: Demo Mode section with reset functionality
+- **Governance**: Proposal creation and voting interface (demo only)
+- **Navigation**: Governance link visible only in demo mode

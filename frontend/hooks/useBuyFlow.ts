@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@clerk/clerk-react';
+import { useDemoMode } from '../context/DemoModeContext';
 
 export type BuyFlowState = 'idle' | 'checking' | 'ready' | 'processing' | 'error';
 
@@ -38,6 +39,7 @@ export const useBuyFlow = (): UseBuyFlowResult => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isSignedIn, isLoaded } = useAuth();
+  const { demoMode } = useDemoMode();
 
   const [state, setState] = useState<BuyFlowState>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -46,6 +48,24 @@ export const useBuyFlow = (): UseBuyFlowResult => {
   const [vaultBalance, setVaultBalance] = useState(0);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
+
+  const fetchDemoVaultBalance = async (): Promise<number> => {
+    try {
+      const response = await fetch('/api/demo/status', {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        return 0;
+      }
+      
+      const data = await response.json();
+      return data.data?.vault?.balance || 0;
+    } catch (err) {
+      console.error('Failed to fetch demo vault balance:', err);
+      return 0;
+    }
+  };
 
   const checkKycStatus = async (): Promise<KycStatus> => {
     try {
@@ -123,6 +143,30 @@ export const useBuyFlow = (): UseBuyFlowResult => {
     }
 
     try {
+      if (demoMode) {
+        const demoBalance = await fetchDemoVaultBalance();
+        
+        if (demoBalance === 0) {
+          navigate('/');
+          setState('idle');
+          return;
+        }
+
+        const demoMethods: PaymentMethod[] = [
+          {
+            id: 'vault',
+            type: 'vault' as const,
+            balance: demoBalance,
+          },
+        ];
+
+        setPaymentMethods(demoMethods);
+        setVaultBalance(demoBalance);
+        setIsModalOpen(true);
+        setState('ready');
+        return;
+      }
+
       const kycStatus = await checkKycStatus();
       
       if (kycStatus.status !== 'APPROVED') {
@@ -167,7 +211,7 @@ export const useBuyFlow = (): UseBuyFlowResult => {
       setError('Something went wrong. Please try again.');
       setState('error');
     }
-  }, [isLoaded, isSignedIn, navigate, location.pathname]);
+  }, [isLoaded, isSignedIn, navigate, location.pathname, demoMode]);
 
   const closeModal = useCallback(() => {
     setIsModalOpen(false);
