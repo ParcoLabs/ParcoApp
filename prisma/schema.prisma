@@ -273,6 +273,13 @@ model BorrowPosition {
   borrowedAt          DateTime      @default(now())
   dueDate             DateTime?
   repaidAt            DateTime?
+  lastInterestUpdate  DateTime      @default(now())
+  
+  stripePayoutId      String?
+  txHash              String?
+  
+  collaterals         BorrowCollateral[]
+  repayments          BorrowRepayment[]
   
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
@@ -280,6 +287,53 @@ model BorrowPosition {
   @@index([userId])
   @@index([vaultAccountId])
   @@index([status])
+  @@index([stripePayoutId])
+}
+
+model BorrowCollateral {
+  id                String          @id @default(cuid())
+  borrowPositionId  String
+  borrowPosition    BorrowPosition  @relation(fields: [borrowPositionId], references: [id], onDelete: Cascade)
+  
+  propertyId        String
+  tokenId           Int
+  amount            Int
+  valueAtLock       Decimal         @db.Decimal(18, 2)
+  currentValue      Decimal         @db.Decimal(18, 2)
+  
+  lockedAt          DateTime        @default(now())
+  unlockedAt        DateTime?
+  
+  txHashLock        String?
+  txHashUnlock      String?
+  
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  
+  @@index([borrowPositionId])
+  @@index([propertyId])
+  @@index([tokenId])
+}
+
+model BorrowRepayment {
+  id                String          @id @default(cuid())
+  borrowPositionId  String
+  borrowPosition    BorrowPosition  @relation(fields: [borrowPositionId], references: [id], onDelete: Cascade)
+  
+  principalPaid     Decimal         @db.Decimal(18, 2)
+  interestPaid      Decimal         @db.Decimal(18, 2)
+  totalPaid         Decimal         @db.Decimal(18, 2)
+  
+  paymentMethodType String
+  stripePaymentIntentId String?
+  
+  txHash            String?
+  
+  paidAt            DateTime        @default(now())
+  createdAt         DateTime        @default(now())
+  
+  @@index([borrowPositionId])
+  @@index([stripePaymentIntentId])
 }
 
 model Transaction {

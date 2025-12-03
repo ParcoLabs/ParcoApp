@@ -10,6 +10,7 @@ import paymentsRoutes from './routes/payments';
 import cryptoRoutes, { handleCryptoWebhook } from './routes/crypto';
 import kycRoutes, { handleSumsubWebhook } from './routes/kyc';
 import buyRoutes from './routes/buy';
+import borrowRoutes from './routes/borrow';
 import { getStripeSync } from './lib/stripeClient';
 import { WebhookHandlers } from './lib/webhookHandlers';
 
@@ -122,6 +123,7 @@ app.use('/api/payments', paymentsRoutes);
 app.use('/api/crypto', cryptoRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/buy', buyRoutes);
+app.use('/api/borrow', borrowRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
