@@ -12,6 +12,17 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 - **Environment**: Development mode using Vite dev server
 
 ## Recent Changes (Dec 3, 2025)
+41. **Created PropertyToken.sol ERC-1155 Smart Contract**:
+    - Single contract for all property tokens (tokenId = propertyId)
+    - OpenZeppelin v5 base: ERC1155, ERC1155Supply, AccessControl, Pausable, ReentrancyGuard
+    - Role-based access: ADMIN_ROLE, MINTER_ROLE, BURNER_ROLE, COMPLIANCE_ROLE
+    - Property management: createProperty, setTokenURI, setMaxSupply
+    - Supply tracking: maxSupply per tokenId, remainingSupply calculation
+    - Compliance hooks: blocklist + transfer restrictions (KYC/AML ready)
+    - Hardhat build pipeline in backend/blockchain/
+    - ABI exported to backend/blockchain/contracts/PropertyToken.json
+    - Metadata template in backend/blockchain/metadata/property-template.json
+
 38. **Made Marketplace Publicly Viewable**:
     - Created ViewableRoute component for pages viewable without authentication
     - /marketplace and /marketplace/:id routes now publicly accessible
