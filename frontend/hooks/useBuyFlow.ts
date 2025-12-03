@@ -139,12 +139,12 @@ export const useBuyFlow = (): UseBuyFlowResult => {
       const allMethods: PaymentMethod[] = [
         {
           id: 'vault',
-          type: 'vault',
+          type: 'vault' as const,
           balance: balance,
         },
-        ...methods.map((m: any) => ({
+        ...methods.map((m: any): PaymentMethod => ({
           id: m.id,
-          type: m.type === 'card' ? 'card' : 'bank',
+          type: (m.type === 'card' ? 'card' : 'bank') as 'card' | 'bank',
           brand: m.brand,
           last4: m.last4,
           expMonth: m.expMonth,
@@ -154,7 +154,7 @@ export const useBuyFlow = (): UseBuyFlowResult => {
         })),
         {
           id: 'crypto',
-          type: 'crypto',
+          type: 'crypto' as const,
         },
       ];
 

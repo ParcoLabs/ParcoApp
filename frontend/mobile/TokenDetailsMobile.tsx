@@ -1,10 +1,20 @@
 import React, { useState } from 'react';
 import { Property } from '../../types';
 import { ChainIndicator } from '../components/ChainIndicator';
+import { PaymentMethodModal } from '../components/PaymentMethodModal';
+import { useBuyFlow, PaymentMethod } from '../hooks/useBuyFlow';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
 interface TokenDetailsMobileProps {
   property: Property;
+  buyState?: string;
+  isModalOpen?: boolean;
+  paymentMethods?: PaymentMethod[];
+  vaultBalance?: number;
+  selectedMethod?: PaymentMethod | null;
+  onBuy?: (propertyId: string, tokenAmount?: number, tokenPrice?: number) => void;
+  onCloseModal?: () => void;
+  onSelectMethod?: (method: PaymentMethod) => void;
 }
 
 // Mock Chart Data
@@ -12,9 +22,31 @@ const DATA = [
   { v: 400 }, { v: 420 }, { v: 410 }, { v: 450 }, { v: 440 }, { v: 480 }, { v: 500 }, { v: 490 }, { v: 550 }, { v: 580 }
 ];
 
-export const TokenDetailsMobile: React.FC<TokenDetailsMobileProps> = ({ property }) => {
+export const TokenDetailsMobile: React.FC<TokenDetailsMobileProps> = ({ 
+  property,
+  buyState,
+  isModalOpen,
+  paymentMethods,
+  vaultBalance,
+  selectedMethod,
+  onBuy,
+  onCloseModal,
+  onSelectMethod,
+}) => {
   const [timeframe, setTimeframe] = useState('1M');
   const [activeTab, setActiveTab] = useState('Overview');
+  const [tokenAmount, setTokenAmount] = useState(1);
+
+  const localBuyFlow = useBuyFlow();
+  
+  const effectiveBuyState = buyState || localBuyFlow.state;
+  const effectiveIsModalOpen = isModalOpen !== undefined ? isModalOpen : localBuyFlow.isModalOpen;
+  const effectivePaymentMethods = paymentMethods || localBuyFlow.paymentMethods;
+  const effectiveVaultBalance = vaultBalance !== undefined ? vaultBalance : localBuyFlow.vaultBalance;
+  const effectiveSelectedMethod = selectedMethod !== undefined ? selectedMethod : localBuyFlow.selectedMethod;
+  const effectiveOnBuy = onBuy || localBuyFlow.handleBuy;
+  const effectiveOnCloseModal = onCloseModal || localBuyFlow.closeModal;
+  const effectiveOnSelectMethod = onSelectMethod || localBuyFlow.selectPaymentMethod;
 
   return (
     <div className="flex flex-col min-h-screen bg-white pb-24 fixed inset-0 z-[100] overflow-y-auto no-scrollbar">
@@ -293,13 +325,39 @@ export const TokenDetailsMobile: React.FC<TokenDetailsMobileProps> = ({ property
 
       {/* Bottom Action Buttons (Split Buy/Sell) */}
       <div className="fixed bottom-0 left-0 right-0 bg-white p-4 pb-8 z-20 flex gap-4 border-t border-brand-lightGray shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
-          <button className="flex-1 bg-brand-deep text-white font-bold py-3.5 rounded-xl shadow-md hover:bg-brand-dark active:scale-[0.98] transition-all text-sm">
-             Buy
+          <button 
+            onClick={() => effectiveOnBuy(property.id, tokenAmount, property.tokenPrice)}
+            disabled={property.tokensAvailable === 0 || effectiveBuyState === 'checking'}
+            className={`flex-1 font-bold py-3.5 rounded-xl shadow-md active:scale-[0.98] transition-all text-sm ${
+              property.tokensAvailable === 0 || effectiveBuyState === 'checking'
+                ? 'bg-brand-sage text-white cursor-not-allowed'
+                : 'bg-brand-deep text-white hover:bg-brand-dark'
+            }`}
+          >
+             {effectiveBuyState === 'checking' ? (
+               <><i className="fa-solid fa-spinner fa-spin mr-2"></i>Checking...</>
+             ) : 'Buy'}
           </button>
           <button className="flex-1 bg-white border border-brand-lightGray text-brand-deep font-bold py-3.5 rounded-xl hover:bg-brand-offWhite active:scale-[0.98] transition-all text-sm">
              Sell
           </button>
       </div>
+
+      <PaymentMethodModal
+        isOpen={effectiveIsModalOpen}
+        onClose={effectiveOnCloseModal}
+        paymentMethods={effectivePaymentMethods}
+        vaultBalance={effectiveVaultBalance}
+        selectedMethod={effectiveSelectedMethod}
+        onSelectMethod={effectiveOnSelectMethod}
+        onConfirm={() => {
+          console.log('Purchase confirmed with method:', effectiveSelectedMethod);
+          effectiveOnCloseModal();
+        }}
+        propertyName={property.title}
+        tokenAmount={tokenAmount}
+        tokenPrice={property.tokenPrice}
+      />
     </div>
   );
 };
