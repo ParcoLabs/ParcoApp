@@ -11,6 +11,14 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 - **Setup Date**: November 30, 2025
 - **Environment**: Development mode using Vite dev server
 
+## Recent Changes (Dec 3, 2025)
+37. **Implemented Buy Button Flow Logic**:
+    - useBuyFlow hook: handles auth check (Clerk), KYC status check, payment methods fetch
+    - PaymentMethodModal: displays vault balance, saved cards/banks, crypto deposit option
+    - Buy button flow: Not logged in → Login; Logged in but no KYC → KYC flow; Approved → Payment modal
+    - TokenDetails.tsx and TokenDetailsMobile.tsx updated with new Buy button logic
+    - Token amount input with MAX button and USDC price calculation
+
 ## Recent Changes (Dec 2, 2025)
 36. **Integrated Sumsub KYC Verification**:
     - Sumsub WebSDK embedded in Document Upload step (scan_front screen)

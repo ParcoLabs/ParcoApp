@@ -107,12 +107,12 @@ export const useBuyFlow = (): UseBuyFlowResult => {
   const handleBuy = useCallback(async (propertyId: string, tokenAmount?: number, pricePerToken?: number) => {
     setError(null);
     setSelectedPropertyId(propertyId);
-    setState('checking');
 
     if (!isLoaded) {
-      setState('checking');
       return;
     }
+
+    setState('checking');
 
     if (!isSignedIn) {
       navigate('/login', { 
