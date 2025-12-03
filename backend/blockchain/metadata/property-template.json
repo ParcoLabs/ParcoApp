@@ -1,0 +1,61 @@
+{
+  "name": "Property Name",
+  "description": "Description of the tokenized real estate property",
+  "image": "https://example.com/property-image.jpg",
+  "external_url": "https://parco.app/marketplace/{propertyId}",
+  "attributes": [
+    {
+      "trait_type": "Region",
+      "value": "USA"
+    },
+    {
+      "trait_type": "City",
+      "value": "New York"
+    },
+    {
+      "trait_type": "State",
+      "value": "NY"
+    },
+    {
+      "trait_type": "Property Type",
+      "value": "Residential"
+    },
+    {
+      "trait_type": "APY",
+      "value": "8.5%"
+    },
+    {
+      "trait_type": "Token Price",
+      "value": "100",
+      "display_type": "number"
+    },
+    {
+      "trait_type": "Total Supply",
+      "value": 10000,
+      "display_type": "number"
+    },
+    {
+      "trait_type": "Square Feet",
+      "value": 2500,
+      "display_type": "number"
+    },
+    {
+      "trait_type": "Year Built",
+      "value": 2020,
+      "display_type": "number"
+    },
+    {
+      "trait_type": "Chain",
+      "value": "Polygon"
+    }
+  ],
+  "properties": {
+    "address": "123 Main Street",
+    "contractAddress": "0x...",
+    "tokenId": "1",
+    "totalValue": 1000000,
+    "monthlyRent": 5000,
+    "managementFee": 0.08,
+    "occupancyRate": 0.95
+  }
+}
