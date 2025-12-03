@@ -26,6 +26,7 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
     
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     bytes32 public constant COMPLIANCE_ROLE = keccak256("COMPLIANCE_ROLE");
 
     string public name = "Parco Property Tokens";
@@ -43,13 +44,13 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
     event PropertyBurned(uint256 indexed tokenId, address indexed from, uint256 amount);
     event PropertyURIUpdated(uint256 indexed tokenId, string newUri);
     event MaxSupplyUpdated(uint256 indexed tokenId, uint256 newMaxSupply);
-    event AddressBlocklisted(address indexed account, bool blocked);
+    event AddressBlocklistUpdated(address indexed account, bool blocked);
     event ComplianceToggled(bool enabled);
 
     error PropertyDoesNotExist(uint256 tokenId);
     error PropertyAlreadyExists(uint256 tokenId);
     error ExceedsMaxSupply(uint256 tokenId, uint256 requested, uint256 available);
-    error AddressBlocklisted();
+    error BlocklistedAddress(address account);
     error ZeroAddress();
     error ZeroAmount();
     error InvalidMaxSupply();
@@ -60,28 +61,29 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
         _grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
         _grantRole(ADMIN_ROLE, defaultAdmin);
         _grantRole(MINTER_ROLE, defaultAdmin);
+        _grantRole(BURNER_ROLE, defaultAdmin);
         _grantRole(COMPLIANCE_ROLE, defaultAdmin);
     }
 
     /**
      * @notice Creates a new property token type
      * @param tokenId Unique identifier for the property (should match off-chain propertyId)
-     * @param maxSupply Maximum number of tokens that can be minted for this property
+     * @param propertyMaxSupply Maximum number of tokens that can be minted for this property
      * @param tokenUri Metadata URI for this property
      */
     function createProperty(
         uint256 tokenId,
-        uint256 maxSupply,
+        uint256 propertyMaxSupply,
         string calldata tokenUri
     ) external onlyRole(ADMIN_ROLE) {
         if (_propertyExists[tokenId]) revert PropertyAlreadyExists(tokenId);
-        if (maxSupply == 0) revert InvalidMaxSupply();
+        if (propertyMaxSupply == 0) revert InvalidMaxSupply();
 
         _propertyExists[tokenId] = true;
-        _maxSupply[tokenId] = maxSupply;
+        _maxSupply[tokenId] = propertyMaxSupply;
         _tokenURIs[tokenId] = tokenUri;
 
-        emit PropertyCreated(tokenId, maxSupply, tokenUri);
+        emit PropertyCreated(tokenId, propertyMaxSupply, tokenUri);
     }
 
     /**
@@ -102,9 +104,9 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
         if (!_propertyExists[tokenId]) revert PropertyDoesNotExist(tokenId);
         
         uint256 currentSupply = totalSupply(tokenId);
-        uint256 maxSupply = _maxSupply[tokenId];
-        if (currentSupply + amount > maxSupply) {
-            revert ExceedsMaxSupply(tokenId, amount, maxSupply - currentSupply);
+        uint256 propertyMaxSupply = _maxSupply[tokenId];
+        if (currentSupply + amount > propertyMaxSupply) {
+            revert ExceedsMaxSupply(tokenId, amount, propertyMaxSupply - currentSupply);
         }
 
         _mint(to, tokenId, amount, data);
@@ -132,9 +134,9 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
             if (amounts[i] == 0) revert ZeroAmount();
             
             uint256 currentSupply = totalSupply(tokenIds[i]);
-            uint256 maxSupply = _maxSupply[tokenIds[i]];
-            if (currentSupply + amounts[i] > maxSupply) {
-                revert ExceedsMaxSupply(tokenIds[i], amounts[i], maxSupply - currentSupply);
+            uint256 propertyMaxSupply = _maxSupply[tokenIds[i]];
+            if (currentSupply + amounts[i] > propertyMaxSupply) {
+                revert ExceedsMaxSupply(tokenIds[i], amounts[i], propertyMaxSupply - currentSupply);
             }
         }
 
@@ -155,7 +157,7 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
         address from,
         uint256 tokenId,
         uint256 amount
-    ) external onlyRole(ADMIN_ROLE) whenNotPaused nonReentrant {
+    ) external onlyRole(BURNER_ROLE) whenNotPaused nonReentrant {
         if (from == address(0)) revert ZeroAddress();
         if (amount == 0) revert ZeroAmount();
         if (!_propertyExists[tokenId]) revert PropertyDoesNotExist(tokenId);
@@ -175,7 +177,7 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
         address from,
         uint256[] calldata tokenIds,
         uint256[] calldata amounts
-    ) external onlyRole(ADMIN_ROLE) whenNotPaused nonReentrant {
+    ) external onlyRole(BURNER_ROLE) whenNotPaused nonReentrant {
         if (from == address(0)) revert ZeroAddress();
         
         for (uint256 i = 0; i < tokenIds.length; i++) {
@@ -234,7 +236,7 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
         bool blocked
     ) external onlyRole(COMPLIANCE_ROLE) {
         _blocklist[account] = blocked;
-        emit AddressBlocklisted(account, blocked);
+        emit AddressBlocklistUpdated(account, blocked);
     }
 
     /**
@@ -318,8 +320,8 @@ contract PropertyToken is ERC1155, ERC1155Supply, AccessControl, Pausable, Reent
         uint256[] memory values
     ) internal virtual override(ERC1155, ERC1155Supply) whenNotPaused {
         if (complianceEnabled) {
-            if (from != address(0) && _blocklist[from]) revert AddressBlocklisted();
-            if (to != address(0) && _blocklist[to]) revert AddressBlocklisted();
+            if (from != address(0) && _blocklist[from]) revert BlocklistedAddress(from);
+            if (to != address(0) && _blocklist[to]) revert BlocklistedAddress(to);
         }
         
         super._update(from, to, ids, values);
