@@ -1,130 +1,12 @@
 # Parco - RWA Investment Platform
 
 ## Overview
-Parco is a Real-World Asset (RWA) investment platform built with React, TypeScript, and Vite. This application allows users to invest in tokenized real estate and other real-world assets through a modern web interface.
+Parco is a Real-World Asset (RWA) investment platform built with React, TypeScript, and Vite. It enables users to invest in tokenized real estate and other real-world assets through a modern web interface. The platform aims to connect traditional finance with blockchain technology, offering a new avenue for asset ownership and investment.
 
-**Original Source**: Imported from AI Studio (Google Gemini)
-**AI Studio URL**: https://ai.studio/apps/drive/1Z8KEuVaYpugHFbaldcQf1jyqWirlXfi2
+## User Preferences
+None documented yet.
 
-## Project Status
-- **Current State**: Successfully imported and configured for Replit environment
-- **Setup Date**: November 30, 2025
-- **Environment**: Development mode using Vite dev server
-
-## Recent Changes (Dec 3, 2025)
-41. **Created PropertyToken.sol ERC-1155 Smart Contract**:
-    - Single contract for all property tokens (tokenId = propertyId)
-    - OpenZeppelin v5 base: ERC1155, ERC1155Supply, AccessControl, Pausable, ReentrancyGuard
-    - Role-based access: ADMIN_ROLE, MINTER_ROLE, BURNER_ROLE, COMPLIANCE_ROLE
-    - Property management: createProperty, setTokenURI, setMaxSupply
-    - Supply tracking: maxSupply per tokenId, remainingSupply calculation
-    - Compliance hooks: blocklist + transfer restrictions (KYC/AML ready)
-    - Hardhat build pipeline in backend/blockchain/
-    - ABI exported to backend/blockchain/contracts/PropertyToken.json
-    - Metadata template in backend/blockchain/metadata/property-template.json
-
-38. **Made Marketplace Publicly Viewable**:
-    - Created ViewableRoute component for pages viewable without authentication
-    - /marketplace and /marketplace/:id routes now publicly accessible
-    - Buy button still requires auth → KYC → payment method selection flow
-
-40. **Connected Marketplace to GET /api/properties**:
-    - Fetches properties from API with fallback to mock data when empty
-    - PropertyCardSkeleton and MarketplaceGridSkeleton components for loading states
-    - Error state with retry button functionality
-    - Mobile skeleton support for responsive loading experience
-
-39. **Implemented POST /api/buy Endpoint**:
-    - Full purchase flow: payment processing → USDC conversion → vault deposit → ERC-1155 mint → holdings update
-    - Supports vault balance, card, bank, and hybrid payment methods
-    - KYC verification enforced before purchase
-    - Atomic transaction handling via Prisma $transaction
-    - Returns updated portfolio summary after purchase
-    - Platform fee (1%) applied to purchases
-    - GET /api/buy/estimate endpoint for price estimation
-
-37. **Implemented Buy Button Flow Logic**:
-    - useBuyFlow hook: handles auth check (Clerk), KYC status check, payment methods fetch
-    - PaymentMethodModal: displays vault balance, saved cards/banks, crypto deposit option
-    - Buy button flow: Not logged in → Login; Logged in but no KYC → KYC flow; Approved → Payment modal
-    - TokenDetails.tsx and TokenDetailsMobile.tsx updated with new Buy button logic
-    - Token amount input with MAX button and USDC price calculation
-
-## Recent Changes (Dec 2, 2025)
-36. **Integrated Sumsub KYC Verification**:
-    - Sumsub WebSDK embedded in Document Upload step (scan_front screen)
-    - Backend KYC routes: /api/kyc/sumsub/init, /api/kyc/sumsub/status, /api/kyc/sumsub/webhook
-    - useSumsubKyc hook for frontend token management and status polling
-    - KycGatedButton component blocks purchases until KYC = APPROVED
-    - Updated KYCVerification model with Sumsub tracking fields
-    - Graceful fallback to mock flow when SUMSUB_APP_TOKEN/SUMSUB_SECRET_KEY not configured
-    - Real-time verification status on Review screen
-34. **Integrated Coinbase Commerce for Crypto Payments**:
-    - Support for BTC, ETH, SOL, USDC, USDT, DAI payments
-    - CryptoPayment database model for tracking crypto transactions
-    - Created crypto routes: /api/crypto/* endpoints
-    - Webhook receiver at /api/coinbase/webhook for payment confirmations
-    - Auto-credit USDC to user vault on confirmed payments
-    - Created CryptoDeposit component for frontend deposit flow
-35. Added /api/healthz endpoint for backend health checks
-
-32. **Integrated Stripe Payment Processing** with stripe-replit-sync:
-    - ACH bank account linking via Financial Connections (instant verification)
-    - Credit/debit card payments via Stripe Elements
-    - PaymentMethod database model for saved payment methods
-    - Created payment routes: /api/payments/* endpoints
-    - Created PaymentMethods page (Settings → Payment methods)
-    - Automatic Stripe webhook handling via stripe-replit-sync
-33. Migrated database from Supabase to Replit Neon PostgreSQL for stripe-replit-sync compatibility
-
-20. Created GET /api/properties endpoint returning: id, name, images, APY, totalSupply, remainingSupply, description, region, tokenPrice, chain
-21. Added `BlockchainNetwork` type ('polygon' | 'solana') to types.ts
-22. Created ChainIndicator component with Polygon and Solana chain icons/badges
-23. Added chain indicator to TokenDetails page (desktop hero section)
-24. Added chain indicator to PropertyCard component (bottom-left of image)
-25. Added chain indicator to TokenDetailsMobile (in metrics section)
-26. Updated mock data with chain='polygon' and descriptions for all properties
-27. Replaced logo-green.svg with ParcoLogoGreen.png in Navigation, Login, and Register pages
-28. Configured Vite publicDir to serve brand assets from frontend/public
-29. **Created GET /api/portfolio endpoint** returning:
-    - Summary: total portfolio value, net worth, total invested, gains
-    - Vault: USDC balance, locked balance, available balance, deposits/withdrawals
-    - Holdings: property token balances with current value, gains, rent earned
-    - Loans: active borrow positions with principal, interest, collateral info
-    - Rent distributions: recent rent payment transactions
-30. **Created GET /api/portfolio/history endpoint** with:
-    - Query params: period (7d, 30d, 90d, 1y, all), type (transaction type filter)
-    - Summary: deposits, withdrawals, purchases, sales, rent received, borrowings, repayments
-    - Daily summary: aggregated transactions by day
-    - Full transaction history with all details
-31. **Connected TokenDetails to GET /api/properties/:id endpoint**:
-    - Created PropertyDetailsSkeleton component with animated loading states (shimmer effect)
-    - Updated TokenDetails.tsx to fetch property data from API
-    - Added graceful fallback to mock data when API is unavailable
-    - Responsive skeletons for both desktop and mobile views
-
-## Recent Changes (Dec 1, 2025)
-1. Installed Node.js dependencies via npm
-2. Updated vite.config.ts to use port 5000 (required for Replit webview)
-3. Added `allowedHosts: true` to allow Replit proxy domains
-4. Configured HMR with WSS protocol for Replit's HTTPS proxy
-5. Removed AI Studio importmap from index.html and added proper Vite script tag
-6. Configured workflow for frontend dev server on port 5000
-7. Set up static deployment configuration (builds to `dist/` folder)
-8. **Integrated Clerk authentication** with email/password, Google OAuth, and Apple OAuth
-9. Created Express backend server (port 3001) with JWT validation middleware
-10. Updated Login.tsx and Register.tsx to use Clerk while preserving Parco UI design
-11. Created /api/auth/sync endpoint for user registration to database
-12. Switched from HashRouter to BrowserRouter for OAuth compatibility
-13. Added /sso-callback route with AuthenticateWithRedirectCallback for OAuth flow
-14. OAuth uses redirect flow - opens new tab if running in iframe (Replit webview)
-15. **Installed Prisma ORM 7** with PostgreSQL adapter (@prisma/adapter-pg)
-16. **Connected to Supabase PostgreSQL database** via pooler connection
-17. **Created database schema** with 9 models: User, KYCVerification, Property, Token, Holding, VaultAccount, BorrowPosition, Transaction, RentPayment
-18. Applied initial migration to Supabase database
-19. Updated auth routes to use Prisma for user persistence (upsert on sync, includes VaultAccount creation)
-
-## Project Architecture
+## System Architecture
 
 ### Technology Stack
 - **Frontend Framework**: React 19.2.0 with TypeScript
@@ -136,126 +18,40 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
 - **Icons**: Font Awesome 6.4.0
 - **Authentication**: Clerk (email/password, Google OAuth, Apple OAuth)
 - **Backend**: Express.js with TypeScript
-- **Database**: Supabase PostgreSQL with Prisma ORM 7
-- **ORM**: Prisma 7.0.1 with @prisma/adapter-pg driver
-- **Payments**: Stripe (stripe-replit-sync for managed webhooks)
-
-### Directory Structure
-```
-/
-├── frontend/               # Frontend components and pages
-│   ├── api/               # Mock data for DeFi and marketplace
-│   ├── components/        # Reusable UI components
-│   │   ├── defi/         # DeFi-specific components
-│   │   ├── ChainIndicator.tsx  # Blockchain network badge (Polygon/Solana)
-│   │   ├── Navigation.tsx
-│   │   └── PropertyCard.tsx
-│   ├── context/          # React context (Auth with Clerk)
-│   ├── mobile/           # Mobile-optimized views
-│   ├── pages/            # Page components
-│   │   ├── defi/        # DeFi pages
-│   │   ├── Dashboard.tsx
-│   │   ├── KYC.tsx
-│   │   ├── Login.tsx     # Clerk email/Google/Apple login
-│   │   ├── Marketplace.tsx
-│   │   ├── Portfolio.tsx
-│   │   ├── Register.tsx  # Clerk registration
-│   │   ├── Settings.tsx
-│   │   ├── PaymentMethods.tsx  # Add cards and bank accounts
-│   │   └── TokenDetails.tsx
-│   └── public/           # Static assets
-│       └── brand/        # Brand assets (logos)
-├── prisma/               # Prisma ORM configuration
-│   ├── schema.prisma     # Database schema with all models
-│   ├── migrations/       # Database migrations
-│   └── ...
-├── server/               # Express backend server
-│   ├── index.ts          # Server entry point (port 3001)
-│   ├── lib/
-│   │   └── prisma.ts     # Prisma client singleton
-│   ├── middleware/
-│   │   └── auth.ts       # Clerk JWT validation middleware
-│   └── routes/
-│       ├── auth.ts       # Auth routes (/api/auth/sync, /api/auth/me)
-│       ├── properties.ts # Properties routes (/api/properties)
-│       ├── portfolio.ts  # Portfolio routes (/api/portfolio, /api/portfolio/history)
-│       └── payments.ts   # Stripe payment routes (/api/payments/*)
-├── backend/              # Backend architecture documentation
-│   └── architecture.ts   # Backend module manifest (not implemented)
-├── App.tsx              # Main app with Clerk provider & routing
-├── index.tsx            # App entry point
-├── index.html           # HTML template
-├── types.ts             # TypeScript type definitions
-├── vite.config.ts       # Vite configuration (proxy to backend)
-├── tsconfig.json        # TypeScript configuration
-└── package.json         # Dependencies and scripts
-```
+- **Database**: PostgreSQL with Prisma ORM 7
+- **Payments**: Stripe (via stripe-replit-sync for managed webhooks)
+- **KYC**: Sumsub WebSDK
+- **Blockchain**: Smart contracts (PropertyToken.sol, PropertyVault.sol) on Polygon, interacting via Ethers.js v6.
 
 ### Key Features
-1. **Authentication System**: Login/Register with protected routes
-2. **Dashboard**: Overview of portfolio and market trends
-3. **Marketplace**: Browse and purchase tokenized properties
-4. **Portfolio Management**: Track owned assets and performance
-5. **DeFi Integration**: Borrowing and lending features
-6. **KYC/Compliance**: Know Your Customer verification flow
-7. **Settings**: User preferences and account management
+- **Authentication System**: Login/Register with Clerk, protected routes.
+- **Marketplace**: Browse and purchase tokenized properties, public viewing available.
+- **Portfolio Management**: Track owned assets, performance, and transaction history.
+- **Payment Processing**: Supports various methods including credit/debit cards, ACH bank transfers (via Stripe), and cryptocurrency payments (via Coinbase Commerce).
+- **KYC/Compliance**: Integrated Sumsub for identity verification.
+- **Blockchain Integration**: USDC deposits, ERC-1155 token minting for property ownership, role-based access control for contract operations.
+- **API Endpoints**: Comprehensive API for properties, portfolio data, payments, and KYC.
 
-### Backend Architecture (Documented but not implemented)
-The `backend/architecture.ts` file documents the intended backend modules:
-- Auth Service (JWT with Clerk/Auth0)
-- Payments Service (Stripe + Circle USDC)
-- KYC/AML Service (Sumsub/Sardine)
-- Marketplace Engine
-- Tokenization Engine (ERC1155 on Polygon)
-- Portfolio Engine
-- Borrow Engine
-- Blockchain Adapter Layer
-- Admin Portal
+### System Design
+- The application uses a client-side routing approach with BrowserRouter.
+- Frontend communicates with a custom Express.js backend.
+- Database interactions are handled via Prisma ORM.
+- Smart contracts are designed with OpenZeppelin standards, including ERC1155, AccessControl, Pausable, and ReentrancyGuard.
+- Role-based access control is implemented in smart contracts for administrative and operational functions.
+- Atomic transactions are managed using Prisma's `$transaction` for complex operations like purchases.
+- Environment-based configuration for API keys and contract addresses.
 
-**Note**: The backend is currently not implemented. The app uses mock data defined in `frontend/api/`.
-
-## Environment Variables
-
-### Required for Authentication (Clerk)
-- `VITE_CLERK_PUBLISHABLE_KEY` - Clerk frontend publishable key (get from https://dashboard.clerk.com)
-- `CLERK_SECRET_KEY` - Clerk backend secret key
-
-### Optional (AI Features)
-- `GEMINI_API_KEY` - For AI features (defined in vite.config.ts)
-
-## Development
-
-### Running Locally
-The Vite dev server runs automatically via the "Dev Server" workflow:
-- **Port**: 5000 (webview enabled)
-- **Host**: 0.0.0.0
-- **Command**: `npm run dev`
-
-### Building for Production
-```bash
-npm run build
-```
-Builds the app to the `dist/` directory.
-
-### Preview Production Build
-```bash
-npm run preview
-```
-
-## Deployment
-- **Type**: Static site deployment
-- **Build Command**: `npm run build`
-- **Output Directory**: `dist`
-
-The app is configured for static deployment since it's a frontend-only application with no backend implementation.
-
-## User Preferences
-None documented yet.
-
-## Notes
-- The app uses BrowserRouter for client-side routing (required for OAuth)
-- TailwindCSS is loaded via CDN (not ideal for production, but works for demo)
-- Mock data is used for marketplace/DeFi features
-- Database connected to Supabase PostgreSQL via Prisma ORM
-- Clerk authentication fully integrated
-- OAuth opens in new browser tab when accessed from Replit's iframe environment (browser security limitation)
+## External Dependencies
+- **Clerk**: For user authentication and authorization.
+- **Stripe**: For credit/debit card and ACH bank payments, integrated with `stripe-replit-sync` for webhook management.
+- **Coinbase Commerce**: For cryptocurrency payments (BTC, ETH, SOL, USDC, USDT, DAI).
+- **Sumsub**: For Know Your Customer (KYC) verification.
+- **Alchemy RPC**: Used for blockchain interactions on Polygon.
+- **PostgreSQL (Replit Neon)**: Primary database for application data.
+- **Vite**: Frontend build tool.
+- **React Router DOM**: For client-side routing.
+- **Recharts**: For data visualization and charts.
+- **Font Awesome**: For icons.
+- **Google Fonts**: For typography (Inter, Bungee).
+- **OpenZeppelin Contracts**: Base for smart contract development.
+- **Ethers.js**: Library for interacting with Ethereum blockchain and smart contracts.
