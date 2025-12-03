@@ -123,14 +123,20 @@ export const Settings: React.FC = () => {
                 <button
                   onClick={handleToggleDemoMode}
                   disabled={toggleLoading}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
-                    userDemoEnabled ? 'bg-amber-500' : 'bg-gray-300'
-                  } ${toggleLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  style={{
+                    backgroundColor: userDemoEnabled ? '#f59e0b' : '#d1d5db',
+                    transition: 'background-color 0.2s ease-in-out',
+                  }}
+                  className={`relative inline-flex h-7 w-12 items-center rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
+                    toggleLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                  }`}
                 >
                   <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      userDemoEnabled ? 'translate-x-6' : 'translate-x-1'
-                    }`}
+                    style={{
+                      transform: userDemoEnabled ? 'translateX(22px)' : 'translateX(4px)',
+                      transition: 'transform 0.2s ease-in-out',
+                    }}
+                    className="inline-block h-5 w-5 rounded-full bg-white shadow-md"
                   />
                 </button>
               </div>
