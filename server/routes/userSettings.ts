@@ -6,13 +6,17 @@ import { isDemoMode } from '../lib/demoMode';
 const router = Router();
 
 router.post('/demo-mode', validateAuth, async (req, res) => {
+  console.log('[POST /api/user/demo-mode] Request received');
   try {
     const clerkId = (req as any).auth?.userId;
+    console.log('[POST /api/user/demo-mode] clerkId:', clerkId);
     if (!clerkId) {
+      console.log('[POST /api/user/demo-mode] No clerkId - returning 401');
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
     if (!isDemoMode()) {
+      console.log('[POST /api/user/demo-mode] Server demo mode not enabled');
       return res.status(403).json({
         success: false,
         error: 'Demo mode is not available on this server',
@@ -20,6 +24,7 @@ router.post('/demo-mode', validateAuth, async (req, res) => {
     }
 
     const { enabled } = req.body;
+    console.log('[POST /api/user/demo-mode] enabled:', enabled);
 
     if (typeof enabled !== 'boolean') {
       return res.status(400).json({

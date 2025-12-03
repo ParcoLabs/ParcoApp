@@ -12,6 +12,11 @@ export const Settings: React.FC = () => {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
   const [toggleLoading, setToggleLoading] = useState(false);
+  const [localToggle, setLocalToggle] = useState(userDemoEnabled);
+
+  React.useEffect(() => {
+    setLocalToggle(userDemoEnabled);
+  }, [userDemoEnabled]);
 
   const handleResetDemo = async () => {
     const result = await resetDemo();
@@ -23,8 +28,18 @@ export const Settings: React.FC = () => {
   };
 
   const handleToggleDemoMode = async () => {
+    const newValue = !localToggle;
+    console.log('Toggle clicked, setting local to:', newValue);
+    setLocalToggle(newValue);
     setToggleLoading(true);
-    await toggleUserDemoMode(!userDemoEnabled);
+    
+    const result = await toggleUserDemoMode(newValue);
+    console.log('API result:', result);
+    
+    if (!result) {
+      console.log('API failed, reverting local toggle');
+      setLocalToggle(!newValue);
+    }
     setToggleLoading(false);
   };
 
@@ -124,7 +139,7 @@ export const Settings: React.FC = () => {
                   onClick={handleToggleDemoMode}
                   disabled={toggleLoading}
                   style={{
-                    backgroundColor: userDemoEnabled ? '#f59e0b' : '#d1d5db',
+                    backgroundColor: localToggle ? '#f59e0b' : '#d1d5db',
                     transition: 'background-color 0.2s ease-in-out',
                   }}
                   className={`relative inline-flex h-7 w-12 items-center rounded-full focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
@@ -133,7 +148,7 @@ export const Settings: React.FC = () => {
                 >
                   <span
                     style={{
-                      transform: userDemoEnabled ? 'translateX(22px)' : 'translateX(4px)',
+                      transform: localToggle ? 'translateX(22px)' : 'translateX(4px)',
                       transition: 'transform 0.2s ease-in-out',
                     }}
                     className="inline-block h-5 w-5 rounded-full bg-white shadow-md"

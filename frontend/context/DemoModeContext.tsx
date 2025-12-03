@@ -76,6 +76,7 @@ export const DemoModeProvider: React.FC<{ children: ReactNode }> = ({ children }
   };
 
   const toggleUserDemoMode = async (enabled: boolean): Promise<boolean> => {
+    console.log('toggleUserDemoMode called with enabled:', enabled);
     try {
       const response = await fetch('/api/user/demo-mode', {
         method: 'POST',
@@ -84,12 +85,19 @@ export const DemoModeProvider: React.FC<{ children: ReactNode }> = ({ children }
         body: JSON.stringify({ enabled }),
       });
 
+      console.log('API response status:', response.status);
+      
       if (response.ok) {
         const result = await response.json();
+        console.log('API response data:', result);
         if (result.success) {
+          console.log('Setting userDemoEnabled to:', result.data.isDemoUser);
           setUserDemoEnabled(result.data.isDemoUser);
           return true;
         }
+      } else {
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
       }
       return false;
     } catch (error) {
