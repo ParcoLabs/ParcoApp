@@ -11,8 +11,10 @@ import cryptoRoutes, { handleCryptoWebhook } from './routes/crypto';
 import kycRoutes, { handleSumsubWebhook } from './routes/kyc';
 import buyRoutes from './routes/buy';
 import borrowRoutes from './routes/borrow';
+import rentRoutes from './routes/rent';
 import { getStripeSync } from './lib/stripeClient';
 import { WebhookHandlers } from './lib/webhookHandlers';
+import { scheduler } from './services/scheduler';
 
 dotenv.config();
 
@@ -124,6 +126,7 @@ app.use('/api/crypto', cryptoRoutes);
 app.use('/api/kyc', kycRoutes);
 app.use('/api/buy', buyRoutes);
 app.use('/api/borrow', borrowRoutes);
+app.use('/api/rent', rentRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -183,6 +186,8 @@ async function initStripe() {
 initStripe().then(() => {
   app.listen(PORT, () => {
     console.log(`Backend server running on port ${PORT}`);
+    
+    scheduler.initialize();
   });
 });
 

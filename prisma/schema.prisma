@@ -87,6 +87,7 @@ model User {
   transactions      Transaction[]
   paymentMethods    PaymentMethod[]
   cryptoPayments    CryptoPayment[]
+  rentDistributions RentDistribution[]
   
   @@index([clerkId])
   @@index([email])
@@ -243,6 +244,7 @@ model VaultAccount {
   
   totalDeposited    Decimal     @default(0) @db.Decimal(18, 2)
   totalWithdrawn    Decimal     @default(0) @db.Decimal(18, 2)
+  totalEarned       Decimal     @default(0) @db.Decimal(18, 6)
   
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
@@ -397,6 +399,8 @@ model RentPayment {
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
   
+  distributions     RentDistribution[]
+  
   @@index([propertyId])
   @@index([periodStart, periodEnd])
   @@index([status])
@@ -494,4 +498,61 @@ model CryptoPayment {
   @@index([coinbaseChargeId])
   @@index([status])
   @@index([createdAt])
+}
+
+model RentDistribution {
+  id                String      @id @default(cuid())
+  
+  rentPaymentId     String
+  rentPayment       RentPayment @relation(fields: [rentPaymentId], references: [id], onDelete: Cascade)
+  
+  userId            String
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  holdingId         String
+  
+  propertyId        String
+  
+  tokensHeld        Int
+  totalTokens       Int
+  ownershipPercent  Decimal     @db.Decimal(10, 6)
+  
+  grossAmount       Decimal     @db.Decimal(18, 6)
+  interestDeducted  Decimal     @db.Decimal(18, 6)   @default(0)
+  netAmount         Decimal     @db.Decimal(18, 6)
+  
+  distributedAt     DateTime    @default(now())
+  
+  txHash            String?
+  
+  createdAt         DateTime    @default(now())
+  
+  @@index([rentPaymentId])
+  @@index([userId])
+  @@index([propertyId])
+  @@index([distributedAt])
+}
+
+model DistributionRun {
+  id                String      @id @default(cuid())
+  
+  runType           String      @default("SCHEDULED")
+  triggeredBy       String?
+  
+  propertiesProcessed  Int      @default(0)
+  rentPaymentsProcessed Int     @default(0)
+  holdersDistributed   Int      @default(0)
+  
+  totalGrossDistributed   Decimal  @db.Decimal(18, 6)  @default(0)
+  totalInterestDeducted   Decimal  @db.Decimal(18, 6)  @default(0)
+  totalNetDistributed     Decimal  @db.Decimal(18, 6)  @default(0)
+  
+  status            String      @default("RUNNING")
+  errorMessage      String?
+  
+  startedAt         DateTime    @default(now())
+  completedAt       DateTime?
+  
+  @@index([status])
+  @@index([startedAt])
 }

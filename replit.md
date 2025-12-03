@@ -41,6 +41,14 @@ None documented yet.
 - **Disbursement**: Loan proceeds credited to vault balance (Stripe Transfers available when configured).
 - **Endpoints**: POST /api/borrow (lock collateral, issue loan), POST /api/repay (process payment, unlock on full repayment), GET /api/borrow/position, GET /api/borrow/estimate, GET /api/borrow/history.
 
+### Rent Distribution Engine
+- **Scheduled Cron Job**: Runs on the 1st of each month (configurable via RENT_DISTRIBUTION_CRON env var).
+- **Distribution Flow**: Fetches pending rent payments → calculates per-token amounts → distributes proportionally to holders → deducts loan interest from borrowers → updates vault balances.
+- **Interest Deduction**: Automatically deducts accrued loan interest from rent distributions, updating lastInterestUpdate and accruedInterest on borrow positions.
+- **Tracking Models**: RentDistribution (per-holder distribution records), DistributionRun (batch run history with stats).
+- **Idempotent Processing**: Rent payments marked as COMPLETED after distribution to prevent duplicate processing.
+- **Endpoints**: POST /api/rent/distribute (manual trigger), POST /api/rent/payments (create rent payment), GET /api/rent/payments, GET /api/rent/distributions (user history), GET /api/rent/history (run history), GET /api/rent/summary (user earnings).
+
 ### System Design
 - The application uses a client-side routing approach with BrowserRouter.
 - Frontend communicates with a custom Express.js backend.
