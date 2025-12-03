@@ -70,6 +70,27 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return <>{children}</>;
 };
 
+const ViewableRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isLoaded } = useAuth();
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen bg-brand-offWhite">
+      <Navigation />
+      <main className="flex-1 md:ml-64 pb-20 md:pb-0 overflow-y-auto h-screen">
+        {children}
+      </main>
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <AuthProvider>
@@ -80,8 +101,8 @@ const App: React.FC = () => {
           <Route path="/sso-callback" element={<SSOCallbackPage />} />
 
           <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/marketplace" element={<ProtectedRoute><Marketplace /></ProtectedRoute>} />
-          <Route path="/marketplace/:id" element={<ProtectedRoute><TokenDetails /></ProtectedRoute>} />
+          <Route path="/marketplace" element={<ViewableRoute><Marketplace /></ViewableRoute>} />
+          <Route path="/marketplace/:id" element={<ViewableRoute><TokenDetails /></ViewableRoute>} />
           <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
           <Route path="/defi" element={<ProtectedRoute><DefiPage /></ProtectedRoute>} />
           <Route path="/kyc" element={<ProtectedRoute><KYC /></ProtectedRoute>} />
