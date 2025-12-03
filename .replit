@@ -67,6 +67,10 @@ localPort = 33111
 externalPort = 6000
 
 [[ports]]
+localPort = 33263
+externalPort = 8008
+
+[[ports]]
 localPort = 34625
 externalPort = 8000
 
@@ -94,3 +98,8 @@ externalPort = 5173
 deploymentTarget = "static"
 build = ["npm", "run", "build"]
 publicDir = "dist"
+
+[userenv]
+
+[userenv.shared]
+DEMO_MODE = "true"

@@ -72,3 +72,13 @@ None documented yet.
 - **Google Fonts**: For typography (Inter, Bungee).
 - **OpenZeppelin Contracts**: Base for smart contract development.
 - **Ethers.js**: Library for interacting with Ethereum blockchain and smart contracts.
+
+### Demo Mode
+The platform includes a comprehensive Demo Mode for testing and demonstration purposes:
+- **Environment Variable**: Set `DEMO_MODE=true` to enable demo mode.
+- **Backend Simulation**: When enabled, the backend simulates all blockchain and payment operations without making real calls.
+- **KYC Auto-Approval**: Demo mode auto-approves KYC verification with mock Sumsub IDs.
+- **Mock Transactions**: All payment and blockchain transactions generate mock IDs and hashes.
+- **Frontend Indicator**: A "Demo Mode" badge displays in the navigation sidebar when demo mode is active.
+- **API Response Flag**: All API responses include a `demoMode: true` flag when demo mode is enabled.
+- **System Config Endpoint**: GET /api/system/config returns the current demo mode status and feature flags.

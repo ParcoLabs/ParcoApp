@@ -21,10 +21,6 @@ interface DemoModeContextType {
 
 const DemoModeContext = createContext<DemoModeContextType | undefined>(undefined);
 
-const API_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:3001' 
-  : `https://${window.location.hostname.replace('-5000', '-3001')}`;
-
 export const DemoModeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [demoMode, setDemoMode] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -32,12 +28,22 @@ export const DemoModeProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/system/config`);
+      const response = await fetch('/api/system/config');
       if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setDemoMode(data.config.demoMode);
-          setConfig(data.config);
+        const result = await response.json();
+        if (result.success && result.data) {
+          setDemoMode(result.data.demoMode);
+          setConfig({
+            demoMode: result.data.demoMode,
+            version: result.data.version,
+            environment: import.meta.env.MODE || 'development',
+            features: {
+              kyc: result.data.features?.kyc ?? true,
+              payments: result.data.features?.stripePayments ?? true,
+              blockchain: true,
+              rentDistribution: result.data.features?.rentDistribution ?? true,
+            },
+          });
         }
       }
     } catch (error) {
