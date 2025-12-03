@@ -5,6 +5,8 @@ import { Property, PropertyType, BlockchainNetwork } from '../../types';
 import { TokenDetailsMobile } from '../mobile/TokenDetailsMobile';
 import { ChainIndicator } from '../components/ChainIndicator';
 import { PropertyDetailsSkeletonDesktop, PropertyDetailsSkeletonMobile } from '../components/PropertyDetailsSkeleton';
+import { PaymentMethodModal } from '../components/PaymentMethodModal';
+import { useBuyFlow } from '../hooks/useBuyFlow';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
 const CHART_DATA = [
@@ -70,6 +72,18 @@ export const TokenDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('Overview');
+  const [tokenAmount, setTokenAmount] = useState<number>(1);
+  
+  const {
+    state: buyState,
+    isModalOpen,
+    paymentMethods,
+    vaultBalance,
+    selectedMethod,
+    handleBuy,
+    closeModal,
+    selectPaymentMethod,
+  } = useBuyFlow();
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -394,27 +408,43 @@ export const TokenDetails: React.FC = () => {
                     <div className="bg-brand-offWhite p-4 rounded-lg mb-6">
                         <div className="flex justify-between mb-2">
                             <span className="text-xs font-bold text-brand-sage">AMOUNT</span>
-                            <span className="text-xs font-bold text-brand-deep cursor-pointer">MAX</span>
+                            <button 
+                                onClick={() => setTokenAmount(property.tokensAvailable)}
+                                className="text-xs font-bold text-brand-deep cursor-pointer hover:underline"
+                            >
+                                MAX
+                            </button>
                         </div>
                         <div className="flex items-center gap-2">
                             <input 
                                 type="number" 
-                                placeholder="0" 
+                                placeholder="0"
+                                min="1"
+                                max={property.tokensAvailable}
+                                value={tokenAmount || ''}
+                                onChange={(e) => setTokenAmount(Math.min(Number(e.target.value), property.tokensAvailable))}
                                 className="bg-transparent text-2xl font-bold text-brand-dark w-full outline-none" 
                             />
                             <span className="text-brand-sage font-medium">TOKENS</span>
                         </div>
-                        <div className="text-right text-xs text-brand-sage mt-1">≈ $0.00 USDC</div>
+                        <div className="text-right text-xs text-brand-sage mt-1">
+                            ≈ ${(tokenAmount * property.tokenPrice).toFixed(2)} USDC
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                          <button 
+                            onClick={() => handleBuy(property.id, tokenAmount, property.tokenPrice)}
                             className={`w-full py-3 rounded-lg font-bold text-white shadow-sm transition-all text-sm ${
-                                 property.tokensAvailable === 0 ? 'bg-brand-sage cursor-not-allowed' : 'bg-brand-deep hover:bg-brand-dark'
+                                 property.tokensAvailable === 0 || buyState === 'checking' 
+                                   ? 'bg-brand-sage cursor-not-allowed' 
+                                   : 'bg-brand-deep hover:bg-brand-dark'
                             }`}
-                            disabled={property.tokensAvailable === 0}
+                            disabled={property.tokensAvailable === 0 || buyState === 'checking'}
                         >
-                             Buy
+                             {buyState === 'checking' ? (
+                               <><i className="fa-solid fa-spinner fa-spin mr-2"></i>Checking...</>
+                             ) : 'Buy'}
                         </button>
                         <button 
                              className="w-full py-3 rounded-lg font-bold text-brand-deep border border-brand-deep hover:bg-brand-offWhite transition-all text-sm"
@@ -430,6 +460,22 @@ export const TokenDetails: React.FC = () => {
             </div>
         </div>
       </div>
+
+      <PaymentMethodModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        paymentMethods={paymentMethods}
+        vaultBalance={vaultBalance}
+        selectedMethod={selectedMethod}
+        onSelectMethod={selectPaymentMethod}
+        onConfirm={() => {
+          console.log('Purchase confirmed with method:', selectedMethod);
+          closeModal();
+        }}
+        propertyName={property.title}
+        tokenAmount={tokenAmount}
+        tokenPrice={property.tokenPrice}
+      />
     </>
   );
 };
