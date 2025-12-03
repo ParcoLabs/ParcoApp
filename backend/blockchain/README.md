@@ -126,6 +126,89 @@ await contract.mint(userAddress, propertyId, amount, "0x");
 - Max supply prevents over-minting
 - Reentrancy guards on all state-changing functions
 
+## Contract: PropertyVault.sol
+
+USDC vault for property token purchases with integrated minting.
+
+### Features
+- **USDC Deposits**: Users deposit USDC to their vault balance
+- **Balance Tracking**: Per-user balance with locking for pending transactions
+- **Property Purchase**: Atomic USDC deduction + ERC-1155 minting
+- **Platform Fees**: Configurable fee (default 1%) on purchases
+- **Withdrawals**: Users can withdraw available balance anytime
+
+### Roles
+- `ADMIN_ROLE`: Configure vault, set fees, pause/unpause
+- `OPERATOR_ROLE`: Execute purchases, lock/unlock balances (backend service)
+
+### Key Functions
+
+```solidity
+// User deposits
+function deposit(uint256 amount) external
+function withdraw(uint256 amount) external
+
+// Operator functions (backend)
+function depositFor(address user, uint256 amount) external
+function purchaseProperty(address buyer, uint256 propertyId, uint256 tokenAmount, uint256 usdcCost) external
+function lockBalance(address user, uint256 amount) external
+function unlockBalance(address user, uint256 amount) external
+
+// View functions
+function balanceOf(address user) external view returns (uint256)
+function lockedBalanceOf(address user) external view returns (uint256)
+function availableBalanceOf(address user) external view returns (uint256)
+```
+
+### Deployment Order
+
+1. Deploy PropertyToken
+2. Deploy PropertyVault (with USDC address)
+3. Call `vault.setPropertyToken(propertyTokenAddress)`
+4. Grant `MINTER_ROLE` to vault on PropertyToken
+5. Grant `OPERATOR_ROLE` to backend wallet on vault
+
+---
+
+## Backend Integration
+
+The `server/blockchain/evm.ts` module provides TypeScript utilities:
+
+```typescript
+import { 
+  initializeEVMClient,
+  depositUSDC,
+  mintPropertyTokens,
+  getVaultBalance,
+  getTokenBalance 
+} from './blockchain';
+
+// Get user's vault balance
+const balance = await getVaultBalance(userAddress);
+console.log(balance.available); // Available USDC
+
+// Get property token balance
+const tokens = await getTokenBalance(userAddress, propertyId);
+
+// Execute purchase (operator only)
+const result = await mintPropertyTokens(
+  buyerAddress,
+  propertyId,
+  tokenAmount,
+  usdcCost
+);
+```
+
+### Required Environment Variables
+
+```bash
+ALCHEMY_API_KEY=your_alchemy_key
+OPERATOR_PRIVATE_KEY=your_operator_wallet_private_key
+PROPERTY_TOKEN_ADDRESS=0x...
+PROPERTY_VAULT_ADDRESS=0x...
+POLYGON_NETWORK=polygon-amoy  # or 'polygon' for mainnet
+```
+
 ## License
 
 MIT
