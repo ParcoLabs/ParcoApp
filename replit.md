@@ -17,6 +17,12 @@ Parco is a Real-World Asset (RWA) investment platform built with React, TypeScri
     - /marketplace and /marketplace/:id routes now publicly accessible
     - Buy button still requires auth → KYC → payment method selection flow
 
+40. **Connected Marketplace to GET /api/properties**:
+    - Fetches properties from API with fallback to mock data when empty
+    - PropertyCardSkeleton and MarketplaceGridSkeleton components for loading states
+    - Error state with retry button functionality
+    - Mobile skeleton support for responsive loading experience
+
 39. **Implemented POST /api/buy Endpoint**:
     - Full purchase flow: payment processing → USDC conversion → vault deposit → ERC-1155 mint → holdings update
     - Supports vault balance, card, bank, and hybrid payment methods
