@@ -1,7 +1,7 @@
-
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useDemoMode } from '../context/DemoModeContext';
 
 interface NavItem {
   label: string;
@@ -20,6 +20,7 @@ export const Navigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { demoMode } = useDemoMode();
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -27,9 +28,17 @@ export const Navigation: React.FC = () => {
     <>
       {/* Desktop Sidebar */}
       <div className="hidden md:flex flex-col w-64 bg-white border-r border-brand-lightGray h-screen fixed left-0 top-0 z-50">
-        <div className="p-6 border-b border-brand-lightGray flex items-center gap-3">
+        <div className="p-6 border-b border-brand-lightGray">
+          <div className="flex items-center gap-3">
             <img src="/brand/ParcoLogoGreen.png" alt="Parco Logo" className="w-10 h-10 object-contain" />
             <span className="text-2xl font-logo text-brand-deep tracking-wider uppercase">Parco</span>
+          </div>
+          {demoMode && (
+            <div className="mt-3 flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+              <span className="text-xs font-medium text-amber-700">Demo Mode</span>
+            </div>
+          )}
         </div>
         
         <div className="flex-1 py-6 px-3 space-y-1">
@@ -69,6 +78,14 @@ export const Navigation: React.FC = () => {
            )}
         </div>
       </div>
+
+      {/* Mobile Demo Mode Banner */}
+      {demoMode && (
+        <div className="md:hidden fixed top-0 left-0 right-0 bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-center gap-2 z-50">
+          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+          <span className="text-xs font-medium text-amber-700">Demo Mode</span>
+        </div>
+      )}
 
       {/* Mobile Bottom Tab Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-brand-lightGray px-6 py-3 flex justify-between items-center z-50 pb-safe safe-area-bottom">

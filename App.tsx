@@ -13,6 +13,7 @@ import { Settings } from './frontend/pages/Settings';
 import { DefiPage } from './frontend/pages/defi/DefiPage';
 import { PaymentMethods } from './frontend/pages/PaymentMethods';
 import { AuthProvider } from './frontend/context/AuthContext';
+import { DemoModeProvider } from './frontend/context/DemoModeContext';
 
 const SSOCallbackPage: React.FC = () => {
   return (
@@ -93,28 +94,30 @@ const ViewableRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-          <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-          <Route path="/sso-callback" element={<SSOCallbackPage />} />
+    <DemoModeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+            <Route path="/sso-callback" element={<SSOCallbackPage />} />
 
-          <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-          <Route path="/marketplace" element={<ViewableRoute><Marketplace /></ViewableRoute>} />
-          <Route path="/marketplace/:id" element={<ViewableRoute><TokenDetails /></ViewableRoute>} />
-          <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
-          <Route path="/defi" element={<ProtectedRoute><DefiPage /></ProtectedRoute>} />
-          <Route path="/kyc" element={<ProtectedRoute><KYC /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-          <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethods /></ProtectedRoute>} />
-          
-          <Route path="/borrow" element={<Navigate to="/defi" replace />} />
-          
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/marketplace" element={<ViewableRoute><Marketplace /></ViewableRoute>} />
+            <Route path="/marketplace/:id" element={<ViewableRoute><TokenDetails /></ViewableRoute>} />
+            <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
+            <Route path="/defi" element={<ProtectedRoute><DefiPage /></ProtectedRoute>} />
+            <Route path="/kyc" element={<ProtectedRoute><KYC /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethods /></ProtectedRoute>} />
+            
+            <Route path="/borrow" element={<Navigate to="/defi" replace />} />
+            
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </DemoModeProvider>
   );
 };
 
