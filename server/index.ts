@@ -12,6 +12,8 @@ import kycRoutes, { handleSumsubWebhook } from './routes/kyc';
 import buyRoutes from './routes/buy';
 import borrowRoutes from './routes/borrow';
 import rentRoutes from './routes/rent';
+import systemRoutes from './routes/system';
+import { isDemoMode } from './lib/demoMode';
 import { getStripeSync } from './lib/stripeClient';
 import { WebhookHandlers } from './lib/webhookHandlers';
 import { scheduler } from './services/scheduler';
@@ -127,6 +129,7 @@ app.use('/api/kyc', kycRoutes);
 app.use('/api/buy', buyRoutes);
 app.use('/api/borrow', borrowRoutes);
 app.use('/api/rent', rentRoutes);
+app.use('/api/system', systemRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -186,6 +189,9 @@ async function initStripe() {
 initStripe().then(() => {
   app.listen(PORT, () => {
     console.log(`Backend server running on port ${PORT}`);
+    if (isDemoMode()) {
+      console.log('[Demo Mode] Demo mode is ENABLED - blockchain/payment operations will be simulated');
+    }
     
     scheduler.initialize();
   });
