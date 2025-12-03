@@ -14,15 +14,20 @@ interface SystemConfig {
 
 interface DemoModeContextType {
   demoMode: boolean;
+  serverDemoEnabled: boolean;
+  userDemoEnabled: boolean;
   loading: boolean;
   config: SystemConfig | null;
   refetch: () => Promise<void>;
+  toggleUserDemoMode: (enabled: boolean) => Promise<boolean>;
 }
 
 const DemoModeContext = createContext<DemoModeContextType | undefined>(undefined);
 
 export const DemoModeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [demoMode, setDemoMode] = useState(false);
+  const [serverDemoEnabled, setServerDemoEnabled] = useState(false);
+  const [userDemoEnabled, setUserDemoEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
   const [config, setConfig] = useState<SystemConfig | null>(null);
 
@@ -32,7 +37,7 @@ export const DemoModeProvider: React.FC<{ children: ReactNode }> = ({ children }
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
-          setDemoMode(result.data.demoMode);
+          setServerDemoEnabled(result.data.demoMode);
           setConfig({
             demoMode: result.data.demoMode,
             version: result.data.version,
@@ -48,17 +53,78 @@ export const DemoModeProvider: React.FC<{ children: ReactNode }> = ({ children }
       }
     } catch (error) {
       console.error('Failed to fetch system config:', error);
-    } finally {
-      setLoading(false);
+    }
+  };
+
+  const fetchUserDemoMode = async () => {
+    try {
+      const response = await fetch('/api/user/demo-mode', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setUserDemoEnabled(result.data.isDemoUser);
+          }
+        }
+      }
+    } catch (error) {
+      // Silently ignore - user may not be logged in
+    }
+  };
+
+  const toggleUserDemoMode = async (enabled: boolean): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/user/demo-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ enabled }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setUserDemoEnabled(result.data.isDemoUser);
+          return true;
+        }
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to toggle demo mode:', error);
+      return false;
     }
   };
 
   useEffect(() => {
-    fetchConfig();
+    const init = async () => {
+      setLoading(true);
+      await fetchConfig();
+      await fetchUserDemoMode();
+      setLoading(false);
+    };
+    init();
   }, []);
 
+  useEffect(() => {
+    setDemoMode(serverDemoEnabled && userDemoEnabled);
+  }, [serverDemoEnabled, userDemoEnabled]);
+
   return (
-    <DemoModeContext.Provider value={{ demoMode, loading, config, refetch: fetchConfig }}>
+    <DemoModeContext.Provider value={{ 
+      demoMode, 
+      serverDemoEnabled, 
+      userDemoEnabled, 
+      loading, 
+      config, 
+      refetch: async () => {
+        await fetchConfig();
+        await fetchUserDemoMode();
+      },
+      toggleUserDemoMode,
+    }}>
       {children}
     </DemoModeContext.Provider>
   );

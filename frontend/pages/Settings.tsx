@@ -7,10 +7,11 @@ import { useDemo } from '../hooks/useDemo';
 export const Settings: React.FC = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
-  const { demoMode } = useDemoMode();
+  const { demoMode, serverDemoEnabled, userDemoEnabled, toggleUserDemoMode } = useDemoMode();
   const { resetDemo, loading } = useDemo();
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const [toggleLoading, setToggleLoading] = useState(false);
 
   const handleResetDemo = async () => {
     const result = await resetDemo();
@@ -19,6 +20,12 @@ export const Settings: React.FC = () => {
       setShowResetConfirm(false);
       setTimeout(() => setResetSuccess(false), 3000);
     }
+  };
+
+  const handleToggleDemoMode = async () => {
+    setToggleLoading(true);
+    await toggleUserDemoMode(!userDemoEnabled);
+    setToggleLoading(false);
   };
 
   const handleLogout = () => {
@@ -103,24 +110,50 @@ export const Settings: React.FC = () => {
         </div>
 
         {/* Demo Mode Section */}
-        {demoMode && (
+        {serverDemoEnabled && (
           <div className="mb-8">
             <h2 className="font-bold text-amber-700 mb-2 text-lg px-2">Demo Mode</h2>
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-                <span className="text-sm font-medium text-amber-800">Demo environment is active</span>
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-4">
+              {/* Toggle Switch */}
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <span className="text-sm font-medium text-amber-800">Enable Demo Mode</span>
+                  <p className="text-xs text-amber-600 mt-0.5">Use simulated blockchain and payments</p>
+                </div>
+                <button
+                  onClick={handleToggleDemoMode}
+                  disabled={toggleLoading}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
+                    userDemoEnabled ? 'bg-amber-500' : 'bg-gray-300'
+                  } ${toggleLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      userDemoEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
               </div>
-              <button
-                onClick={() => setShowResetConfirm(true)}
-                disabled={loading}
-                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-lg transition-colors disabled:opacity-50"
-              >
-                {loading ? 'Resetting...' : 'Reset Demo Environment'}
-              </button>
-              <p className="text-xs text-amber-700 mt-2 text-center">
-                This will reset your vault to $25,000 and clear all transactions
-              </p>
+
+              {/* Active indicator and reset button - only show when demo is active */}
+              {demoMode && (
+                <>
+                  <div className="flex items-center gap-2 mb-3 pt-3 border-t border-amber-200">
+                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                    <span className="text-sm font-medium text-amber-800">Demo environment is active</span>
+                  </div>
+                  <button
+                    onClick={() => setShowResetConfirm(true)}
+                    disabled={loading}
+                    className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-3 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {loading ? 'Resetting...' : 'Reset Demo Environment'}
+                  </button>
+                  <p className="text-xs text-amber-700 mt-2 text-center">
+                    This will reset your vault to $25,000 and clear all transactions
+                  </p>
+                </>
+              )}
             </div>
           </div>
         )}

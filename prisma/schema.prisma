@@ -75,6 +75,7 @@ model User {
   phone             String?
   country           String?
   stripeCustomerId  String?         @unique
+  isDemoUser        Boolean         @default(false)
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   
