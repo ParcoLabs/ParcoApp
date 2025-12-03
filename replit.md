@@ -30,7 +30,16 @@ None documented yet.
 - **Payment Processing**: Supports various methods including credit/debit cards, ACH bank transfers (via Stripe), and cryptocurrency payments (via Coinbase Commerce).
 - **KYC/Compliance**: Integrated Sumsub for identity verification.
 - **Blockchain Integration**: USDC deposits, ERC-1155 token minting for property ownership, role-based access control for contract operations.
-- **API Endpoints**: Comprehensive API for properties, portfolio data, payments, and KYC.
+- **Collateral Lending**: Borrow USDC against locked property tokens with BorrowVault smart contract (50% max LTV, 8% annual interest, 1% origination fee).
+- **API Endpoints**: Comprehensive API for properties, portfolio data, payments, KYC, borrowing, and repayment.
+
+### Borrowing System
+- **BorrowVault.sol**: Smart contract for collateral-based USDC lending with lock/unlock, LTV calculations, interest accrual, and liquidation mechanisms.
+- **Loan Terms**: 50% max LTV, 8% annual interest rate (800 bps), 1% origination fee, 75% liquidation threshold.
+- **Collateral Tracking**: BorrowCollateral model tracks locked tokens per property with lock/unlock transaction hashes.
+- **Repayment Tracking**: BorrowRepayment model records each repayment with principal/interest breakdown.
+- **Disbursement**: Loan proceeds credited to vault balance (Stripe Transfers available when configured).
+- **Endpoints**: POST /api/borrow (lock collateral, issue loan), POST /api/repay (process payment, unlock on full repayment), GET /api/borrow/position, GET /api/borrow/estimate, GET /api/borrow/history.
 
 ### System Design
 - The application uses a client-side routing approach with BrowserRouter.
