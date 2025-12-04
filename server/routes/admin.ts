@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { requireAuth } from '@clerk/express';
+import { getAuth } from '@clerk/express';
 import prisma from '../lib/prisma';
 import { adminOnly, loadUserWithRole, AuthenticatedRequest } from '../middleware/admin';
 import { isDemoMode, generateMockTxHash } from '../lib/demoMode';
@@ -9,7 +9,20 @@ const router = Router();
 
 const DEMO_MODE = process.env.DEMO_MODE === 'true';
 
-router.post('/user/set-role', requireAuth, adminOnly, async (req: Request, res: Response) => {
+const simpleAuth = async (req: Request, res: Response, next: Function) => {
+  try {
+    const auth = getAuth(req);
+    if (!auth.userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    next();
+  } catch (error) {
+    console.error('[simpleAuth] Error:', error);
+    return res.status(401).json({ error: 'Authentication failed' });
+  }
+};
+
+router.post('/user/set-role', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { userId, role } = req.body;
     const admin = (req as AuthenticatedRequest).user;
@@ -54,7 +67,7 @@ router.post('/user/set-role', requireAuth, adminOnly, async (req: Request, res: 
   }
 });
 
-router.get('/user/role', requireAuth, loadUserWithRole, async (req: Request, res: Response) => {
+router.get('/user/role', simpleAuth, loadUserWithRole, async (req: Request, res: Response) => {
   try {
     const user = (req as AuthenticatedRequest).user;
     console.log(`[Admin] /user/role called - User: ${user?.email}, Role: ${user?.role}`);
@@ -69,7 +82,7 @@ router.get('/user/role', requireAuth, loadUserWithRole, async (req: Request, res
   }
 });
 
-router.get('/users', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.get('/users', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { search, role, page = '1', limit = '20' } = req.query;
     
@@ -131,7 +144,7 @@ router.get('/users', requireAuth, adminOnly, async (req: Request, res: Response)
   }
 });
 
-router.get('/tokenizations', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.get('/tokenizations', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { status, page = '1', limit = '20' } = req.query;
     
@@ -180,7 +193,7 @@ router.get('/tokenizations', requireAuth, adminOnly, async (req: Request, res: R
   }
 });
 
-router.get('/tokenizations/:id', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.get('/tokenizations/:id', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -210,7 +223,7 @@ router.get('/tokenizations/:id', requireAuth, adminOnly, async (req: Request, re
   }
 });
 
-router.post('/tokenizations/:id/approve', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.post('/tokenizations/:id/approve', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { notes } = req.body;
@@ -263,7 +276,7 @@ router.post('/tokenizations/:id/approve', requireAuth, adminOnly, async (req: Re
   }
 });
 
-router.post('/tokenizations/:id/reject', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.post('/tokenizations/:id/reject', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { reason, notes } = req.body;
@@ -316,7 +329,7 @@ router.post('/tokenizations/:id/reject', requireAuth, adminOnly, async (req: Req
   }
 });
 
-router.post('/tokenizations/:id/start-review', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.post('/tokenizations/:id/start-review', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const admin = (req as AuthenticatedRequest).user;
@@ -365,7 +378,7 @@ router.post('/tokenizations/:id/start-review', requireAuth, adminOnly, async (re
   }
 });
 
-router.get('/stats', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.get('/stats', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const [
       totalUsers,
@@ -402,7 +415,7 @@ router.get('/stats', requireAuth, adminOnly, async (req: Request, res: Response)
   }
 });
 
-router.get('/properties', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.get('/properties', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { status, page = '1', limit = '20' } = req.query;
     
@@ -456,7 +469,7 @@ router.get('/properties', requireAuth, adminOnly, async (req: Request, res: Resp
   }
 });
 
-router.get('/properties/:id', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.get('/properties/:id', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -502,7 +515,7 @@ router.get('/properties/:id', requireAuth, adminOnly, async (req: Request, res: 
   }
 });
 
-router.post('/properties/:propertyId/mint-and-list', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.post('/properties/:propertyId/mint-and-list', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { propertyId } = req.params;
     const admin = (req as AuthenticatedRequest).user;
@@ -603,7 +616,7 @@ router.post('/properties/:propertyId/mint-and-list', requireAuth, adminOnly, asy
   }
 });
 
-router.post('/property/:id/pause', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.post('/property/:id/pause', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const admin = (req as AuthenticatedRequest).user;
@@ -642,7 +655,7 @@ router.post('/property/:id/pause', requireAuth, adminOnly, async (req: Request, 
   }
 });
 
-router.post('/property/:id/unpause', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.post('/property/:id/unpause', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const admin = (req as AuthenticatedRequest).user;
@@ -681,7 +694,7 @@ router.post('/property/:id/unpause', requireAuth, adminOnly, async (req: Request
   }
 });
 
-router.get('/investors/search', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.get('/investors/search', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { q, page = '1', limit = '20' } = req.query;
     
@@ -740,7 +753,7 @@ router.get('/investors/search', requireAuth, adminOnly, async (req: Request, res
   }
 });
 
-router.get('/investors/:userId', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.get('/investors/:userId', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
 
@@ -872,7 +885,7 @@ router.get('/investors/:userId', requireAuth, adminOnly, async (req: Request, re
   }
 });
 
-router.post('/rent/run', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.post('/rent/run', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const admin = (req as AuthenticatedRequest).user;
     const { propertyIds, dryRun = false } = req.body;
@@ -917,7 +930,7 @@ router.post('/rent/run', requireAuth, adminOnly, async (req: Request, res: Respo
   }
 });
 
-router.get('/rent/history', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.get('/rent/history', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { limit = '10', offset = '0' } = req.query;
 
@@ -940,7 +953,7 @@ router.get('/rent/history', requireAuth, adminOnly, async (req: Request, res: Re
   }
 });
 
-router.get('/rent/pending', requireAuth, adminOnly, async (req: Request, res: Response) => {
+router.get('/rent/pending', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const pendingPayments = await prisma.rentPayment.findMany({
       where: { status: 'PENDING' },
