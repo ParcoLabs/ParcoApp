@@ -8,231 +8,52 @@ None documented yet.
 
 ## System Architecture
 
-### Technology Stack
-- **Frontend Framework**: React 19.2.0 with TypeScript
-- **Build Tool**: Vite 6.2.0
-- **Routing**: React Router DOM 7.9.6
-- **UI Styling**: TailwindCSS (via CDN)
-- **Charts**: Recharts 3.5.1
-- **Fonts**: Google Fonts (Inter, Bungee)
-- **Icons**: Font Awesome 6.4.0
-- **Authentication**: Clerk (email/password, Google OAuth, Apple OAuth)
-- **Backend**: Express.js with TypeScript
-- **Database**: PostgreSQL with Prisma ORM 7
-- **Payments**: Stripe (via stripe-replit-sync for managed webhooks)
-- **KYC**: Sumsub WebSDK
-- **Blockchain**: Smart contracts (PropertyToken.sol, PropertyVault.sol) on Polygon, interacting via Ethers.js v6.
+### UI/UX Decisions
+The platform uses React for the frontend, styled with TailwindCSS and featuring Recharts for data visualization. Google Fonts (Inter, Bungee) and Font Awesome provide consistent typography and iconography.
 
-### Key Features
+### Technical Implementations
+- **Frontend**: React 19.2.0, TypeScript, Vite 6.2.0, React Router DOM 7.9.6.
+- **Backend**: Express.js with TypeScript.
+- **Database**: PostgreSQL with Prisma ORM 7.
+- **Blockchain Integration**: Smart contracts (PropertyToken.sol, PropertyVault.sol) on Polygon, interacting via Ethers.js v6. Uses OpenZeppelin standards for contracts.
+- **Authentication**: Clerk for user management.
+- **KYC**: Sumsub WebSDK.
+- **Payments**: Stripe for fiat and Coinbase Commerce for cryptocurrency.
+
+### Feature Specifications
 - **Authentication System**: Login/Register with Clerk, protected routes.
-- **Marketplace**: Browse and purchase tokenized properties, public viewing available.
-- **Portfolio Management**: Track owned assets, performance, and transaction history.
-- **Payment Processing**: Supports various methods including credit/debit cards, ACH bank transfers (via Stripe), and cryptocurrency payments (via Coinbase Commerce).
+- **Marketplace**: Browse and purchase tokenized properties.
+- **Portfolio Management**: Track assets, performance, and transaction history.
+- **Payment Processing**: Supports credit/debit cards, ACH, and cryptocurrencies.
 - **KYC/Compliance**: Integrated Sumsub for identity verification.
-- **Blockchain Integration**: USDC deposits, ERC-1155 token minting for property ownership, role-based access control for contract operations.
-- **Collateral Lending**: Borrow USDC against locked property tokens with BorrowVault smart contract (50% max LTV, 8% annual interest, 1% origination fee).
-- **API Endpoints**: Comprehensive API for properties, portfolio data, payments, KYC, borrowing, and repayment.
+- **Blockchain Integration**: USDC deposits, ERC-1155 token minting for ownership, role-based access control.
+- **Collateral Lending**: Borrow USDC against locked property tokens via BorrowVault smart contract (50% max LTV, 8% annual interest, 1% origination fee, 75% liquidation threshold).
+- **Rent Distribution Engine**: Automated monthly distribution of rent, deducting loan interest from borrowers.
+- **Demo Mode**: Comprehensive simulation environment for testing all platform features without real blockchain/payment interactions, including demo user setup, buy flow, rent cycles, borrow/repay, and governance.
+- **Admin Role System**: Database-driven role-based access control (USER, TOKENIZER, ADMIN) with middleware for secure access to administrative functionalities.
+- **Tokenization Review System**: Workflow for property tokenization submissions (DRAFT → SUBMITTED → IN_REVIEW → APPROVED/REJECTED → PUBLISHED).
+- **Property Management System**: Admin controls for minting, listing, pausing, and unpausing properties.
+- **Investor Operations System**: Admin tools to search investors, view profiles, holdings, vault balances, and loan positions.
+- **Tokenizer Dashboard**: Interface for tokenizers to manage their property submissions, track progress, and view submission details.
 
-### Borrowing System
-- **BorrowVault.sol**: Smart contract for collateral-based USDC lending with lock/unlock, LTV calculations, interest accrual, and liquidation mechanisms.
-- **Loan Terms**: 50% max LTV, 8% annual interest rate (800 bps), 1% origination fee, 75% liquidation threshold.
-- **Collateral Tracking**: BorrowCollateral model tracks locked tokens per property with lock/unlock transaction hashes.
-- **Repayment Tracking**: BorrowRepayment model records each repayment with principal/interest breakdown.
-- **Disbursement**: Loan proceeds credited to vault balance (Stripe Transfers available when configured).
-- **Endpoints**: POST /api/borrow (lock collateral, issue loan), POST /api/repay (process payment, unlock on full repayment), GET /api/borrow/position, GET /api/borrow/estimate, GET /api/borrow/history.
-
-### Rent Distribution Engine
-- **Scheduled Cron Job**: Runs on the 1st of each month (configurable via RENT_DISTRIBUTION_CRON env var).
-- **Distribution Flow**: Fetches pending rent payments → calculates per-token amounts → distributes proportionally to holders → deducts loan interest from borrowers → updates vault balances.
-- **Interest Deduction**: Automatically deducts accrued loan interest from rent distributions, updating lastInterestUpdate and accruedInterest on borrow positions.
-- **Tracking Models**: RentDistribution (per-holder distribution records), DistributionRun (batch run history with stats).
-- **Idempotent Processing**: Rent payments marked as COMPLETED after distribution to prevent duplicate processing.
-- **Endpoints**: POST /api/rent/distribute (manual trigger), POST /api/rent/payments (create rent payment), GET /api/rent/payments, GET /api/rent/distributions (user history), GET /api/rent/history (run history), GET /api/rent/summary (user earnings).
-
-### System Design
-- The application uses a client-side routing approach with BrowserRouter.
-- Frontend communicates with a custom Express.js backend.
-- Database interactions are handled via Prisma ORM.
-- Smart contracts are designed with OpenZeppelin standards, including ERC1155, AccessControl, Pausable, and ReentrancyGuard.
-- Role-based access control is implemented in smart contracts for administrative and operational functions.
-- Atomic transactions are managed using Prisma's `$transaction` for complex operations like purchases.
-- Environment-based configuration for API keys and contract addresses.
+### System Design Choices
+- Client-side routing with BrowserRouter.
+- Custom Express.js backend for API interactions.
+- Prisma ORM for database operations and atomic transactions.
+- Role-based access control implemented in smart contracts and backend middleware.
+- Environment-based configuration for sensitive data.
 
 ## External Dependencies
-- **Clerk**: For user authentication and authorization.
-- **Stripe**: For credit/debit card and ACH bank payments, integrated with `stripe-replit-sync` for webhook management.
-- **Coinbase Commerce**: For cryptocurrency payments (BTC, ETH, SOL, USDC, USDT, DAI).
-- **Sumsub**: For Know Your Customer (KYC) verification.
-- **Alchemy RPC**: Used for blockchain interactions on Polygon.
-- **PostgreSQL (Replit Neon)**: Primary database for application data.
+- **Clerk**: User authentication and authorization.
+- **Stripe**: Fiat payments (credit/debit card, ACH) and webhook management via `stripe-replit-sync`.
+- **Coinbase Commerce**: Cryptocurrency payments.
+- **Sumsub**: KYC verification.
+- **Alchemy RPC**: Blockchain interactions on Polygon.
+- **PostgreSQL (Replit Neon)**: Main database.
 - **Vite**: Frontend build tool.
-- **React Router DOM**: For client-side routing.
-- **Recharts**: For data visualization and charts.
-- **Font Awesome**: For icons.
-- **Google Fonts**: For typography (Inter, Bungee).
-- **OpenZeppelin Contracts**: Base for smart contract development.
-- **Ethers.js**: Library for interacting with Ethereum blockchain and smart contracts.
-
-### Demo Mode
-The platform includes a comprehensive Demo Mode for testing and demonstration purposes:
-- **Server Environment Variable**: Set `DEMO_MODE=true` to enable demo mode availability on the server.
-- **Per-User Toggle**: Each user can enable/disable demo mode for themselves via Settings page toggle switch.
-- **Activation Logic**: Demo mode is active when BOTH server `DEMO_MODE=true` AND user has `isDemoUser=true`.
-- **Backend Simulation**: When enabled, the backend simulates all blockchain and payment operations without making real calls.
-- **KYC Auto-Approval**: Demo mode auto-approves KYC verification with mock Sumsub IDs.
-- **Mock Transactions**: All payment and blockchain transactions generate mock IDs and hashes.
-- **Frontend Indicator**: A "Demo Mode" badge displays in the navigation sidebar when demo mode is active.
-- **API Response Flag**: All API responses include a `demoMode: true` flag when demo mode is enabled.
-- **System Config Endpoint**: GET /api/system/config returns the current demo mode status and feature flags.
-- **User Demo Mode Endpoint**: GET/POST /api/user/demo-mode for reading/toggling user's demo preference.
-
-### Isolated Demo Environment
-Complete sandbox environment for testing all platform features without real blockchain/payment interactions:
-
-#### 1. Demo User Setup (POST /api/demo/create-user)
-- Creates or updates user with auto-approved KYC (VERIFIED status)
-- Pre-funds vault with $25,000 USDC
-- Initializes empty holdings for all active properties
-- UI: "Start Demo" button on Dashboard when demo mode is active
-
-#### 2. Demo Buy Flow (POST /api/demo/buy)
-- Deducts from demo vault balance (no real payment)
-- Creates fake transaction with demo_tx_* hash
-- Updates holdings with purchased tokens
-- Decrements available property tokens
-
-#### 3. Demo Rent Cycle (POST /api/demo/run-rent-cycle)
-- Calculates rent based on property APY and token holdings
-- Formula: (tokenPrice * quantity * annualYield/12)
-- Creates RentPayment and RentDistribution records
-- Credits rent to vault balance and totalEarned
-- UI: "Run Rent Cycle" button on Dashboard (visible after setup)
-
-#### 4. Demo Borrow/Repay System
-- **Borrow (POST /api/demo/borrow)**: Lock tokens as collateral, receive USDC loan (50% max LTV, 8% interest, 1% origination fee)
-- **Repay (POST /api/demo/repay)**: Pay back principal + interest, unlock collateral on full repayment
-- All operations use demo transaction hashes
-
-#### 5. Demo Governance (Proposals & Voting)
-- **Create Proposal (POST /api/demo/proposals/create)**: Title, description, voting duration
-- **Vote (POST /api/demo/proposals/vote)**: FOR, AGAINST, or ABSTAIN with voting power based on token holdings
-- **View Proposals (GET /api/demo/proposals)**: List all proposals with vote counts
-- Proposal and Vote models in Prisma schema
-- UI: Governance page (only visible in demo mode) accessible from sidebar
-
-#### 6. Demo Reset (POST /api/demo/reset)
-- Clears all user transactions, holdings, borrow positions, rent distributions, and votes
-- Resets vault to $25,000 USDC initial balance
-- Recreates empty holdings for all properties
-- UI: "Reset Demo Environment" button in Settings (demo mode section)
-
-#### Demo Status (GET /api/demo/status)
-Returns comprehensive status including vault balance, portfolio value, active borrow positions, and transaction count.
-
-#### Frontend Components
-- **useDemo hook** (frontend/hooks/useDemo.ts): All demo API interactions
-- **DemoModeContext**: Global demo state and badge display
-- **Dashboard**: Start Demo button, Run Rent Cycle button, rent result modal
-- **Settings**: Demo Mode section with reset functionality
-- **Governance**: Proposal creation and voting interface (demo only)
-- **Navigation**: Governance link visible only in demo mode
-
-### Admin Role System
-Database-driven role-based access control for platform administration:
-
-#### User Roles (UserRole enum)
-- **USER**: Default role for regular investors
-- **TOKENIZER**: Property tokenization submission privileges
-- **ADMIN**: Full administrative access to all platform features
-
-#### Role Field
-- Added `role` field to User model with default value of USER
-- Roles are stored in database, not in Clerk (additive design)
-- Existing Clerk authentication logic remains unchanged
-
-#### Admin Middleware (server/middleware/admin.ts)
-- **loadUserWithRole**: Loads user with role from database
-- **adminOnly**: Requires ADMIN role, returns 403 if not admin
-- **tokenizerOrAdmin**: Allows TOKENIZER or ADMIN roles
-
-#### Admin API Endpoints
-- **GET /api/admin/user/role**: Get current user's role status
-- **POST /api/admin/user/set-role**: Change user role (admin only)
-  - Body: { userId, role }
-  - Validates role is USER, TOKENIZER, or ADMIN
-- **GET /api/admin/users**: List all users with filters (search, role, pagination)
-- **GET /api/admin/stats**: Platform statistics (users, properties, tokenizations)
-
-#### Tokenization Review System
-Model: TokenizationSubmission with full property details, documents, and compliance tracking
-
-**Status Flow**: DRAFT → SUBMITTED → IN_REVIEW → APPROVED/REJECTED → PUBLISHED
-
-**Endpoints**:
-- **GET /api/admin/tokenizations**: List submissions with status filter
-- **GET /api/admin/tokenizations/:id**: Full submission details
-- **POST /api/admin/tokenizations/:id/start-review**: Set status to IN_REVIEW
-- **POST /api/admin/tokenizations/:id/approve**: Approve submission
-  - Body: { notes } (optional)
-- **POST /api/admin/tokenizations/:id/reject**: Reject submission
-  - Body: { reason, notes }
-
-#### Property Management System
-Property model extended with: isMinted, isListable, isPaused, mintedAt, mintTxHash
-
-**Mint & List Endpoints**:
-- **GET /api/admin/properties**: List all properties with status filter
-- **GET /api/admin/properties/:id**: Full property details with holdings and rent history
-- **POST /api/admin/properties/:propertyId/mint-and-list**: Mint ERC-1155 tokens
-  - Demo mode: Simulates mint with mock tx hash
-  - Real mode: Calls EVMClient.createProperty on Polygon
-  - Sets isMinted=true, isListable=true, status=FUNDING
-
-**Pause/Unpause Endpoints**:
-- **POST /api/admin/property/:id/pause**: Pause property (hides from marketplace, blocks purchases)
-- **POST /api/admin/property/:id/unpause**: Resume property listing
-
-#### Investor Operations System
-**Endpoints**:
-- **GET /api/admin/investors/search**: Search investors by name/email
-- **GET /api/admin/investors/:userId**: Full investor profile
-  - User details and KYC status
-  - Holdings with property details and values
-  - Vault balances (USDC, locked, deposited, earned)
-  - Active borrow positions with collateral info
-  - Rent distribution history
-  - Summary stats (portfolio value, total rent, total borrowed)
-
-#### Rent Distribution Controls
-**Endpoints**:
-- **POST /api/admin/rent/run**: Trigger manual rent distribution
-  - Supports dryRun mode for preview
-  - Returns summary: properties processed, holders paid, amounts distributed
-- **GET /api/admin/rent/history**: Distribution run history with stats
-- **GET /api/admin/rent/pending**: Pending rent payments awaiting distribution
-
-#### Frontend Admin Panel (/admin)
-- **AdminLayout**: Role-based access check, tabs navigation
-- **Tokenizations Tab**: Table with submissions, status filter, detail drawer
-  - View full property info, financials, documents
-  - Approve/Reject actions with confirmation
-- **Properties Tab**: Property management with Mint & List and Pause/Unpause controls
-  - Table showing all properties with status, tokens, APY
-  - "Mint & List" button for unminted properties with confirmation modal
-  - "Pause"/"Unpause" toggle for minted properties
-- **Investors Tab**: User list with search, role editing, and detail panel
-  - Search by name/email with real-time results
-  - Click investor to view full profile in side panel
-  - Holdings table, vault balances, borrow positions, rent history
-  - Change user roles via modal
-- **Rent Tab**: Rent distribution management
-  - Summary cards: pending payments count, pending amount, total runs
-  - "Run Rent Distribution Now" button with confirmation modal
-  - Pending payments table with property, period, amounts
-  - Distribution history table with run statistics
-- **Demo Tools Tab**: Platform statistics and demo utilities
-
-#### Navigation Integration
-- Admin link in sidebar (purple) only visible to ADMIN users
-- Checks role via /api/admin/user/role endpoint on component mount
-- Access denied page shown to non-admins who navigate directly to /admin
+- **React Router DOM**: Client-side routing.
+- **Recharts**: Data visualization.
+- **Font Awesome**: Icons.
+- **Google Fonts**: Typography.
+- **OpenZeppelin Contracts**: Smart contract development standards.
+- **Ethers.js**: Ethereum blockchain interaction library.
