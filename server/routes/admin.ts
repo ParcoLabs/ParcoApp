@@ -57,6 +57,7 @@ router.post('/user/set-role', requireAuth, adminOnly, async (req: Request, res: 
 router.get('/user/role', requireAuth, loadUserWithRole, async (req: Request, res: Response) => {
   try {
     const user = (req as AuthenticatedRequest).user;
+    console.log(`[Admin] /user/role called - User: ${user?.email}, Role: ${user?.role}`);
     return res.json({
       role: user?.role || 'USER',
       isAdmin: user?.role === 'ADMIN',

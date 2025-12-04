@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useAuth as useClerkAuth } from '@clerk/clerk-react';
 
 interface Tab {
   id: string;
@@ -21,6 +22,7 @@ export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useAuth();
+  const { getToken } = useClerkAuth();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,8 +30,19 @@ export const AdminLayout: React.FC = () => {
   useEffect(() => {
     const checkAdminAccess = async () => {
       try {
+        const token = await getToken();
+        
+        if (!token) {
+          setError('Access Denied');
+          setLoading(false);
+          return;
+        }
+
         const response = await fetch('/api/admin/user/role', {
           credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
         });
         
         if (response.ok) {
@@ -55,7 +68,7 @@ export const AdminLayout: React.FC = () => {
       setLoading(false);
       setError('Access Denied');
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, getToken]);
 
   const getCurrentTab = () => {
     const path = location.pathname;
