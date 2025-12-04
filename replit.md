@@ -35,10 +35,11 @@ The platform uses React for the frontend, styled with TailwindCSS and featuring 
 - **Property Management System**: Admin controls for minting, listing, pausing, and unpausing properties.
 - **Investor Operations System**: Admin tools to search investors, view profiles, holdings, vault balances, and loan positions.
 - **Tokenizer Dashboard**: Comprehensive interface for tokenizers with dual view modes:
-  - **Pre-tokenization View**: Shows application progress, document checklist with received/approved status, Parco Intelligence Valuation, funds raising goals, token terms, and notifications for properties in progress
-  - **Post-tokenization View**: Displays property overview with value, occupancy rate, rental income, expenses, net profit, token holder count, and charts for property appreciation, earnings/expenses, and token holder growth
-  - **Tokenizer Navigation**: Dedicated sidebar with tokenizer-specific navigation (Overview, My Properties, Rental Income, Token Holders, Compliance, Notifications, Submit Property)
-  - **Tokenizer Settings**: View mode toggle (pre/post, defaults to post), switch to investor account button, persisted via tokenizerViewMode field in database
+  - **Pre-tokenization View**: Shows application progress, document checklist with upload buttons (native file picker), Parco Intelligence Valuation, funds raising goals, token terms, and notifications. Navigation restricted to: Overview, Application, Help, Settings
+  - **Post-tokenization View**: Displays property overview with value, occupancy rate, rental income, expenses, net profit, token holder count, and charts. Full navigation available: My Properties, Governance, Compliance, Token Holders, etc.
+  - **Tokenizer Navigation**: Dedicated sidebar with tokenizer-specific navigation. Mobile bottom tab bar adapts based on pre/post view mode
+  - **Tokenizer Settings**: View mode toggle (pre/post for demo purposes), switch to investor account button, persisted via tokenizerViewMode field in database
+  - **Document Upload**: Native file picker integration supporting PDF, DOC, DOCX, JPG, JPEG, PNG with visual feedback and file management
 - **Admin Dashboard**: Dedicated admin interface with sidebar navigation:
   - **Admin Navigation**: Sidebar with Overview, Tokenizations, Properties, Investors, Rent Distribution, Demo Tools
   - **Admin Overview**: Dashboard home with stats cards (Total Users, Properties, Pending Reviews, Pending KYC), quick action buttons, recent activity feed, platform status
