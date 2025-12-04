@@ -14,7 +14,7 @@ import { DefiPage } from './frontend/pages/defi/DefiPage';
 import { PaymentMethods } from './frontend/pages/PaymentMethods';
 import { Governance } from './frontend/pages/Governance';
 import { AdminLayout, AdminTokenizations, AdminProperties, AdminInvestors, AdminRent, AdminDemo } from './frontend/pages/admin';
-import { MyProperties, TokenizerDashboard } from './frontend/pages/tokenizer';
+import { MyProperties, TokenizerDashboard, TokenizerHome, TokenizerSettings, TokenizerLayout } from './frontend/pages/tokenizer';
 import { AuthProvider } from './frontend/context/AuthContext';
 import { DemoModeProvider } from './frontend/context/DemoModeContext';
 
@@ -95,6 +95,29 @@ const ViewableRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =>
   );
 };
 
+const TokenizerRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isLoaded, isSignedIn } = useAuth();
+  const location = useLocation();
+
+  if (!isLoaded) {
+    return (
+      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep"></div>
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return (
+    <TokenizerLayout>
+      {children}
+    </TokenizerLayout>
+  );
+};
+
 const App: React.FC = () => {
   return (
     <DemoModeProvider>
@@ -117,8 +140,15 @@ const App: React.FC = () => {
             
             <Route path="/borrow" element={<Navigate to="/defi" replace />} />
 
-            <Route path="/tokenizer/my-properties" element={<ProtectedRoute><MyProperties /></ProtectedRoute>} />
-            <Route path="/tokenizer/dashboard/:id" element={<ProtectedRoute><TokenizerDashboard /></ProtectedRoute>} />
+            <Route path="/tokenizer" element={<TokenizerRoute><TokenizerHome /></TokenizerRoute>} />
+            <Route path="/tokenizer/my-properties" element={<TokenizerRoute><MyProperties /></TokenizerRoute>} />
+            <Route path="/tokenizer/dashboard/:id" element={<TokenizerRoute><TokenizerDashboard /></TokenizerRoute>} />
+            <Route path="/tokenizer/settings" element={<TokenizerRoute><TokenizerSettings /></TokenizerRoute>} />
+            <Route path="/tokenizer/rental-income" element={<TokenizerRoute><TokenizerHome /></TokenizerRoute>} />
+            <Route path="/tokenizer/token-holders" element={<TokenizerRoute><TokenizerHome /></TokenizerRoute>} />
+            <Route path="/tokenizer/compliance" element={<TokenizerRoute><TokenizerHome /></TokenizerRoute>} />
+            <Route path="/tokenizer/notifications" element={<TokenizerRoute><TokenizerHome /></TokenizerRoute>} />
+            <Route path="/tokenizer/submit-property" element={<TokenizerRoute><MyProperties /></TokenizerRoute>} />
 
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<Navigate to="/admin/tokenizations" replace />} />

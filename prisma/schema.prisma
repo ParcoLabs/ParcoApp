@@ -20,6 +20,7 @@ model User {
   kycStatus               KYCLevel                 @default(NONE)
   isDemoUser              Boolean                  @default(false)
   role                    UserRole                 @default(USER)
+  tokenizerViewMode       String                   @default("post")
   borrowPositions         BorrowPosition[]
   cryptoPayments          CryptoPayment[]
   holdings                Holding[]

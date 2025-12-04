@@ -87,4 +87,73 @@ router.get('/demo-mode', validateAuth, async (req, res) => {
   }
 });
 
+router.get('/tokenizer-view', validateAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { tokenizerViewMode: true },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        tokenizerViewMode: user?.tokenizerViewMode || 'post',
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching tokenizer view mode:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch tokenizer view mode',
+    });
+  }
+});
+
+router.post('/tokenizer-view', validateAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const { viewMode } = req.body;
+
+    if (viewMode !== 'pre' && viewMode !== 'post') {
+      return res.status(400).json({
+        success: false,
+        error: 'viewMode must be "pre" or "post"',
+      });
+    }
+
+    const user = await prisma.user.update({
+      where: { clerkId },
+      data: { tokenizerViewMode: viewMode },
+      select: {
+        id: true,
+        email: true,
+        tokenizerViewMode: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        tokenizerViewMode: user.tokenizerViewMode,
+        message: viewMode === 'pre' ? 'Pre-tokenization view enabled' : 'Post-tokenization view enabled',
+      },
+    });
+  } catch (error: any) {
+    console.error('Error updating tokenizer view mode:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to update tokenizer view mode',
+    });
+  }
+});
+
 export default router;
