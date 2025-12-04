@@ -9,6 +9,32 @@ const router = Router();
 
 const DEMO_MODE = process.env.DEMO_MODE === 'true';
 
+router.get('/debug/users', async (req: Request, res: Response) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        clerkId: true,
+        role: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 20,
+    });
+
+    return res.json({
+      count: users.length,
+      users,
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    return res.status(500).json({ error: 'Failed to fetch users', details: String(error) });
+  }
+});
+
 router.post('/user/set-role', requireAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const { userId, role } = req.body;

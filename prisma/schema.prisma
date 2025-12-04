@@ -6,6 +6,466 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id                      String                   @id @default(cuid())
+  clerkId                 String                   @unique
+  email                   String                   @unique
+  firstName               String?
+  lastName                String?
+  phone                   String?
+  country                 String?
+  stripeCustomerId        String?                  @unique
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  kycStatus               KYCLevel                 @default(NONE)
+  isDemoUser              Boolean                  @default(false)
+  role                    UserRole                 @default(USER)
+  borrowPositions         BorrowPosition[]
+  cryptoPayments          CryptoPayment[]
+  holdings                Holding[]
+  kycVerification         KYCVerification?
+  paymentMethods          PaymentMethod[]
+  rentDistributions       RentDistribution[]
+  tokenizationSubmissions TokenizationSubmission[]
+  transactions            Transaction[]
+  vaultAccount            VaultAccount?
+
+  @@index([clerkId])
+  @@index([email])
+  @@index([stripeCustomerId])
+  @@index([role])
+}
+
+model KYCVerification {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  status             KYCStatus @default(PENDING)
+  level              KYCLevel  @default(NONE)
+  documentType       String?
+  documentNumber     String?
+  documentCountry    String?
+  verificationDate   DateTime?
+  expiryDate         DateTime?
+  providerRef        String?
+  providerData       Json?
+  rejectionReason    String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  sumsubApplicantId  String?   @unique
+  sumsubExternalId   String?
+  sumsubLevelName    String?
+  sumsubReviewResult Json?
+  sumsubReviewStatus String?
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([sumsubApplicantId])
+}
+
+model Property {
+  id               String         @id @default(cuid())
+  name             String
+  description      String?
+  address          String
+  city             String
+  state            String
+  country          String
+  zipCode          String?
+  propertyType     PropertyType
+  status           PropertyStatus @default(DRAFT)
+  totalValue       Decimal        @db.Decimal(18, 2)
+  tokenPrice       Decimal        @db.Decimal(18, 6)
+  totalTokens      Int
+  availableTokens  Int
+  annualYield      Decimal        @db.Decimal(5, 2)
+  monthlyRent      Decimal?       @db.Decimal(18, 2)
+  imageUrl         String?
+  images           String[]
+  documents        String[]
+  latitude         Decimal?       @db.Decimal(10, 8)
+  longitude        Decimal?       @db.Decimal(11, 8)
+  squareFeet       Int?
+  bedrooms         Int?
+  bathrooms        Decimal?       @db.Decimal(3, 1)
+  yearBuilt        Int?
+  fundingDeadline  DateTime?
+  fundingStartDate DateTime?
+  managerId        String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  isListable       Boolean        @default(false)
+  isMinted         Boolean        @default(false)
+  isPaused         Boolean        @default(false)
+  mintTxHash       String?
+  mintedAt         DateTime?
+  holdings         Holding[]
+  rentPayments     RentPayment[]
+  token            Token?
+
+  @@index([status])
+  @@index([propertyType])
+  @@index([city, state])
+  @@index([isPaused])
+  @@index([isListable])
+}
+
+model Token {
+  id                String    @id @default(cuid())
+  propertyId        String    @unique
+  contractAddress   String?   @unique
+  tokenId           String?
+  chainId           Int       @default(137)
+  standard          String    @default("ERC1155")
+  totalSupply       Int
+  circulatingSupply Int       @default(0)
+  metadata          Json?
+  deployedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  holdings          Holding[]
+  property          Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([contractAddress])
+  @@index([chainId])
+}
+
+model Holding {
+  id            String    @id @default(cuid())
+  userId        String
+  propertyId    String
+  tokenId       String
+  quantity      Int
+  averageCost   Decimal   @db.Decimal(18, 6)
+  totalInvested Decimal   @db.Decimal(18, 2)
+  rentEarned    Decimal   @default(0) @db.Decimal(18, 2)
+  lastRentDate  DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  token         Token     @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId])
+  @@index([userId])
+  @@index([propertyId])
+  @@index([tokenId])
+}
+
+model VaultAccount {
+  id              String           @id @default(cuid())
+  userId          String           @unique
+  walletAddress   String?          @unique
+  custodianRef    String?
+  usdcBalance     Decimal          @default(0) @db.Decimal(18, 6)
+  lockedBalance   Decimal          @default(0) @db.Decimal(18, 6)
+  totalDeposited  Decimal          @default(0) @db.Decimal(18, 2)
+  totalWithdrawn  Decimal          @default(0) @db.Decimal(18, 2)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  totalEarned     Decimal          @default(0) @db.Decimal(18, 6)
+  borrowPositions BorrowPosition[]
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([walletAddress])
+}
+
+model BorrowPosition {
+  id                   String             @id @default(cuid())
+  userId               String
+  vaultAccountId       String
+  principal            Decimal            @db.Decimal(18, 2)
+  interestRate         Decimal            @db.Decimal(5, 4)
+  accruedInterest      Decimal            @default(0) @db.Decimal(18, 2)
+  collateralValue      Decimal            @db.Decimal(18, 2)
+  collateralRatio      Decimal            @db.Decimal(5, 4)
+  liquidationThreshold Decimal            @default(0.75) @db.Decimal(5, 4)
+  status               BorrowStatus       @default(ACTIVE)
+  borrowedAt           DateTime           @default(now())
+  dueDate              DateTime?
+  repaidAt             DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  lastInterestUpdate   DateTime           @default(now())
+  stripePayoutId       String?
+  txHash               String?
+  collaterals          BorrowCollateral[]
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vaultAccount         VaultAccount       @relation(fields: [vaultAccountId], references: [id], onDelete: Cascade)
+  repayments           BorrowRepayment[]
+
+  @@index([userId])
+  @@index([vaultAccountId])
+  @@index([status])
+  @@index([stripePayoutId])
+}
+
+model BorrowCollateral {
+  id               String         @id @default(cuid())
+  borrowPositionId String
+  propertyId       String
+  tokenId          Int
+  amount           Int
+  valueAtLock      Decimal        @db.Decimal(18, 2)
+  currentValue     Decimal        @db.Decimal(18, 2)
+  lockedAt         DateTime       @default(now())
+  unlockedAt       DateTime?
+  txHashLock       String?
+  txHashUnlock     String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  borrowPosition   BorrowPosition @relation(fields: [borrowPositionId], references: [id], onDelete: Cascade)
+
+  @@index([borrowPositionId])
+  @@index([propertyId])
+  @@index([tokenId])
+}
+
+model BorrowRepayment {
+  id                    String         @id @default(cuid())
+  borrowPositionId      String
+  principalPaid         Decimal        @db.Decimal(18, 2)
+  interestPaid          Decimal        @db.Decimal(18, 2)
+  totalPaid             Decimal        @db.Decimal(18, 2)
+  paymentMethodType     String
+  stripePaymentIntentId String?
+  txHash                String?
+  paidAt                DateTime       @default(now())
+  createdAt             DateTime       @default(now())
+  borrowPosition        BorrowPosition @relation(fields: [borrowPositionId], references: [id], onDelete: Cascade)
+
+  @@index([borrowPositionId])
+  @@index([stripePaymentIntentId])
+}
+
+model Transaction {
+  id            String            @id @default(cuid())
+  userId        String
+  type          TransactionType
+  status        TransactionStatus @default(PENDING)
+  amount        Decimal           @db.Decimal(18, 6)
+  currency      String            @default("USDC")
+  propertyId    String?
+  tokenQuantity Int?
+  tokenPrice    Decimal?          @db.Decimal(18, 6)
+  fee           Decimal?          @db.Decimal(18, 6)
+  txHash        String?
+  blockNumber   Int?
+  chainId       Int?
+  reference     String?
+  description   String?
+  metadata      Json?
+  failureReason String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  completedAt   DateTime?
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([propertyId])
+  @@index([txHash])
+  @@index([createdAt])
+}
+
+model RentPayment {
+  id             String             @id @default(cuid())
+  propertyId     String
+  periodStart    DateTime
+  periodEnd      DateTime
+  grossAmount    Decimal            @db.Decimal(18, 2)
+  netAmount      Decimal            @db.Decimal(18, 2)
+  managementFee  Decimal            @db.Decimal(18, 2)
+  perTokenAmount Decimal            @db.Decimal(18, 6)
+  distributedAt  DateTime?
+  status         TransactionStatus  @default(PENDING)
+  txHash         String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  distributions  RentDistribution[]
+  property       Property           @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([periodStart, periodEnd])
+  @@index([status])
+}
+
+model PaymentMethod {
+  id                    String             @id @default(cuid())
+  userId                String
+  stripePaymentMethodId String             @unique
+  stripeCustomerId      String
+  type                  PaymentMethodType
+  isDefault             Boolean            @default(false)
+  cardBrand             String?
+  cardLast4             String?
+  cardExpMonth          Int?
+  cardExpYear           Int?
+  bankName              String?
+  bankLast4             String?
+  bankAccountType       String?
+  bankStatus            BankAccountStatus?
+  nickname              String?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  user                  User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([stripePaymentMethodId])
+  @@index([stripeCustomerId])
+}
+
+model CryptoPayment {
+  id                 String              @id @default(cuid())
+  userId             String
+  coinbaseChargeId   String              @unique
+  coinbaseChargeCode String              @unique
+  amount             Decimal             @db.Decimal(18, 2)
+  currency           String              @default("USD")
+  cryptoCurrency     CryptoCurrency?
+  cryptoAmount       Decimal?            @db.Decimal(28, 18)
+  status             CryptoPaymentStatus @default(PENDING)
+  hostedUrl          String?
+  expiresAt          DateTime?
+  confirmedAt        DateTime?
+  txHash             String?
+  metadata           Json?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([coinbaseChargeId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model RentDistribution {
+  id               String      @id @default(cuid())
+  rentPaymentId    String
+  userId           String
+  holdingId        String
+  propertyId       String
+  tokensHeld       Int
+  totalTokens      Int
+  ownershipPercent Decimal     @db.Decimal(10, 6)
+  grossAmount      Decimal     @db.Decimal(18, 6)
+  interestDeducted Decimal     @default(0) @db.Decimal(18, 6)
+  netAmount        Decimal     @db.Decimal(18, 6)
+  distributedAt    DateTime    @default(now())
+  txHash           String?
+  createdAt        DateTime    @default(now())
+  rentPayment      RentPayment @relation(fields: [rentPaymentId], references: [id], onDelete: Cascade)
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([rentPaymentId])
+  @@index([userId])
+  @@index([propertyId])
+  @@index([distributedAt])
+}
+
+model DistributionRun {
+  id                    String    @id @default(cuid())
+  runType               String    @default("SCHEDULED")
+  triggeredBy           String?
+  propertiesProcessed   Int       @default(0)
+  rentPaymentsProcessed Int       @default(0)
+  holdersDistributed    Int       @default(0)
+  totalGrossDistributed Decimal   @default(0) @db.Decimal(18, 6)
+  totalInterestDeducted Decimal   @default(0) @db.Decimal(18, 6)
+  totalNetDistributed   Decimal   @default(0) @db.Decimal(18, 6)
+  status                String    @default("RUNNING")
+  errorMessage          String?
+  startedAt             DateTime  @default(now())
+  completedAt           DateTime?
+
+  @@index([status])
+  @@index([startedAt])
+}
+
+model Proposal {
+  id             String         @id @default(cuid())
+  title          String
+  description    String
+  proposerId     String
+  status         ProposalStatus @default(DRAFT)
+  votingStartsAt DateTime?
+  votingEndsAt   DateTime?
+  forVotes       Int            @default(0)
+  againstVotes   Int            @default(0)
+  abstainVotes   Int            @default(0)
+  quorumRequired Int            @default(100)
+  passThreshold  Decimal        @default(50.00) @db.Decimal(5, 2)
+  executedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  votes          Vote[]
+
+  @@index([status])
+  @@index([proposerId])
+  @@index([votingEndsAt])
+}
+
+model Vote {
+  id          String     @id @default(cuid())
+  proposalId  String
+  userId      String
+  choice      VoteChoice
+  votingPower Int        @default(1)
+  comment     String?
+  createdAt   DateTime   @default(now())
+  proposal    Proposal   @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, userId])
+  @@index([proposalId])
+  @@index([userId])
+}
+
+model TokenizationSubmission {
+  id                  String             @id @default(cuid())
+  tokenizerId         String
+  status              TokenizationStatus @default(DRAFT)
+  propertyName        String
+  propertyAddress     String
+  propertyCity        String
+  propertyState       String
+  propertyCountry     String
+  propertyZipCode     String?
+  propertyType        PropertyType
+  totalValue          Decimal            @db.Decimal(18, 2)
+  tokenPrice          Decimal            @db.Decimal(18, 6)
+  totalTokens         Int
+  annualYield         Decimal            @db.Decimal(5, 2)
+  monthlyRent         Decimal?           @db.Decimal(18, 2)
+  description         String?
+  imageUrl            String?
+  images              String[]
+  documents           String[]
+  squareFeet          Int?
+  bedrooms            Int?
+  bathrooms           Decimal?           @db.Decimal(3, 1)
+  yearBuilt           Int?
+  ownershipProof      String?
+  legalDocuments      String[]
+  financialStatements String[]
+  reviewedById        String?
+  reviewNotes         String?
+  rejectionReason     String?
+  submittedAt         DateTime?
+  reviewedAt          DateTime?
+  approvedAt          DateTime?
+  publishedAt         DateTime?
+  propertyId          String?            @unique
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  tokenizer           User               @relation(fields: [tokenizerId], references: [id], onDelete: Cascade)
+
+  @@index([tokenizerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
 enum KYCLevel {
   NONE
   BASIC
@@ -66,358 +526,6 @@ enum BorrowStatus {
   DEFAULTED
 }
 
-model User {
-  id                String          @id @default(cuid())
-  clerkId           String          @unique
-  email             String          @unique
-  firstName         String?
-  lastName          String?
-  phone             String?
-  country           String?
-  stripeCustomerId  String?         @unique
-  isDemoUser        Boolean         @default(false)
-  role              UserRole        @default(USER)
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  
-  kycStatus         KYCLevel        @default(NONE)
-  kycVerification   KYCVerification?
-  
-  vaultAccount      VaultAccount?
-  holdings          Holding[]
-  borrowPositions   BorrowPosition[]
-  transactions      Transaction[]
-  paymentMethods    PaymentMethod[]
-  cryptoPayments    CryptoPayment[]
-  rentDistributions RentDistribution[]
-  tokenizationSubmissions TokenizationSubmission[]
-  
-  @@index([clerkId])
-  @@index([email])
-  @@index([stripeCustomerId])
-  @@index([role])
-}
-
-model KYCVerification {
-  id                String      @id @default(cuid())
-  userId            String      @unique
-  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  status            KYCStatus   @default(PENDING)
-  level             KYCLevel    @default(NONE)
-  
-  documentType      String?
-  documentNumber    String?
-  documentCountry   String?
-  
-  verificationDate  DateTime?
-  expiryDate        DateTime?
-  
-  providerRef       String?
-  providerData      Json?
-  
-  rejectionReason   String?
-  
-  sumsubApplicantId String?     @unique
-  sumsubExternalId  String?
-  sumsubLevelName   String?
-  sumsubReviewStatus String?
-  sumsubReviewResult Json?
-  
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  
-  @@index([userId])
-  @@index([status])
-  @@index([sumsubApplicantId])
-}
-
-model Property {
-  id                String          @id @default(cuid())
-  
-  name              String
-  description       String?
-  address           String
-  city              String
-  state             String
-  country           String
-  zipCode           String?
-  
-  propertyType      PropertyType
-  status            PropertyStatus  @default(DRAFT)
-  
-  totalValue        Decimal         @db.Decimal(18, 2)
-  tokenPrice        Decimal         @db.Decimal(18, 6)
-  totalTokens       Int
-  availableTokens   Int
-  
-  annualYield       Decimal         @db.Decimal(5, 2)
-  monthlyRent       Decimal?        @db.Decimal(18, 2)
-  
-  imageUrl          String?
-  images            String[]
-  documents         String[]
-  
-  latitude          Decimal?        @db.Decimal(10, 8)
-  longitude         Decimal?        @db.Decimal(11, 8)
-  
-  squareFeet        Int?
-  bedrooms          Int?
-  bathrooms         Decimal?        @db.Decimal(3, 1)
-  yearBuilt         Int?
-  
-  fundingDeadline   DateTime?
-  fundingStartDate  DateTime?
-  
-  managerId         String?
-  
-  isMinted          Boolean         @default(false)
-  isListable        Boolean         @default(false)
-  isPaused          Boolean         @default(false)
-  mintedAt          DateTime?
-  mintTxHash        String?
-  
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  
-  token             Token?
-  holdings          Holding[]
-  rentPayments      RentPayment[]
-  
-  @@index([status])
-  @@index([propertyType])
-  @@index([city, state])
-  @@index([isPaused])
-  @@index([isListable])
-}
-
-model Token {
-  id                String      @id @default(cuid())
-  propertyId        String      @unique
-  property          Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  
-  contractAddress   String?     @unique
-  tokenId           String?
-  chainId           Int         @default(137)
-  standard          String      @default("ERC1155")
-  
-  totalSupply       Int
-  circulatingSupply Int         @default(0)
-  
-  metadata          Json?
-  
-  deployedAt        DateTime?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  
-  holdings          Holding[]
-  
-  @@index([contractAddress])
-  @@index([chainId])
-}
-
-model Holding {
-  id                String      @id @default(cuid())
-  userId            String
-  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  propertyId        String
-  property          Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  
-  tokenId           String
-  token             Token       @relation(fields: [tokenId], references: [id], onDelete: Cascade)
-  
-  quantity          Int
-  averageCost       Decimal     @db.Decimal(18, 6)
-  totalInvested     Decimal     @db.Decimal(18, 2)
-  
-  rentEarned        Decimal     @default(0) @db.Decimal(18, 2)
-  lastRentDate      DateTime?
-  
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  
-  @@unique([userId, propertyId])
-  @@index([userId])
-  @@index([propertyId])
-  @@index([tokenId])
-}
-
-model VaultAccount {
-  id                String      @id @default(cuid())
-  userId            String      @unique
-  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  walletAddress     String?     @unique
-  custodianRef      String?
-  
-  usdcBalance       Decimal     @default(0) @db.Decimal(18, 6)
-  lockedBalance     Decimal     @default(0) @db.Decimal(18, 6)
-  
-  totalDeposited    Decimal     @default(0) @db.Decimal(18, 2)
-  totalWithdrawn    Decimal     @default(0) @db.Decimal(18, 2)
-  totalEarned       Decimal     @default(0) @db.Decimal(18, 6)
-  
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  
-  borrowPositions   BorrowPosition[]
-  
-  @@index([walletAddress])
-}
-
-model BorrowPosition {
-  id                  String        @id @default(cuid())
-  userId              String
-  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  vaultAccountId      String
-  vaultAccount        VaultAccount  @relation(fields: [vaultAccountId], references: [id], onDelete: Cascade)
-  
-  principal           Decimal       @db.Decimal(18, 2)
-  interestRate        Decimal       @db.Decimal(5, 4)
-  accruedInterest     Decimal       @default(0) @db.Decimal(18, 2)
-  
-  collateralValue     Decimal       @db.Decimal(18, 2)
-  collateralRatio     Decimal       @db.Decimal(5, 4)
-  liquidationThreshold Decimal      @db.Decimal(5, 4) @default(0.75)
-  
-  status              BorrowStatus  @default(ACTIVE)
-  
-  borrowedAt          DateTime      @default(now())
-  dueDate             DateTime?
-  repaidAt            DateTime?
-  lastInterestUpdate  DateTime      @default(now())
-  
-  stripePayoutId      String?
-  txHash              String?
-  
-  collaterals         BorrowCollateral[]
-  repayments          BorrowRepayment[]
-  
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
-  
-  @@index([userId])
-  @@index([vaultAccountId])
-  @@index([status])
-  @@index([stripePayoutId])
-}
-
-model BorrowCollateral {
-  id                String          @id @default(cuid())
-  borrowPositionId  String
-  borrowPosition    BorrowPosition  @relation(fields: [borrowPositionId], references: [id], onDelete: Cascade)
-  
-  propertyId        String
-  tokenId           Int
-  amount            Int
-  valueAtLock       Decimal         @db.Decimal(18, 2)
-  currentValue      Decimal         @db.Decimal(18, 2)
-  
-  lockedAt          DateTime        @default(now())
-  unlockedAt        DateTime?
-  
-  txHashLock        String?
-  txHashUnlock      String?
-  
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  
-  @@index([borrowPositionId])
-  @@index([propertyId])
-  @@index([tokenId])
-}
-
-model BorrowRepayment {
-  id                String          @id @default(cuid())
-  borrowPositionId  String
-  borrowPosition    BorrowPosition  @relation(fields: [borrowPositionId], references: [id], onDelete: Cascade)
-  
-  principalPaid     Decimal         @db.Decimal(18, 2)
-  interestPaid      Decimal         @db.Decimal(18, 2)
-  totalPaid         Decimal         @db.Decimal(18, 2)
-  
-  paymentMethodType String
-  stripePaymentIntentId String?
-  
-  txHash            String?
-  
-  paidAt            DateTime        @default(now())
-  createdAt         DateTime        @default(now())
-  
-  @@index([borrowPositionId])
-  @@index([stripePaymentIntentId])
-}
-
-model Transaction {
-  id                String            @id @default(cuid())
-  userId            String
-  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  type              TransactionType
-  status            TransactionStatus @default(PENDING)
-  
-  amount            Decimal           @db.Decimal(18, 6)
-  currency          String            @default("USDC")
-  
-  propertyId        String?
-  tokenQuantity     Int?
-  tokenPrice        Decimal?          @db.Decimal(18, 6)
-  
-  fee               Decimal?          @db.Decimal(18, 6)
-  
-  txHash            String?
-  blockNumber       Int?
-  chainId           Int?
-  
-  reference         String?
-  description       String?
-  metadata          Json?
-  
-  failureReason     String?
-  
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  completedAt       DateTime?
-  
-  @@index([userId])
-  @@index([type])
-  @@index([status])
-  @@index([propertyId])
-  @@index([txHash])
-  @@index([createdAt])
-}
-
-model RentPayment {
-  id                String      @id @default(cuid())
-  propertyId        String
-  property          Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  
-  periodStart       DateTime
-  periodEnd         DateTime
-  
-  grossAmount       Decimal     @db.Decimal(18, 2)
-  netAmount         Decimal     @db.Decimal(18, 2)
-  managementFee     Decimal     @db.Decimal(18, 2)
-  
-  perTokenAmount    Decimal     @db.Decimal(18, 6)
-  
-  distributedAt     DateTime?
-  status            TransactionStatus @default(PENDING)
-  
-  txHash            String?
-  
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
-  
-  distributions     RentDistribution[]
-  
-  @@index([propertyId])
-  @@index([periodStart, periodEnd])
-  @@index([status])
-}
-
 enum PaymentMethodType {
   CARD
   US_BANK_ACCOUNT
@@ -448,127 +556,6 @@ enum CryptoCurrency {
   DAI
 }
 
-model PaymentMethod {
-  id                    String              @id @default(cuid())
-  userId                String
-  user                  User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  stripePaymentMethodId String              @unique
-  stripeCustomerId      String
-  
-  type                  PaymentMethodType
-  isDefault             Boolean             @default(false)
-  
-  cardBrand             String?
-  cardLast4             String?
-  cardExpMonth          Int?
-  cardExpYear           Int?
-  
-  bankName              String?
-  bankLast4             String?
-  bankAccountType       String?
-  bankStatus            BankAccountStatus?
-  
-  nickname              String?
-  
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  
-  @@index([userId])
-  @@index([stripePaymentMethodId])
-  @@index([stripeCustomerId])
-}
-
-model CryptoPayment {
-  id                  String              @id @default(cuid())
-  userId              String
-  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  coinbaseChargeId    String              @unique
-  coinbaseChargeCode  String              @unique
-  
-  amount              Decimal             @db.Decimal(18, 2)
-  currency            String              @default("USD")
-  
-  cryptoCurrency      CryptoCurrency?
-  cryptoAmount        Decimal?            @db.Decimal(28, 18)
-  
-  status              CryptoPaymentStatus @default(PENDING)
-  
-  hostedUrl           String?
-  expiresAt           DateTime?
-  
-  confirmedAt         DateTime?
-  txHash              String?
-  
-  metadata            Json?
-  
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  
-  @@index([userId])
-  @@index([coinbaseChargeId])
-  @@index([status])
-  @@index([createdAt])
-}
-
-model RentDistribution {
-  id                String      @id @default(cuid())
-  
-  rentPaymentId     String
-  rentPayment       RentPayment @relation(fields: [rentPaymentId], references: [id], onDelete: Cascade)
-  
-  userId            String
-  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  holdingId         String
-  
-  propertyId        String
-  
-  tokensHeld        Int
-  totalTokens       Int
-  ownershipPercent  Decimal     @db.Decimal(10, 6)
-  
-  grossAmount       Decimal     @db.Decimal(18, 6)
-  interestDeducted  Decimal     @db.Decimal(18, 6)   @default(0)
-  netAmount         Decimal     @db.Decimal(18, 6)
-  
-  distributedAt     DateTime    @default(now())
-  
-  txHash            String?
-  
-  createdAt         DateTime    @default(now())
-  
-  @@index([rentPaymentId])
-  @@index([userId])
-  @@index([propertyId])
-  @@index([distributedAt])
-}
-
-model DistributionRun {
-  id                String      @id @default(cuid())
-  
-  runType           String      @default("SCHEDULED")
-  triggeredBy       String?
-  
-  propertiesProcessed  Int      @default(0)
-  rentPaymentsProcessed Int     @default(0)
-  holdersDistributed   Int      @default(0)
-  
-  totalGrossDistributed   Decimal  @db.Decimal(18, 6)  @default(0)
-  totalInterestDeducted   Decimal  @db.Decimal(18, 6)  @default(0)
-  totalNetDistributed     Decimal  @db.Decimal(18, 6)  @default(0)
-  
-  status            String      @default("RUNNING")
-  errorMessage      String?
-  
-  startedAt         DateTime    @default(now())
-  completedAt       DateTime?
-  
-  @@index([status])
-  @@index([startedAt])
-}
-
 enum UserRole {
   USER
   TOKENIZER
@@ -597,111 +584,4 @@ enum VoteChoice {
   FOR
   AGAINST
   ABSTAIN
-}
-
-model Proposal {
-  id                String          @id @default(cuid())
-  
-  title             String
-  description       String
-  
-  proposerId        String
-  
-  status            ProposalStatus  @default(DRAFT)
-  
-  votingStartsAt    DateTime?
-  votingEndsAt      DateTime?
-  
-  forVotes          Int             @default(0)
-  againstVotes      Int             @default(0)
-  abstainVotes      Int             @default(0)
-  
-  quorumRequired    Int             @default(100)
-  passThreshold     Decimal         @db.Decimal(5, 2)  @default(50.00)
-  
-  executedAt        DateTime?
-  
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
-  
-  votes             Vote[]
-  
-  @@index([status])
-  @@index([proposerId])
-  @@index([votingEndsAt])
-}
-
-model Vote {
-  id                String      @id @default(cuid())
-  
-  proposalId        String
-  proposal          Proposal    @relation(fields: [proposalId], references: [id], onDelete: Cascade)
-  
-  userId            String
-  
-  choice            VoteChoice
-  votingPower       Int         @default(1)
-  
-  comment           String?
-  
-  createdAt         DateTime    @default(now())
-  
-  @@unique([proposalId, userId])
-  @@index([proposalId])
-  @@index([userId])
-}
-
-model TokenizationSubmission {
-  id                  String              @id @default(cuid())
-  
-  tokenizerId         String
-  tokenizer           User                @relation(fields: [tokenizerId], references: [id], onDelete: Cascade)
-  
-  status              TokenizationStatus  @default(DRAFT)
-  
-  propertyName        String
-  propertyAddress     String
-  propertyCity        String
-  propertyState       String
-  propertyCountry     String
-  propertyZipCode     String?
-  propertyType        PropertyType
-  
-  totalValue          Decimal             @db.Decimal(18, 2)
-  tokenPrice          Decimal             @db.Decimal(18, 6)
-  totalTokens         Int
-  annualYield         Decimal             @db.Decimal(5, 2)
-  monthlyRent         Decimal?            @db.Decimal(18, 2)
-  
-  description         String?
-  imageUrl            String?
-  images              String[]
-  documents           String[]
-  
-  squareFeet          Int?
-  bedrooms            Int?
-  bathrooms           Decimal?            @db.Decimal(3, 1)
-  yearBuilt           Int?
-  
-  ownershipProof      String?
-  legalDocuments      String[]
-  financialStatements String[]
-  
-  reviewedById        String?
-  reviewNotes         String?
-  rejectionReason     String?
-  
-  submittedAt         DateTime?
-  reviewedAt          DateTime?
-  approvedAt          DateTime?
-  publishedAt         DateTime?
-  
-  propertyId          String?             @unique
-  
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  
-  @@index([tokenizerId])
-  @@index([status])
-  @@index([createdAt])
 }
