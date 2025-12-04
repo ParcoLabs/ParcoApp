@@ -143,9 +143,9 @@ export const TokenizerPreDashboard: React.FC = () => {
   const progressPercent = activeSubmission?.progress || 60;
 
   return (
-    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-4 md:space-y-6 w-full box-border">
       {!activeSubmission ? (
-        <div className="bg-white border border-brand-sage/20 rounded-xl p-12 text-center">
+        <div className="bg-white border border-brand-sage/20 rounded-xl p-8 md:p-12 text-center">
           <div className="w-16 h-16 bg-brand-sage/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fa-solid fa-building text-2xl text-brand-sage"></i>
           </div>
@@ -160,24 +160,24 @@ export const TokenizerPreDashboard: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* Top Section - 3 Column Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Top Section - Stacked on mobile, 3 Column Grid on desktop */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             {/* Left Column - Property In Progress */}
-            <div className="bg-white rounded-xl border border-brand-lightGray p-6">
-              <h2 className="text-lg font-bold text-brand-dark mb-4">Property In Progress</h2>
+            <div className="bg-white rounded-xl border border-brand-lightGray p-4 md:p-6">
+              <h2 className="text-base md:text-lg font-bold text-brand-dark mb-3 md:mb-4">Property In Progress</h2>
               
-              <div className="bg-brand-offWhite rounded-lg p-4 mb-4">
+              <div className="bg-brand-offWhite rounded-lg p-3 md:p-4 mb-3 md:mb-4">
                 <img 
                   src={activeSubmission.imageUrl || activeSubmission.images?.[0] || 'https://picsum.photos/200/150?random=1'}
                   alt="Property"
-                  className="w-full h-28 object-cover rounded-lg bg-brand-lightGray mb-3"
+                  className="w-full h-24 md:h-28 object-cover rounded-lg bg-brand-lightGray mb-2 md:mb-3"
                 />
-                <p className="text-[10px] text-brand-sage mb-1">Current page's Property Listing's Images</p>
+                <p className="text-[10px] text-brand-sage">Property Image</p>
               </div>
 
-              <div className="mb-4">
-                <p className="text-sm font-medium text-brand-dark">{getDisplayAddress(activeSubmission)}</p>
-                <p className="text-[10px] text-brand-sage">Current page's Property Listing's Address</p>
+              <div className="mb-3 md:mb-4">
+                <p className="text-sm font-medium text-brand-dark truncate">{getDisplayAddress(activeSubmission)}</p>
+                <p className="text-[10px] text-brand-sage">Property Address</p>
               </div>
 
               <div>
@@ -185,7 +185,7 @@ export const TokenizerPreDashboard: React.FC = () => {
                 <div className="relative h-6 bg-brand-lightGray rounded-full overflow-hidden">
                   <div 
                     className="absolute top-0 left-0 h-full bg-brand-deep rounded-full flex items-center justify-end pr-3"
-                    style={{ width: `${progressPercent}%` }}
+                    style={{ width: `${Math.max(progressPercent, 15)}%` }}
                   >
                     <span className="text-xs font-bold text-white">{progressPercent}%</span>
                   </div>
@@ -196,45 +196,44 @@ export const TokenizerPreDashboard: React.FC = () => {
             {/* Right Columns - Valuation and Cards */}
             <div className="lg:col-span-2 space-y-4">
               {/* Parco Intelligence Valuation Banner */}
-              <div className="bg-brand-deep text-white rounded-xl p-6">
-                <h3 className="text-lg font-bold mb-2">Parco Intelligence Valuation:</h3>
-                <p className="text-sm opacity-90">Current page's Property Listing's</p>
-                <p className="text-sm opacity-90">parco_valuation_average:formatted as ${estimatedValue.toLocaleString()}</p>
+              <div className="bg-brand-deep text-white rounded-xl p-4 md:p-6">
+                <h3 className="text-base md:text-lg font-bold mb-1 md:mb-2">Parco Intelligence Valuation:</h3>
+                <p className="text-2xl md:text-3xl font-bold">${estimatedValue.toLocaleString()}</p>
               </div>
 
               {/* Two Column Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 {/* Funds Raising Goal */}
-                <div className="bg-white rounded-xl border border-brand-lightGray p-5">
-                  <h3 className="text-sm font-bold text-brand-dark mb-4">Funds Raising Goal</h3>
-                  <div className="flex items-start gap-3">
-                    <div className="w-16 h-16 rounded-full border-4 border-brand-deep flex items-center justify-center flex-shrink-0">
-                      <i className="fa-solid fa-house text-brand-deep text-xl"></i>
+                <div className="bg-white rounded-xl border border-brand-lightGray p-4 md:p-5">
+                  <h3 className="text-sm font-bold text-brand-dark mb-3 md:mb-4">Funds Raising Goal</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full border-4 border-brand-deep flex items-center justify-center flex-shrink-0">
+                      <i className="fa-solid fa-house text-brand-deep text-lg md:text-xl"></i>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-brand-dark leading-tight">Current page's Property Listing's Valuation:formatted as</p>
-                      <p className="text-lg font-bold text-brand-dark">${(estimatedValue).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] md:text-xs text-brand-sage">Property Valuation</p>
+                      <p className="text-base md:text-lg font-bold text-brand-dark">${(estimatedValue).toLocaleString()}</p>
                     </div>
                   </div>
-                  <button className="text-xs text-brand-sage hover:text-brand-deep mt-4 transition-colors">
+                  <button className="text-xs text-brand-sage hover:text-brand-deep mt-3 md:mt-4 transition-colors">
                     Review Terms
                   </button>
                 </div>
 
                 {/* Token Terms */}
-                <div className="bg-white rounded-xl border border-brand-lightGray p-5">
-                  <h3 className="text-sm font-bold text-brand-dark mb-4">Token Terms</h3>
-                  <div className="flex items-start gap-3">
-                    <div className="w-16 h-16 rounded-full border-4 border-brand-deep flex items-center justify-center flex-shrink-0">
-                      <i className="fa-solid fa-coins text-brand-deep text-xl"></i>
+                <div className="bg-white rounded-xl border border-brand-lightGray p-4 md:p-5">
+                  <h3 className="text-sm font-bold text-brand-dark mb-3 md:mb-4">Token Terms</h3>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 md:w-16 md:h-16 rounded-full border-4 border-brand-deep flex items-center justify-center flex-shrink-0">
+                      <i className="fa-solid fa-coins text-brand-deep text-lg md:text-xl"></i>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs text-brand-dark leading-tight">Current page's Property Listing's Total Tokens Issued</p>
-                      <p className="text-lg font-bold text-brand-dark">{tokensToIssue.toLocaleString()}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] md:text-xs text-brand-sage">Total Tokens Issued</p>
+                      <p className="text-base md:text-lg font-bold text-brand-dark">{tokensToIssue.toLocaleString()}</p>
                     </div>
                   </div>
-                  <button className="text-xs text-brand-sage hover:text-brand-deep mt-4 transition-colors">
-                    Set Token Contract Terms
+                  <button className="text-xs text-brand-sage hover:text-brand-deep mt-3 md:mt-4 transition-colors">
+                    Set Token Terms
                   </button>
                 </div>
               </div>
@@ -382,34 +381,52 @@ export const TokenizerPreDashboard: React.FC = () => {
           </div>
 
           {/* Notifications */}
-          <div className="bg-white rounded-xl border border-brand-lightGray p-6">
-            <h2 className="text-lg font-bold text-brand-dark mb-4">Notifications</h2>
+          <div className="bg-white rounded-xl border border-brand-lightGray p-4 md:p-6">
+            <h2 className="text-base md:text-lg font-bold text-brand-dark mb-3 md:mb-4">Notifications</h2>
             
-            <div className="flex items-center gap-2 mb-6">
-              <span className="px-4 py-2 bg-brand-dark text-white text-xs font-medium rounded-lg">
+            <div className="flex items-center gap-2 mb-4 md:mb-6">
+              <span className="px-3 py-1.5 md:px-4 md:py-2 bg-brand-dark text-white text-xs font-medium rounded-lg">
                 Pending Listing
               </span>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+              <div className="bg-brand-offWhite rounded-lg p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0 pr-3">
+                    <p className="text-sm font-medium text-brand-dark truncate">{getDisplayAddress(activeSubmission)}</p>
+                    <p className="text-xs text-brand-sage mt-1">Documents needed for review</p>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-brand-deep text-white flex-shrink-0">
+                    High
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-brand-sage">
+                  <i className="fa-solid fa-file-lines"></i>
+                  <span>Re-upload Property Deed required</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full min-w-[500px]">
                 <thead>
                   <tr className="border-b border-brand-lightGray">
-                    <th className="text-left py-3 pr-4 text-xs font-medium text-brand-sage">Current page's Property Listing's Address</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-brand-sage">Doc's Needed2</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-brand-sage">Re Upload Deed</th>
-                    <th className="text-left py-3 px-4 text-xs font-medium text-brand-sage">Admin</th>
-                    <th className="text-right py-3 pl-4 text-xs font-medium text-brand-sage"></th>
+                    <th className="text-left py-3 pr-4 text-xs font-medium text-brand-sage">Property</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-brand-sage">Action Required</th>
+                    <th className="text-left py-3 px-4 text-xs font-medium text-brand-sage">Details</th>
+                    <th className="text-right py-3 pl-4 text-xs font-medium text-brand-sage">Priority</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
                     <td className="py-4 pr-4 text-sm text-brand-dark">{getDisplayAddress(activeSubmission)}</td>
-                    <td className="py-4 px-4 text-sm text-brand-dark">Doc's Needed2</td>
-                    <td className="py-4 px-4 text-sm text-brand-dark">Re Upload Deed</td>
-                    <td className="py-4 px-4 text-sm text-brand-dark">Admin</td>
+                    <td className="py-4 px-4 text-sm text-brand-dark">Documents Needed</td>
+                    <td className="py-4 px-4 text-sm text-brand-dark">Re-upload Property Deed</td>
                     <td className="py-4 pl-4 text-right">
-                      <span className="px-6 py-2 rounded-full text-xs font-bold bg-brand-deep text-white">
+                      <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-brand-deep text-white">
                         High
                       </span>
                     </td>
@@ -418,11 +435,11 @@ export const TokenizerPreDashboard: React.FC = () => {
               </table>
             </div>
 
-            <div className="flex items-center justify-end gap-3 mt-6 text-xs text-brand-sage">
+            <div className="flex items-center justify-center md:justify-end gap-3 mt-4 md:mt-6 text-xs text-brand-sage">
               <button 
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="p-1 hover:text-brand-dark disabled:opacity-50"
+                className="p-2 hover:text-brand-dark disabled:opacity-50"
               >
                 <i className="fa-solid fa-chevron-left"></i>
               </button>
@@ -430,7 +447,7 @@ export const TokenizerPreDashboard: React.FC = () => {
               <button 
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="p-1 hover:text-brand-dark disabled:opacity-50"
+                className="p-2 hover:text-brand-dark disabled:opacity-50"
               >
                 <i className="fa-solid fa-chevron-right"></i>
               </button>

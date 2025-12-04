@@ -133,11 +133,11 @@ export const TokenizerLayout: React.FC<{ children?: React.ReactNode }> = ({ chil
 
   return (
     <TokenizerContext.Provider value={{ viewMode, setViewMode, propertyName, setPropertyName }}>
-      <div className="flex min-h-screen bg-brand-offWhite">
+      <div className="flex min-h-screen bg-brand-offWhite overflow-x-hidden">
         <TokenizerNavigation viewMode={viewMode} propertyName={propertyName} />
-        <div className="flex-1 md:ml-64 pt-14 md:pt-0 pb-20 md:pb-0 flex flex-col min-h-screen">
+        <div className="flex-1 md:ml-64 pt-14 md:pt-0 pb-20 md:pb-0 flex flex-col min-h-screen w-full overflow-x-hidden">
           <TokenizerHeader viewMode={viewMode} />
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden">
             {children || <Outlet />}
           </main>
           {viewMode === 'pre' && (
