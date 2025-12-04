@@ -15,6 +15,7 @@ import rentRoutes from './routes/rent';
 import systemRoutes from './routes/system';
 import demoRoutes from './routes/demo';
 import userSettingsRoutes from './routes/userSettings';
+import adminRoutes from './routes/admin';
 import { isDemoMode } from './lib/demoMode';
 import { getStripeSync } from './lib/stripeClient';
 import { WebhookHandlers } from './lib/webhookHandlers';
@@ -134,6 +135,7 @@ app.use('/api/rent', rentRoutes);
 app.use('/api/system', systemRoutes);
 app.use('/api/demo', demoRoutes);
 app.use('/api/user', userSettingsRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

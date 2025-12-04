@@ -13,6 +13,7 @@ import { Settings } from './frontend/pages/Settings';
 import { DefiPage } from './frontend/pages/defi/DefiPage';
 import { PaymentMethods } from './frontend/pages/PaymentMethods';
 import { Governance } from './frontend/pages/Governance';
+import { AdminLayout, AdminTokenizations, AdminProperties, AdminInvestors, AdminRent, AdminDemo } from './frontend/pages/admin';
 import { AuthProvider } from './frontend/context/AuthContext';
 import { DemoModeProvider } from './frontend/context/DemoModeContext';
 
@@ -114,6 +115,15 @@ const App: React.FC = () => {
             <Route path="/payment-methods" element={<ProtectedRoute><PaymentMethods /></ProtectedRoute>} />
             
             <Route path="/borrow" element={<Navigate to="/defi" replace />} />
+
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Navigate to="/admin/tokenizations" replace />} />
+              <Route path="tokenizations" element={<AdminTokenizations />} />
+              <Route path="properties" element={<AdminProperties />} />
+              <Route path="investors" element={<AdminInvestors />} />
+              <Route path="rent" element={<AdminRent />} />
+              <Route path="demo" element={<AdminDemo />} />
+            </Route>
             
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

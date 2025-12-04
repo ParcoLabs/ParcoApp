@@ -76,6 +76,7 @@ model User {
   country           String?
   stripeCustomerId  String?         @unique
   isDemoUser        Boolean         @default(false)
+  role              UserRole        @default(USER)
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   
@@ -89,10 +90,12 @@ model User {
   paymentMethods    PaymentMethod[]
   cryptoPayments    CryptoPayment[]
   rentDistributions RentDistribution[]
+  tokenizationSubmissions TokenizationSubmission[]
   
   @@index([clerkId])
   @@index([email])
   @@index([stripeCustomerId])
+  @@index([role])
 }
 
 model KYCVerification {
@@ -558,6 +561,21 @@ model DistributionRun {
   @@index([startedAt])
 }
 
+enum UserRole {
+  USER
+  TOKENIZER
+  ADMIN
+}
+
+enum TokenizationStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  PUBLISHED
+}
+
 enum ProposalStatus {
   DRAFT
   ACTIVE
@@ -623,4 +641,59 @@ model Vote {
   @@unique([proposalId, userId])
   @@index([proposalId])
   @@index([userId])
+}
+
+model TokenizationSubmission {
+  id                  String              @id @default(cuid())
+  
+  tokenizerId         String
+  tokenizer           User                @relation(fields: [tokenizerId], references: [id], onDelete: Cascade)
+  
+  status              TokenizationStatus  @default(DRAFT)
+  
+  propertyName        String
+  propertyAddress     String
+  propertyCity        String
+  propertyState       String
+  propertyCountry     String
+  propertyZipCode     String?
+  propertyType        PropertyType
+  
+  totalValue          Decimal             @db.Decimal(18, 2)
+  tokenPrice          Decimal             @db.Decimal(18, 6)
+  totalTokens         Int
+  annualYield         Decimal             @db.Decimal(5, 2)
+  monthlyRent         Decimal?            @db.Decimal(18, 2)
+  
+  description         String?
+  imageUrl            String?
+  images              String[]
+  documents           String[]
+  
+  squareFeet          Int?
+  bedrooms            Int?
+  bathrooms           Decimal?            @db.Decimal(3, 1)
+  yearBuilt           Int?
+  
+  ownershipProof      String?
+  legalDocuments      String[]
+  financialStatements String[]
+  
+  reviewedById        String?
+  reviewNotes         String?
+  rejectionReason     String?
+  
+  submittedAt         DateTime?
+  reviewedAt          DateTime?
+  approvedAt          DateTime?
+  publishedAt         DateTime?
+  
+  propertyId          String?             @unique
+  
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  
+  @@index([tokenizerId])
+  @@index([status])
+  @@index([createdAt])
 }

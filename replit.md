@@ -136,3 +136,61 @@ Returns comprehensive status including vault balance, portfolio value, active bo
 - **Settings**: Demo Mode section with reset functionality
 - **Governance**: Proposal creation and voting interface (demo only)
 - **Navigation**: Governance link visible only in demo mode
+
+### Admin Role System
+Database-driven role-based access control for platform administration:
+
+#### User Roles (UserRole enum)
+- **USER**: Default role for regular investors
+- **TOKENIZER**: Property tokenization submission privileges
+- **ADMIN**: Full administrative access to all platform features
+
+#### Role Field
+- Added `role` field to User model with default value of USER
+- Roles are stored in database, not in Clerk (additive design)
+- Existing Clerk authentication logic remains unchanged
+
+#### Admin Middleware (server/middleware/admin.ts)
+- **loadUserWithRole**: Loads user with role from database
+- **adminOnly**: Requires ADMIN role, returns 403 if not admin
+- **tokenizerOrAdmin**: Allows TOKENIZER or ADMIN roles
+
+#### Admin API Endpoints
+- **GET /api/admin/user/role**: Get current user's role status
+- **POST /api/admin/user/set-role**: Change user role (admin only)
+  - Body: { userId, role }
+  - Validates role is USER, TOKENIZER, or ADMIN
+- **GET /api/admin/users**: List all users with filters (search, role, pagination)
+- **GET /api/admin/stats**: Platform statistics (users, properties, tokenizations)
+
+#### Tokenization Review System
+Model: TokenizationSubmission with full property details, documents, and compliance tracking
+
+**Status Flow**: DRAFT → SUBMITTED → IN_REVIEW → APPROVED/REJECTED → PUBLISHED
+
+**Endpoints**:
+- **GET /api/admin/tokenizations**: List submissions with status filter
+- **GET /api/admin/tokenizations/:id**: Full submission details
+- **POST /api/admin/tokenizations/:id/start-review**: Set status to IN_REVIEW
+- **POST /api/admin/tokenizations/:id/approve**: Approve submission
+  - Body: { notes } (optional)
+- **POST /api/admin/tokenizations/:id/reject**: Reject submission
+  - Body: { reason, notes }
+
+#### Frontend Admin Panel (/admin)
+- **AdminLayout**: Role-based access check, tabs navigation
+- **Tokenizations Tab**: Table with submissions, status filter, detail drawer
+  - View full property info, financials, documents
+  - Approve/Reject actions with confirmation
+- **Properties Tab**: Property management (placeholder)
+- **Investors Tab**: User list with role editing
+  - Search by name/email
+  - Filter by role
+  - Change user roles via modal
+- **Rent Tab**: Rent distribution management (placeholder)
+- **Demo Tools Tab**: Platform statistics and demo utilities
+
+#### Navigation Integration
+- Admin link in sidebar (purple) only visible to ADMIN users
+- Checks role via /api/admin/user/role endpoint on component mount
+- Access denied page shown to non-admins who navigate directly to /admin
