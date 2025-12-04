@@ -39,6 +39,16 @@ The platform uses React for the frontend, styled with TailwindCSS and featuring 
   - **Post-tokenization View**: Displays property overview with value, occupancy rate, rental income, expenses, net profit, token holder count, and charts for property appreciation, earnings/expenses, and token holder growth
   - **Tokenizer Navigation**: Dedicated sidebar with tokenizer-specific navigation (Overview, My Properties, Rental Income, Token Holders, Compliance, Notifications, Submit Property)
   - **Tokenizer Settings**: View mode toggle (pre/post, defaults to post), switch to investor account button, persisted via tokenizerViewMode field in database
+- **Admin Dashboard**: Dedicated admin interface with sidebar navigation:
+  - **Admin Navigation**: Sidebar with Overview, Tokenizations, Properties, Investors, Rent Distribution, Demo Tools
+  - **Admin Overview**: Dashboard home with stats cards (Total Users, Properties, Pending Reviews, Pending KYC), quick action buttons, recent activity feed, platform status
+  - **Role-Based Routing**: ADMIN users automatically redirected to /admin on login, TOKENIZER users to /tokenizer
+
+### Mobile Responsiveness
+All three dashboard types (Investor, Tokenizer, Admin) are fully mobile responsive:
+- **Desktop**: Fixed sidebar navigation (264px width)
+- **Mobile**: Top header with logo and action buttons, bottom tab bar for quick navigation
+- **Responsive Grids**: Content adapts from multi-column on desktop to single-column on mobile
 
 ### System Design Choices
 - Client-side routing with BrowserRouter.
