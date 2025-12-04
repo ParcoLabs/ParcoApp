@@ -28,49 +28,67 @@ interface TokenizerHeaderProps {
 const TokenizerHeader: React.FC<TokenizerHeaderProps> = ({ viewMode }) => {
   const navigate = useNavigate();
   
-  if (viewMode === 'pre') {
-    return (
-      <div className="hidden md:flex items-center justify-end gap-6 px-8 py-4 bg-white border-b border-brand-lightGray">
-        <button className="text-sm text-brand-sage hover:text-brand-dark transition-colors font-medium">
-          Alerts
-        </button>
-        <button 
-          onClick={() => navigate('/tokenizer/settings')}
-          className="text-sm text-brand-sage hover:text-brand-dark transition-colors font-medium"
-        >
-          Settings
-        </button>
-      </div>
-    );
-  }
-
   return (
-    <div className="hidden md:flex items-center justify-between px-8 py-4 bg-white border-b border-brand-lightGray">
-      <div className="flex-1 max-w-md">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search"
-            className="w-full pl-10 pr-4 py-2 border border-brand-lightGray rounded-lg text-sm focus:outline-none focus:border-brand-deep"
-          />
-          <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-brand-sage text-sm"></i>
+    <>
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-brand-lightGray z-40 px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <img src="/brand/ParcoLogoGreen.png" alt="Parco Logo" className="w-8 h-8 object-contain" />
+          <span className="text-lg font-logo text-brand-deep tracking-wider uppercase">Parco</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <button className="p-2 text-brand-sage hover:text-brand-dark">
+            <i className="fa-solid fa-bell text-lg"></i>
+          </button>
+          <button 
+            onClick={() => navigate('/tokenizer/settings')}
+            className="p-2 text-brand-sage hover:text-brand-dark"
+          >
+            <i className="fa-solid fa-gear text-lg"></i>
+          </button>
         </div>
       </div>
-      <div className="flex items-center gap-6">
-        <button className="text-sm text-brand-sage hover:text-brand-dark transition-colors font-medium">
-          Alerts
-        </button>
-        <button className="text-sm text-brand-sage hover:text-brand-dark transition-colors font-medium">
-          Help
-        </button>
-        <button 
-          onClick={() => navigate('/tokenizer/settings')}
-          className="text-sm text-brand-sage hover:text-brand-dark transition-colors font-medium"
-        >
-          Settings
-        </button>
-      </div>
-    </div>
+
+      {viewMode === 'pre' ? (
+        <div className="hidden md:flex items-center justify-end gap-6 px-8 py-4 bg-white border-b border-brand-lightGray">
+          <button className="text-sm text-brand-sage hover:text-brand-dark transition-colors font-medium">
+            Alerts
+          </button>
+          <button 
+            onClick={() => navigate('/tokenizer/settings')}
+            className="text-sm text-brand-sage hover:text-brand-dark transition-colors font-medium"
+          >
+            Settings
+          </button>
+        </div>
+      ) : (
+        <div className="hidden md:flex items-center justify-between px-8 py-4 bg-white border-b border-brand-lightGray">
+          <div className="flex-1 max-w-md">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search"
+                className="w-full pl-10 pr-4 py-2 border border-brand-lightGray rounded-lg text-sm focus:outline-none focus:border-brand-deep"
+              />
+              <i className="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-brand-sage text-sm"></i>
+            </div>
+          </div>
+          <div className="flex items-center gap-6">
+            <button className="text-sm text-brand-sage hover:text-brand-dark transition-colors font-medium">
+              Alerts
+            </button>
+            <button className="text-sm text-brand-sage hover:text-brand-dark transition-colors font-medium">
+              Help
+            </button>
+            <button 
+              onClick={() => navigate('/tokenizer/settings')}
+              className="text-sm text-brand-sage hover:text-brand-dark transition-colors font-medium"
+            >
+              Settings
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
@@ -117,7 +135,7 @@ export const TokenizerLayout: React.FC<{ children?: React.ReactNode }> = ({ chil
     <TokenizerContext.Provider value={{ viewMode, setViewMode, propertyName, setPropertyName }}>
       <div className="flex min-h-screen bg-brand-offWhite">
         <TokenizerNavigation viewMode={viewMode} propertyName={propertyName} />
-        <div className="flex-1 md:ml-64 pb-20 md:pb-0 flex flex-col h-screen">
+        <div className="flex-1 md:ml-64 pt-14 md:pt-0 pb-20 md:pb-0 flex flex-col min-h-screen">
           <TokenizerHeader viewMode={viewMode} />
           <main className="flex-1 overflow-y-auto">
             {children || <Outlet />}

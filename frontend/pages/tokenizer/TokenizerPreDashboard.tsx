@@ -180,7 +180,7 @@ export const TokenizerPreDashboard: React.FC = () => {
               </div>
 
               {/* Two Column Cards */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Funds Raising Goal */}
                 <div className="bg-white rounded-xl border border-brand-lightGray p-5">
                   <h3 className="text-sm font-bold text-brand-dark mb-4">Funds Raising Goal</h3>

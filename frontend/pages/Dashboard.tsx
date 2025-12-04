@@ -46,6 +46,8 @@ export const Dashboard: React.FC = () => {
   useEffect(() => {
     if (user?.role === 'TOKENIZER') {
       navigate('/tokenizer', { replace: true });
+    } else if (user?.role === 'ADMIN') {
+      navigate('/admin', { replace: true });
     }
   }, [user?.role, navigate]);
 
@@ -57,7 +59,7 @@ export const Dashboard: React.FC = () => {
     }
   }, [demoMode, user]);
 
-  if (user?.role === 'TOKENIZER') {
+  if (user?.role === 'TOKENIZER' || user?.role === 'ADMIN') {
     return null;
   }
 

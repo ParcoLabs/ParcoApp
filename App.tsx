@@ -13,7 +13,7 @@ import { Settings } from './frontend/pages/Settings';
 import { DefiPage } from './frontend/pages/defi/DefiPage';
 import { PaymentMethods } from './frontend/pages/PaymentMethods';
 import { Governance } from './frontend/pages/Governance';
-import { AdminLayout, AdminTokenizations, AdminProperties, AdminInvestors, AdminRent, AdminDemo } from './frontend/pages/admin';
+import { AdminLayout, AdminTokenizations, AdminProperties, AdminInvestors, AdminRent, AdminDemo, AdminOverview } from './frontend/pages/admin';
 import { MyProperties, TokenizerDashboard, TokenizerHome, TokenizerSettings, TokenizerLayout } from './frontend/pages/tokenizer';
 import { AuthProvider } from './frontend/context/AuthContext';
 import { DemoModeProvider } from './frontend/context/DemoModeContext';
@@ -151,7 +151,7 @@ const App: React.FC = () => {
             <Route path="/tokenizer/submit-property" element={<TokenizerRoute><MyProperties /></TokenizerRoute>} />
 
             <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<Navigate to="/admin/tokenizations" replace />} />
+              <Route index element={<AdminOverview />} />
               <Route path="tokenizations" element={<AdminTokenizations />} />
               <Route path="properties" element={<AdminProperties />} />
               <Route path="investors" element={<AdminInvestors />} />
