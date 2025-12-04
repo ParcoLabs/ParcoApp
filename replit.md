@@ -34,7 +34,11 @@ The platform uses React for the frontend, styled with TailwindCSS and featuring 
 - **Tokenization Review System**: Workflow for property tokenization submissions (DRAFT → SUBMITTED → IN_REVIEW → APPROVED/REJECTED → PUBLISHED).
 - **Property Management System**: Admin controls for minting, listing, pausing, and unpausing properties.
 - **Investor Operations System**: Admin tools to search investors, view profiles, holdings, vault balances, and loan positions.
-- **Tokenizer Dashboard**: Interface for tokenizers to manage their property submissions, track progress, and view submission details.
+- **Tokenizer Dashboard**: Comprehensive interface for tokenizers with dual view modes:
+  - **Pre-tokenization View**: Shows application progress, document checklist with received/approved status, Parco Intelligence Valuation, funds raising goals, token terms, and notifications for properties in progress
+  - **Post-tokenization View**: Displays property overview with value, occupancy rate, rental income, expenses, net profit, token holder count, and charts for property appreciation, earnings/expenses, and token holder growth
+  - **Tokenizer Navigation**: Dedicated sidebar with tokenizer-specific navigation (Overview, My Properties, Rental Income, Token Holders, Compliance, Notifications, Submit Property)
+  - **Tokenizer Settings**: View mode toggle (pre/post, defaults to post), switch to investor account button, persisted via tokenizerViewMode field in database
 
 ### System Design Choices
 - Client-side routing with BrowserRouter.
