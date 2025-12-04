@@ -6,6 +6,8 @@ export enum UserKycStatus {
   REJECTED = 'REJECTED'
 }
 
+export type UserRole = 'USER' | 'TOKENIZER' | 'ADMIN';
+
 export interface User {
   id: string;
   email: string;
@@ -13,6 +15,8 @@ export interface User {
   lastName: string;
   kycStatus: UserKycStatus;
   usdcBalance: number;
+  role?: UserRole;
+  tokenizerViewMode?: 'pre' | 'post';
 }
 
 export enum PropertyType {

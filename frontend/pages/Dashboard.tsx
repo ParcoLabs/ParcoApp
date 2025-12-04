@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { BrandColors } from '../brand';
 import { useDemoMode } from '../context/DemoModeContext';
 import { useDemo } from '../hooks/useDemo';
@@ -44,12 +44,22 @@ export const Dashboard: React.FC = () => {
   const [isSettingUp, setIsSettingUp] = useState(false);
 
   useEffect(() => {
+    if (user?.role === 'TOKENIZER') {
+      navigate('/tokenizer', { replace: true });
+    }
+  }, [user?.role, navigate]);
+
+  useEffect(() => {
     if (demoMode && user) {
       getDemoStatus().then(status => {
         if (status) setDemoStatus(status);
       });
     }
   }, [demoMode, user]);
+
+  if (user?.role === 'TOKENIZER') {
+    return null;
+  }
 
   const handleSetupDemo = async () => {
     setIsSettingUp(true);

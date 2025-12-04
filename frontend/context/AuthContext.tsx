@@ -9,6 +9,7 @@ interface AuthContextType {
   logout: () => void;
   getToken: () => Promise<string | null>;
   syncUser: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,6 +22,21 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { signOut } = useClerk();
   const [user, setUser] = React.useState<User | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+
+  const fetchUserRole = async (token: string): Promise<{ role: string; tokenizerViewMode?: string } | null> => {
+    try {
+      const roleResponse = await fetch(`${API_BASE_URL}/api/admin/user/role`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (roleResponse.ok) {
+        const roleData = await roleResponse.json();
+        return { role: roleData.role || 'USER', tokenizerViewMode: roleData.tokenizerViewMode };
+      }
+    } catch (error) {
+      console.error('Failed to fetch user role:', error);
+    }
+    return null;
+  };
 
   const syncUser = async () => {
     if (!clerkUser || !isSignedIn) return;
@@ -43,7 +59,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
+        const roleData = token ? await fetchUserRole(token) : null;
+        setUser({
+          ...data.user,
+          role: roleData?.role || 'USER',
+          tokenizerViewMode: roleData?.tokenizerViewMode,
+        });
       } else {
         setUser({
           id: clerkUser.id,
@@ -52,6 +73,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           lastName: clerkUser.lastName || '',
           kycStatus: UserKycStatus.PENDING,
           usdcBalance: 0,
+          role: 'USER',
         });
       }
     } catch (error) {
@@ -63,8 +85,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         lastName: clerkUser.lastName || '',
         kycStatus: UserKycStatus.PENDING,
         usdcBalance: 0,
+        role: 'USER',
       });
     }
+  };
+
+  const refreshUser = async () => {
+    await syncUser();
   };
 
   useEffect(() => {
@@ -98,6 +125,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         logout,
         getToken: getTokenAsync,
         syncUser,
+        refreshUser,
       }}
     >
       {children}

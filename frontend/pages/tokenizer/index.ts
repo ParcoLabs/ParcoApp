@@ -4,4 +4,4 @@ export { TokenizerHome } from './TokenizerHome';
 export { TokenizerPreDashboard } from './TokenizerPreDashboard';
 export { TokenizerPostDashboard } from './TokenizerPostDashboard';
 export { TokenizerSettings } from './TokenizerSettings';
-export { TokenizerLayout } from './TokenizerLayout';
+export { TokenizerLayout, useTokenizerContext } from './TokenizerLayout';
