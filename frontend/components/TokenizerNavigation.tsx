@@ -301,54 +301,98 @@ export const TokenizerNavigation: React.FC<TokenizerNavigationProps> = ({
         </div>
       )}
 
-      {/* Mobile Bottom Tab Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-brand-lightGray px-4 py-3 flex justify-between items-center z-50 pb-safe safe-area-bottom">
-        <button
-          onClick={() => navigate('/tokenizer')}
-          className={`flex flex-col items-center gap-1 ${
-            isActive('/tokenizer') && location.pathname === '/tokenizer' ? 'text-brand-deep' : 'text-brand-sage'
-          }`}
-        >
-          <i className="fa-solid fa-grid-2 text-lg mb-1"></i>
-          <span className="text-[10px] font-medium">Overview</span>
-        </button>
-        <button
-          onClick={() => navigate('/tokenizer/my-properties')}
-          className={`flex flex-col items-center gap-1 ${
-            isActive('/tokenizer/my-properties') ? 'text-brand-deep' : 'text-brand-sage'
-          }`}
-        >
-          <i className="fa-solid fa-building text-lg mb-1"></i>
-          <span className="text-[10px] font-medium">Properties</span>
-        </button>
-        <button
-          onClick={() => navigate('/tokenizer/rental-income')}
-          className={`flex flex-col items-center gap-1 ${
-            isActive('/tokenizer/rental-income') ? 'text-brand-deep' : 'text-brand-sage'
-          }`}
-        >
-          <i className="fa-solid fa-money-bill-trend-up text-lg mb-1"></i>
-          <span className="text-[10px] font-medium">Income</span>
-        </button>
-        <button
-          onClick={() => navigate('/tokenizer/token-holders')}
-          className={`flex flex-col items-center gap-1 ${
-            isActive('/tokenizer/token-holders') ? 'text-brand-deep' : 'text-brand-sage'
-          }`}
-        >
-          <i className="fa-solid fa-users text-lg mb-1"></i>
-          <span className="text-[10px] font-medium">Holders</span>
-        </button>
-        <button
-          onClick={() => navigate('/tokenizer/settings')}
-          className={`flex flex-col items-center gap-1 ${
-            isActive('/tokenizer/settings') ? 'text-brand-deep' : 'text-brand-sage'
-          }`}
-        >
-          <i className="fa-solid fa-gear text-lg mb-1"></i>
-          <span className="text-[10px] font-medium">Settings</span>
-        </button>
-      </div>
+      {/* Mobile Bottom Tab Bar - Pre-tokenization (restricted access) */}
+      {viewMode === 'pre' && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-brand-lightGray px-6 py-3 flex justify-around items-center z-50 pb-safe safe-area-bottom">
+          <button
+            onClick={() => navigate('/tokenizer')}
+            className={`flex flex-col items-center gap-1 ${
+              isActive('/tokenizer') && location.pathname === '/tokenizer' ? 'text-brand-deep' : 'text-brand-sage'
+            }`}
+          >
+            <i className="fa-solid fa-grid-2 text-lg mb-1"></i>
+            <span className="text-[10px] font-medium">Overview</span>
+          </button>
+          <button
+            onClick={() => navigate('/tokenizer/application')}
+            className={`flex flex-col items-center gap-1 ${
+              isActive('/tokenizer/application') ? 'text-brand-deep' : 'text-brand-sage'
+            }`}
+          >
+            <i className="fa-regular fa-file text-lg mb-1"></i>
+            <span className="text-[10px] font-medium">Application</span>
+          </button>
+          <button
+            onClick={() => navigate('/tokenizer/help')}
+            className={`flex flex-col items-center gap-1 ${
+              isActive('/tokenizer/help') ? 'text-brand-deep' : 'text-brand-sage'
+            }`}
+          >
+            <i className="fa-solid fa-circle-question text-lg mb-1"></i>
+            <span className="text-[10px] font-medium">Help</span>
+          </button>
+          <button
+            onClick={() => navigate('/tokenizer/settings')}
+            className={`flex flex-col items-center gap-1 ${
+              isActive('/tokenizer/settings') ? 'text-brand-deep' : 'text-brand-sage'
+            }`}
+          >
+            <i className="fa-solid fa-gear text-lg mb-1"></i>
+            <span className="text-[10px] font-medium">Settings</span>
+          </button>
+        </div>
+      )}
+
+      {/* Mobile Bottom Tab Bar - Post-tokenization (full access) */}
+      {viewMode === 'post' && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-brand-lightGray px-4 py-3 flex justify-between items-center z-50 pb-safe safe-area-bottom">
+          <button
+            onClick={() => navigate('/tokenizer')}
+            className={`flex flex-col items-center gap-1 ${
+              isActive('/tokenizer') && location.pathname === '/tokenizer' ? 'text-brand-deep' : 'text-brand-sage'
+            }`}
+          >
+            <i className="fa-solid fa-grid-2 text-lg mb-1"></i>
+            <span className="text-[10px] font-medium">Overview</span>
+          </button>
+          <button
+            onClick={() => navigate('/tokenizer/my-properties')}
+            className={`flex flex-col items-center gap-1 ${
+              isActive('/tokenizer/my-properties') ? 'text-brand-deep' : 'text-brand-sage'
+            }`}
+          >
+            <i className="fa-solid fa-building text-lg mb-1"></i>
+            <span className="text-[10px] font-medium">Properties</span>
+          </button>
+          <button
+            onClick={() => navigate('/tokenizer/rental-income')}
+            className={`flex flex-col items-center gap-1 ${
+              isActive('/tokenizer/rental-income') ? 'text-brand-deep' : 'text-brand-sage'
+            }`}
+          >
+            <i className="fa-solid fa-money-bill-trend-up text-lg mb-1"></i>
+            <span className="text-[10px] font-medium">Income</span>
+          </button>
+          <button
+            onClick={() => navigate('/tokenizer/token-holders')}
+            className={`flex flex-col items-center gap-1 ${
+              isActive('/tokenizer/token-holders') ? 'text-brand-deep' : 'text-brand-sage'
+            }`}
+          >
+            <i className="fa-solid fa-users text-lg mb-1"></i>
+            <span className="text-[10px] font-medium">Holders</span>
+          </button>
+          <button
+            onClick={() => navigate('/tokenizer/settings')}
+            className={`flex flex-col items-center gap-1 ${
+              isActive('/tokenizer/settings') ? 'text-brand-deep' : 'text-brand-sage'
+            }`}
+          >
+            <i className="fa-solid fa-gear text-lg mb-1"></i>
+            <span className="text-[10px] font-medium">Settings</span>
+          </button>
+        </div>
+      )}
     </>
   );
 };
