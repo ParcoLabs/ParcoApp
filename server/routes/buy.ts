@@ -64,6 +64,14 @@ router.post('/', validateAuth, async (req, res) => {
       return res.status(400).json({ success: false, error: 'Property is not available for purchase' });
     }
 
+    if (property.isPaused) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'This property is currently paused and not available for purchase',
+        code: 'PROPERTY_PAUSED'
+      });
+    }
+
     if (property.availableTokens < tokenAmount) {
       return res.status(400).json({ 
         success: false, 

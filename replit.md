@@ -177,17 +177,59 @@ Model: TokenizationSubmission with full property details, documents, and complia
 - **POST /api/admin/tokenizations/:id/reject**: Reject submission
   - Body: { reason, notes }
 
+#### Property Management System
+Property model extended with: isMinted, isListable, isPaused, mintedAt, mintTxHash
+
+**Mint & List Endpoints**:
+- **GET /api/admin/properties**: List all properties with status filter
+- **GET /api/admin/properties/:id**: Full property details with holdings and rent history
+- **POST /api/admin/properties/:propertyId/mint-and-list**: Mint ERC-1155 tokens
+  - Demo mode: Simulates mint with mock tx hash
+  - Real mode: Calls EVMClient.createProperty on Polygon
+  - Sets isMinted=true, isListable=true, status=FUNDING
+
+**Pause/Unpause Endpoints**:
+- **POST /api/admin/property/:id/pause**: Pause property (hides from marketplace, blocks purchases)
+- **POST /api/admin/property/:id/unpause**: Resume property listing
+
+#### Investor Operations System
+**Endpoints**:
+- **GET /api/admin/investors/search**: Search investors by name/email
+- **GET /api/admin/investors/:userId**: Full investor profile
+  - User details and KYC status
+  - Holdings with property details and values
+  - Vault balances (USDC, locked, deposited, earned)
+  - Active borrow positions with collateral info
+  - Rent distribution history
+  - Summary stats (portfolio value, total rent, total borrowed)
+
+#### Rent Distribution Controls
+**Endpoints**:
+- **POST /api/admin/rent/run**: Trigger manual rent distribution
+  - Supports dryRun mode for preview
+  - Returns summary: properties processed, holders paid, amounts distributed
+- **GET /api/admin/rent/history**: Distribution run history with stats
+- **GET /api/admin/rent/pending**: Pending rent payments awaiting distribution
+
 #### Frontend Admin Panel (/admin)
 - **AdminLayout**: Role-based access check, tabs navigation
 - **Tokenizations Tab**: Table with submissions, status filter, detail drawer
   - View full property info, financials, documents
   - Approve/Reject actions with confirmation
-- **Properties Tab**: Property management (placeholder)
-- **Investors Tab**: User list with role editing
-  - Search by name/email
-  - Filter by role
+- **Properties Tab**: Property management with Mint & List and Pause/Unpause controls
+  - Table showing all properties with status, tokens, APY
+  - "Mint & List" button for unminted properties with confirmation modal
+  - "Pause"/"Unpause" toggle for minted properties
+- **Investors Tab**: User list with search, role editing, and detail panel
+  - Search by name/email with real-time results
+  - Click investor to view full profile in side panel
+  - Holdings table, vault balances, borrow positions, rent history
   - Change user roles via modal
-- **Rent Tab**: Rent distribution management (placeholder)
+- **Rent Tab**: Rent distribution management
+  - Summary cards: pending payments count, pending amount, total runs
+  - "Run Rent Distribution Now" button with confirmation modal
+  - Pending payments table with property, period, amounts
+  - Distribution history table with run statistics
 - **Demo Tools Tab**: Platform statistics and demo utilities
 
 #### Navigation Integration

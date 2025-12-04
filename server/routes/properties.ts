@@ -15,6 +15,8 @@ router.get('/', async (req: Request, res: Response) => {
         status: {
           in: ['FUNDING', 'FUNDED', 'ACTIVE'],
         },
+        isPaused: false,
+        isListable: true,
       },
       include: {
         token: true,
@@ -37,6 +39,8 @@ router.get('/', async (req: Request, res: Response) => {
       chain: property.token ? (CHAIN_MAP[property.token.chainId] || 'polygon') : 'polygon',
       type: property.propertyType,
       totalValue: Number(property.totalValue),
+      isPaused: property.isPaused,
+      isMinted: property.isMinted,
     }));
 
     res.json({

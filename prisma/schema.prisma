@@ -171,6 +171,12 @@ model Property {
   
   managerId         String?
   
+  isMinted          Boolean         @default(false)
+  isListable        Boolean         @default(false)
+  isPaused          Boolean         @default(false)
+  mintedAt          DateTime?
+  mintTxHash        String?
+  
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   
@@ -181,6 +187,8 @@ model Property {
   @@index([status])
   @@index([propertyType])
   @@index([city, state])
+  @@index([isPaused])
+  @@index([isListable])
 }
 
 model Token {
