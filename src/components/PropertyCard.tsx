@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Property } from '../types';
-import { ChainIndicator } from './ChainIndicator';
 
 interface PropertyCardProps {
   property: Property;
@@ -9,49 +8,99 @@ interface PropertyCardProps {
 
 export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   const navigate = useNavigate();
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const handleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFavorite(!isFavorite);
+  };
+
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex(prev => Math.max(0, prev - 1));
+  };
+
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCurrentImageIndex(prev => prev + 1);
+  };
 
   return (
     <div 
       onClick={() => navigate(`/marketplace/${property.id}`)}
-      className="bg-white border border-brand-lightGray rounded-2xl p-3 flex gap-4 hover:shadow-lg transition-all cursor-pointer group h-full items-center"
+      className="bg-white border border-brand-lightGray rounded-2xl overflow-hidden hover:shadow-lg transition-all cursor-pointer group w-full"
     >
-      {/* Image (Left) */}
-      <div className="relative shrink-0">
-        <img 
-          src={property.image} 
-          alt={property.title} 
-          className="w-32 h-32 object-cover rounded-xl bg-brand-lightGray" 
-        />
-        <div className="absolute bottom-2 left-2">
-          <ChainIndicator chain={property.chain} size="sm" showLabel={false} />
+      <div className="flex flex-col sm:flex-row">
+        {/* Image Section */}
+        <div className="relative w-full sm:w-[45%] h-48 sm:h-40 md:h-44 lg:h-48 flex-shrink-0">
+          <img 
+            src={property.image} 
+            alt={property.title} 
+            className="w-full h-full object-cover bg-brand-lightGray" 
+          />
+          
+          {/* Recent Listing Badge */}
+          <div className="absolute top-3 left-3">
+            <span className="bg-brand-deep text-white text-xs font-bold px-3 py-1.5 rounded uppercase tracking-wide">
+              Recent Listing
+            </span>
+          </div>
+
+          {/* Favorite Heart */}
+          <button 
+            onClick={handleFavorite}
+            className="absolute top-3 right-3 w-8 h-8 bg-white/80 hover:bg-white rounded-full flex items-center justify-center transition-colors"
+          >
+            <i className={`${isFavorite ? 'fa-solid text-red-500' : 'fa-regular text-brand-sage'} fa-heart`}></i>
+          </button>
+
+          {/* Image Navigation Arrows */}
+          <button 
+            onClick={handlePrevImage}
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white rounded-full flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
+          >
+            <i className="fa-solid fa-chevron-left text-brand-dark text-sm"></i>
+          </button>
+          <button 
+            onClick={handleNextImage}
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 bg-white/80 hover:bg-white rounded-full flex items-center justify-center transition-colors opacity-0 group-hover:opacity-100"
+          >
+            <i className="fa-solid fa-chevron-right text-brand-dark text-sm"></i>
+          </button>
         </div>
-      </div>
 
-      {/* Middle Content (Title, Loc, Trade Button) */}
-      <div className="flex-1 flex flex-col justify-between h-32 py-1">
-        <div>
-           <h3 className="font-bold text-lg text-brand-dark leading-tight">{property.title}</h3>
-           <p className="text-brand-sage text-sm font-medium">{property.location}</p>
-        </div>
+        {/* Content Section */}
+        <div className="flex-1 p-4 md:p-5 flex flex-col justify-between">
+          <div>
+            {/* Property Name */}
+            <h3 className="font-bold text-lg md:text-xl text-brand-dark leading-tight mb-1">
+              {property.title}
+            </h3>
+            
+            {/* Location */}
+            <p className="text-brand-sage text-sm mb-4">
+              {property.location}
+            </p>
 
-        <button className="bg-brand-deep hover:bg-brand-dark text-white font-bold text-sm py-2 px-6 rounded-full w-fit shadow-sm transition-colors uppercase tracking-wide">
-          Trade
-        </button>
-      </div>
+            {/* Rental Yield */}
+            <p className="text-brand-deep font-bold text-base md:text-lg mb-1">
+              {property.rentalYield}% Rental Yield
+            </p>
+            
+            {/* Projected Annual Return */}
+            <p className="text-brand-dark text-sm md:text-base">
+              {property.rentalYield}% Projected Annual Return
+            </p>
+          </div>
 
-      {/* Right Content (Stats) */}
-      <div className="flex flex-col justify-between h-32 py-1 text-right min-w-[80px]">
-         <div>
-            <p className="text-[10px] text-brand-sage uppercase font-bold tracking-wider">Value</p>
-            <p className="text-brand-dark font-bold text-lg">${property.totalValue.toLocaleString()}</p>
-         </div>
-
-         <div>
-            <p className="text-[10px] text-brand-sage uppercase font-bold tracking-wider">APY</p>
-            <div className="inline-block bg-brand-mint text-brand-deep px-2 py-1 rounded-md text-sm font-bold">
-               {property.rentalYield}%
+          {/* Available Tokens Button */}
+          <div className="mt-4">
+            <div className="inline-block bg-brand-deep text-white font-medium text-sm px-4 py-2 rounded-lg">
+              Available: {property.tokensAvailable?.toLocaleString() || 0} tokens at ${property.tokenPrice || 50}
             </div>
-         </div>
+          </div>
+        </div>
       </div>
     </div>
   );

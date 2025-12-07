@@ -162,14 +162,11 @@ export const Marketplace: React.FC = () => {
         </>
       ) : (
         <>
-          <div className="hidden md:grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Vertical stacked list layout for all screen sizes */}
+          <div className="flex flex-col gap-4 md:gap-6">
             {filteredProperties.map((prop) => (
               <PropertyCard key={prop.id} property={prop} />
             ))}
-          </div>
-
-          <div className="md:hidden">
-            <MarketplaceMobile properties={filteredProperties} />
           </div>
 
           {filteredProperties.length === 0 && !isLoading && (
