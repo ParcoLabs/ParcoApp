@@ -51,12 +51,42 @@ All three dashboard types (Investor, Tokenizer, Admin) are fully mobile responsi
 - **Mobile**: Top header with logo and action buttons, bottom tab bar for quick navigation
 - **Responsive Grids**: Content adapts from multi-column on desktop to single-column on mobile
 
+### Project Structure
+Standard Vite + React structure (refactored December 2025):
+```
+/src                    # Frontend source code
+  /components          # Reusable UI components
+    /admin            # Admin-specific components
+    /defi             # DeFi-related components
+  /pages               # Page components (routes)
+    /admin            # Admin dashboard pages
+    /defi             # DeFi pages
+    /tokenizer        # Tokenizer dashboard pages
+  /context             # React context providers
+  /hooks               # Custom React hooks
+  /api                 # API utilities and mock data
+  /mobile              # Mobile-specific components
+  /public              # Static assets
+    /brand            # Brand assets (logos)
+  /routes              # Route definitions (if needed)
+  App.tsx              # Main app component with routing
+  main.tsx             # Entry point
+  brand.ts             # Brand colors and theming
+  types.ts             # TypeScript type definitions
+/backend               # Backend services (NOT modified)
+/server                # Express.js API server
+/prisma                # Database schema and migrations
+index.html             # HTML entry point (loads /src/main.tsx)
+vite.config.ts         # Vite configuration
+```
+
 ### System Design Choices
 - Client-side routing with BrowserRouter.
 - Custom Express.js backend for API interactions.
 - Prisma ORM for database operations and atomic transactions.
 - Role-based access control implemented in smart contracts and backend middleware.
 - Environment-based configuration for sensitive data.
+- Standard Vite + React file structure with /src directory containing all frontend code.
 
 ## External Dependencies
 - **Clerk**: User authentication and authorization.
