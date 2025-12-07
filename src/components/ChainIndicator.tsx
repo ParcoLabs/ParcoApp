@@ -1,5 +1,5 @@
 import React from 'react';
-import { BlockchainNetwork } from '../../types';
+import { BlockchainNetwork } from '../types';
 
 interface ChainIndicatorProps {
   chain: BlockchainNetwork;

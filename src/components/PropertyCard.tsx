@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Property } from '../../types';
+import { Property } from '../types';
 import { ChainIndicator } from './ChainIndicator';
 
 interface PropertyCardProps {

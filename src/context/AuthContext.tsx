@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useUser, useAuth as useClerkAuth, useClerk } from '@clerk/clerk-react';
-import { User, UserKycStatus } from '../../types';
+import { User, UserKycStatus } from '../types';
 
 interface AuthContextType {
   user: User | null;

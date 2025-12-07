@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Property } from '../../types';
+import { Property } from '../types';
 import { ChainIndicator } from '../components/ChainIndicator';
 import { PaymentMethodModal } from '../components/PaymentMethodModal';
 import { useBuyFlow, PaymentMethod } from '../hooks/useBuyFlow';

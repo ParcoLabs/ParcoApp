@@ -1,5 +1,5 @@
 
-import { Property } from '../../types';
+import { Property } from '../types';
 
 export const DEFI_STATS = {
   borrowPower: 12500.00,

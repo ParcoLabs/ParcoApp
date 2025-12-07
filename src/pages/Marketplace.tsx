@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { PropertyCard } from '../components/PropertyCard';
 import { MarketplaceMobile } from '../mobile/MarketplaceMobile';
 import { MarketplaceGridSkeleton } from '../components/PropertyCardSkeleton';
-import { Property } from '../../types';
+import { Property } from '../types';
 import { MOCK_PROPERTIES } from '../api/mockData';
 
 interface APIProperty {

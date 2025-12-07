@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
     return {
+      root: '.',
       server: {
         port: 5000,
         host: '0.0.0.0',
@@ -21,7 +22,7 @@ export default defineConfig(({ mode }) => {
         },
       },
       appType: 'spa',
-      publicDir: 'frontend/public',
+      publicDir: 'src/public',
       plugins: [react()],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
@@ -29,9 +30,17 @@ export default defineConfig(({ mode }) => {
       },
       resolve: {
         alias: {
-          '@': path.resolve(__dirname, '.'),
+          '@': path.resolve(__dirname, './src'),
+          '@components': path.resolve(__dirname, './src/components'),
+          '@pages': path.resolve(__dirname, './src/pages'),
+          '@context': path.resolve(__dirname, './src/context'),
+          '@hooks': path.resolve(__dirname, './src/hooks'),
+          '@api': path.resolve(__dirname, './src/api'),
           '@assets': path.resolve(__dirname, 'attached_assets'),
         }
+      },
+      build: {
+        outDir: 'dist',
       }
     };
 });

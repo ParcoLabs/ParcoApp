@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getPropertyById } from '../api/mockData';
-import { Property, PropertyType, BlockchainNetwork } from '../../types';
+import { Property, PropertyType, BlockchainNetwork } from '../types';
 import { TokenDetailsMobile } from '../mobile/TokenDetailsMobile';
 import { ChainIndicator } from '../components/ChainIndicator';
 import { PropertyDetailsSkeletonDesktop, PropertyDetailsSkeletonMobile } from '../components/PropertyDetailsSkeleton';
