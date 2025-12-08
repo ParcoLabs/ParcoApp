@@ -9,24 +9,15 @@ import { PaymentMethodModal } from '../components/PaymentMethodModal';
 import { useBuyFlow } from '../hooks/useBuyFlow';
 import { useDemoMode } from '../context/DemoModeContext';
 import { useDemo } from '../hooks/useDemo';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
-const PRICE_HISTORY_DATA = [
-  { name: 'Jan', value: 48 },
-  { name: 'Feb', value: 49 },
-  { name: 'Mar', value: 50 },
-  { name: 'Apr', value: 51 },
-  { name: 'May', value: 52 },
-  { name: 'Jun', value: 54 },
-];
-
-const GROWTH_CHART_DATA = [
-  { year: '2019', value: 100 },
-  { year: '2020', value: 108 },
-  { year: '2021', value: 125 },
-  { year: '2022', value: 138 },
-  { year: '2023', value: 152 },
-  { year: '2024', value: 165 },
+const CHART_DATA = [
+  { name: 'Jan', value: 400 },
+  { name: 'Feb', value: 300 },
+  { name: 'Mar', value: 550 },
+  { name: 'Apr', value: 480 },
+  { name: 'May', value: 600 },
+  { name: 'Jun', value: 750 },
 ];
 
 interface ApiPropertyResponse {
@@ -76,17 +67,13 @@ const mapApiToProperty = (data: ApiPropertyResponse): Property => {
   };
 };
 
-const extractCityName = (location: string): string => {
-  const parts = location.split(',');
-  return parts[0]?.trim() || location;
-};
-
 export const TokenDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [property, setProperty] = useState<Property | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('Overview');
   const [tokenAmount, setTokenAmount] = useState<number>(1);
   
   const {
@@ -196,311 +183,311 @@ export const TokenDetails: React.FC = () => {
     );
   }
 
-  const cityName = extractCityName(property.location);
-
   return (
     <>
-      {/* Mobile Layout - Keep the same */}
       <div className="md:hidden">
-        <TokenDetailsMobile property={property} />
+          <TokenDetailsMobile property={property} />
       </div>
 
-      {/* Desktop Layout - Redesigned */}
-      <div className="hidden md:block max-w-7xl mx-auto p-6 lg:p-8">
+      <div className="hidden md:block max-w-6xl mx-auto p-8">
         
-        {/* Back Button */}
         <button onClick={() => navigate('/marketplace')} className="text-brand-sage hover:text-brand-dark mb-6 flex items-center gap-2 font-medium">
-          <i className="fa-solid fa-arrow-left"></i> Back to Marketplace
+             <i className="fa-solid fa-arrow-left"></i> Back to Marketplace
         </button>
 
-        {/* Main Grid: Left Content + Right Sticky Invest Box */}
-        <div className="flex gap-8">
-          
-          {/* Left Column - Main Content */}
-          <div className="flex-1 space-y-6">
-            
-            {/* Property Header */}
-            <div className="bg-white border border-brand-lightGray rounded-2xl overflow-hidden">
-              <div className="relative h-64 lg:h-80">
-                <img 
-                  src={property.image} 
-                  alt={property.title} 
-                  className="w-full h-full object-cover bg-brand-lightGray" 
-                />
-                <div className="absolute top-4 left-4 flex items-center gap-2">
-                  <span className="bg-brand-deep text-white px-3 py-1.5 rounded text-xs font-bold uppercase tracking-wide">
-                    {property.type}
-                  </span>
-                  <ChainIndicator chain={property.chain} size="sm" />
-                </div>
-              </div>
-              <div className="p-6">
-                <div className="flex items-center gap-2 text-brand-sage text-sm mb-2">
-                  <i className="fa-solid fa-location-dot"></i>
-                  <span>{property.location}</span>
-                </div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-brand-dark mb-2">{property.title}</h1>
-                <div className="flex items-baseline gap-3">
-                  <span className="text-2xl font-bold text-brand-dark">${property.totalValue.toLocaleString()}</span>
-                  <span className="text-brand-medium font-semibold">+2.1%</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Overview Section - Dark Panel Style */}
-            <div className="bg-brand-dark rounded-2xl p-6 text-white">
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <i className="fa-solid fa-info-circle text-brand-medium"></i>
-                Overview
-              </h2>
-              <p className="text-brand-lightGray leading-relaxed">
-                {property.description || `This premium ${property.type.toLowerCase()} asset in ${property.location} offers a unique opportunity for fractional ownership. With a projected rental yield of ${property.rentalYield}%, investors can expect steady cash flow distributed directly to their USDC balance. The property is fully managed by our professional property management partners, ensuring hassle-free ownership and consistent returns.`}
-              </p>
-              
-              {/* Key Stats Row */}
-              <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-brand-sage/30">
-                <div>
-                  <p className="text-brand-sage text-xs uppercase tracking-wide mb-1">Token Price</p>
-                  <p className="text-xl font-bold">${property.tokenPrice}</p>
-                </div>
-                <div>
-                  <p className="text-brand-sage text-xs uppercase tracking-wide mb-1">Rental Yield</p>
-                  <p className="text-xl font-bold text-brand-lime">{property.rentalYield}%</p>
-                </div>
-                <div>
-                  <p className="text-brand-sage text-xs uppercase tracking-wide mb-1">Projected Return</p>
-                  <p className="text-xl font-bold text-brand-lime">{(property.rentalYield + 2.5).toFixed(1)}%</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Why City Section */}
-            <div className="bg-white border border-brand-lightGray rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-brand-dark mb-4">
-                Why {cityName}?
-              </h2>
-              <p className="text-brand-sage leading-relaxed mb-6">
-                {cityName} has emerged as one of the most attractive real estate markets in the region, driven by strong economic growth, population influx, and increasing demand for rental properties. The city offers a unique combination of urban amenities and suburban quality of life, making it highly desirable for both young professionals and families. With major employers expanding their presence and infrastructure investments underway, property values have shown consistent appreciation over the past decade.
-              </p>
-              
-              {/* Growth Chart */}
-              <div className="bg-brand-offWhite rounded-xl p-4">
-                <h3 className="text-sm font-bold text-brand-dark mb-3">Market Growth Index</h3>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={GROWTH_CHART_DATA}>
-                      <XAxis 
-                        dataKey="year" 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{fill: '#7ebea6', fontSize: 12}} 
-                      />
-                      <YAxis 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{fill: '#7ebea6', fontSize: 12}}
-                        domain={[80, 180]}
-                      />
-                      <Tooltip 
-                        contentStyle={{
-                          borderRadius: '8px', 
-                          border: 'none', 
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                          backgroundColor: '#173726',
-                          color: '#fff'
-                        }}
-                        formatter={(value: number) => [`${value}%`, 'Growth']}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="value" 
-                        stroke="#41b39a" 
-                        strokeWidth={3}
-                        dot={{ fill: '#41b39a', strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6, fill: '#056052' }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-
-            {/* Price History Section */}
-            <div className="bg-white border border-brand-lightGray rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-brand-dark mb-4">Price History</h2>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={PRICE_HISTORY_DATA}>
-                    <defs>
-                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#41b39a" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#41b39a" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <XAxis 
-                      dataKey="name" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{fill: '#7ebea6', fontSize: 12}} 
-                    />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{fill: '#7ebea6', fontSize: 12}}
-                      domain={[40, 60]}
-                      tickFormatter={(value) => `$${value}`}
-                    />
-                    <Tooltip 
-                      contentStyle={{
-                        borderRadius: '8px', 
-                        border: 'none', 
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                      }}
-                      formatter={(value: number) => [`$${value}`, 'Token Price']}
-                    />
-                    <Area 
-                      type="monotone" 
-                      dataKey="value" 
-                      stroke="#41b39a" 
-                      strokeWidth={3} 
-                      fillOpacity={1} 
-                      fill="url(#colorValue)" 
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* Investment Highlights */}
-            <div className="bg-white border border-brand-lightGray rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-brand-dark mb-4">Investment Highlights</h2>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { icon: 'fa-chart-line', title: 'Strong Returns', desc: 'Consistent rental yield with appreciation potential' },
-                  { icon: 'fa-shield-halved', title: 'Fully Insured', desc: 'Comprehensive property and liability coverage' },
-                  { icon: 'fa-building', title: 'Professional Management', desc: 'Top-tier property management partners' },
-                  { icon: 'fa-clock', title: 'Monthly Distributions', desc: 'Regular rental income to your wallet' },
-                ].map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-3 p-4 bg-brand-offWhite rounded-xl">
-                    <div className="w-10 h-10 rounded-full bg-brand-mint flex items-center justify-center flex-shrink-0">
-                      <i className={`fa-solid ${item.icon} text-brand-deep`}></i>
-                    </div>
+        <div className="grid grid-cols-3 gap-8">
+            <div className="col-span-2 space-y-8">
+                
+                <div className="flex gap-6">
+                    <img src={property.image} alt={property.title} className="w-32 h-32 object-cover rounded-xl bg-brand-lightGray shadow-sm" />
                     <div>
-                      <h4 className="font-bold text-brand-dark text-sm">{item.title}</h4>
-                      <p className="text-xs text-brand-sage">{item.desc}</p>
+                        <div className="flex items-center gap-3 mb-2">
+                             <span className="bg-brand-mint text-brand-deep px-2 py-1 rounded text-xs font-bold uppercase tracking-wide">{property.type}</span>
+                             <ChainIndicator chain={property.chain} size="sm" />
+                             <span className="text-brand-sage text-sm"><i className="fa-solid fa-location-dot"></i> {property.location}</span>
+                        </div>
+                        <h1 className="text-3xl font-bold text-brand-dark mb-1">{property.title}</h1>
+                        <div className="text-2xl font-bold text-brand-dark">
+                            ${property.totalValue.toLocaleString()} <span className="text-brand-medium text-lg ml-2 font-semibold">+2.1%</span>
+                        </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+                </div>
 
-            {/* Documents Section */}
-            <div className="bg-white border border-brand-lightGray rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-brand-dark mb-4">Documents</h2>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { title: "Property Appraisal", date: "Oct 2024", size: "2.4 MB" },
-                  { title: "Operating Agreement", date: "Sep 2024", size: "1.1 MB" },
-                  { title: "Rent Roll", date: "Current", size: "850 KB" },
-                  { title: "Inspection Report", date: "Aug 2024", size: "3.2 MB" },
-                ].map((doc, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-4 border border-brand-lightGray rounded-xl hover:bg-brand-offWhite cursor-pointer transition-colors group">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-brand-lightGray flex items-center justify-center text-brand-deep group-hover:bg-brand-mint">
-                        <i className="fa-regular fa-file-lines text-lg"></i>
-                      </div>
-                      <div>
-                        <p className="font-bold text-brand-dark text-sm">{doc.title}</p>
-                        <p className="text-xs text-brand-sage">{doc.date} &bull; {doc.size}</p>
-                      </div>
+                <div>
+                    <div className="flex border-b border-brand-lightGray mb-6">
+                        {['Overview', 'Insights', 'Financials'].map(tab => (
+                            <button 
+                                key={tab}
+                                onClick={() => setActiveTab(tab)}
+                                className={`px-6 py-3 font-semibold text-sm transition-colors ${
+                                    activeTab === tab 
+                                    ? 'border-b-2 border-brand-deep text-brand-deep' 
+                                    : 'text-brand-sage hover:text-brand-dark'
+                                }`}
+                            >
+                                {tab}
+                            </button>
+                        ))}
                     </div>
-                    <i className="fa-solid fa-download text-brand-sage group-hover:text-brand-deep"></i>
-                  </div>
-                ))}
-              </div>
+                    
+                    <div className="min-h-[200px]">
+                        {activeTab === 'Overview' && (
+                            <div className="space-y-6">
+                                <div className="bg-white border border-brand-lightGray rounded-xl p-6 h-80">
+                                   <h3 className="font-bold text-brand-dark mb-4">Price History</h3>
+                                   <ResponsiveContainer width="100%" height="100%">
+                                      <AreaChart data={CHART_DATA}>
+                                        <defs>
+                                          <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#41b39a" stopOpacity={0.3}/>
+                                            <stop offset="95%" stopColor="#41b39a" stopOpacity={0}/>
+                                          </linearGradient>
+                                        </defs>
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#7ebea6', fontSize: 12}} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#7ebea6', fontSize: 12}} />
+                                        <Tooltip 
+                                            contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
+                                        />
+                                        <Area type="monotone" dataKey="value" stroke="#41b39a" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+                                      </AreaChart>
+                                   </ResponsiveContainer>
+                                </div>
+
+                                <div className="bg-brand-mint/20 border border-brand-mint rounded-xl p-6">
+                                   <div className="grid grid-cols-3 gap-6">
+                                       <div className="border-r border-brand-mint/50 pr-4">
+                                           <div className="flex items-center gap-1 mb-1">
+                                               <span className="text-sm font-bold text-brand-dark">Starting Price</span>
+                                               <i className="fa-regular fa-circle-info text-brand-sage text-xs"></i>
+                                           </div>
+                                           <p className="text-2xl font-bold text-brand-deep">${property.tokenPrice.toFixed(2)}</p>
+                                       </div>
+                                       <div className="border-r border-brand-mint/50 px-4">
+                                           <div className="flex items-center gap-1 mb-1">
+                                               <span className="text-sm font-bold text-brand-dark">Projected Annual Return</span>
+                                               <i className="fa-regular fa-circle-info text-brand-sage text-xs"></i>
+                                           </div>
+                                           <p className="text-2xl font-bold text-brand-medium">{(property.rentalYield + 2.5).toFixed(2)}%</p>
+                                       </div>
+                                       <div className="pl-4">
+                                           <div className="flex items-center gap-1 mb-1">
+                                               <span className="text-sm font-bold text-brand-dark">Rental Yield</span>
+                                               <i className="fa-regular fa-circle-info text-brand-sage text-xs"></i>
+                                           </div>
+                                           <p className="text-2xl font-bold text-brand-medium">{property.rentalYield}%</p>
+                                       </div>
+                                   </div>
+                                </div>
+
+                                <div className="prose text-brand-dark max-w-none">
+                                    <p>
+                                        {property.description || `This premium ${property.type.toLowerCase()} asset in ${property.location} offers a unique opportunity for fractional ownership.
+                                        With a projected rental yield of ${property.rentalYield}%, investors can expect steady cash flow distributed directly to their USDC balance.`}
+                                    </p>
+                                    <h4 className="font-bold mt-4 mb-2 text-lg">Why Invest?</h4>
+                                    <ul className="list-disc pl-5 space-y-2 text-brand-sage">
+                                        <li>Located in high-growth metropolitan area with strong demand.</li>
+                                        <li>Fully managed property maintenance by top-tier partners.</li>
+                                        <li>Quarterly valuation updates ensured by independent appraisers.</li>
+                                        <li>Instant liquidity via the Parco marketplace (Phase 2).</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'Insights' && (
+                            <div className="space-y-8">
+                                <div>
+                                    <h3 className="font-bold text-brand-dark text-lg mb-4">Property Details</h3>
+                                    <ul className="list-disc pl-5 space-y-3 text-brand-dark leading-relaxed">
+                                        <li>
+                                            <span className="font-bold text-brand-sage">Historic Significance:</span> Situated in The Pastures Historic District, noted for remarkable architectural heritage.
+                                        </li>
+                                        <li>
+                                            <span className="font-bold text-brand-sage">Prime Location:</span> Near Medical Center, Union Center, and Empire State Plaza with easy access to highways.
+                                        </li>
+                                        <li>
+                                            <span className="font-bold text-brand-sage">Recent Upgrades:</span> New furniture and appliances have just been installed in the units.
+                                        </li>
+                                        <li>
+                                            <span className="font-bold text-brand-sage">Growth Potential:</span> New York Plans to Invest $1 Billion to Expand Chip Research in Albany.
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div>
+                                    <h3 className="font-bold text-brand-dark text-lg mb-4">Documents</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {[
+                                            { title: "Appraisal", date: "Oct 2023", size: "2.4 MB" },
+                                            { title: "Operating Agreement", date: "Sep 2023", size: "1.1 MB" },
+                                            { title: "Rent Roll", date: "Current", size: "850 KB" },
+                                            { title: "Inspection Report", date: "Aug 2023", size: "3.2 MB" },
+                                        ].map((doc, idx) => (
+                                            <div key={idx} className="flex items-center justify-between p-4 border border-brand-lightGray rounded-xl hover:bg-brand-offWhite cursor-pointer transition-colors group">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-brand-lightGray flex items-center justify-center text-brand-deep group-hover:bg-brand-mint">
+                                                        <i className="fa-regular fa-file-lines text-lg"></i>
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-bold text-brand-dark text-sm">{doc.title}</p>
+                                                        <p className="text-xs text-brand-sage">{doc.date} • {doc.size}</p>
+                                                    </div>
+                                                </div>
+                                                <i className="fa-solid fa-download text-brand-sage group-hover:text-brand-deep"></i>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'Financials' && (
+                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                 <div className="space-y-8">
+                                     <div className="bg-brand-offWhite p-6 rounded-xl border border-brand-lightGray">
+                                        <h3 className="font-bold text-brand-dark mb-4 border-b border-brand-lightGray pb-2">Projected Returns</h3>
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-brand-dark font-medium text-sm">Annual Return</span>
+                                                <span className="text-brand-deep font-bold">12.25%</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-brand-sage font-medium text-sm">Rental Yield</span>
+                                                <span className="text-brand-dark font-medium">10.79%</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-brand-sage font-medium text-sm">Appreciation</span>
+                                                <span className="text-brand-dark font-medium">1.70%</span>
+                                            </div>
+                                        </div>
+                                     </div>
+
+                                     <div>
+                                        <h3 className="font-bold text-brand-dark mb-4 border-b border-brand-lightGray pb-2">Operating Financials</h3>
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-brand-dark font-bold text-sm">Annual Gross Rents</span>
+                                                <span className="text-brand-medium font-bold">$119,455</span>
+                                            </div>
+                                            {[
+                                                { label: "Property Taxes", value: "-$5,729.28" },
+                                                { label: "Homeowners Insurance", value: "-$3,378.00" },
+                                                { label: "Property Management", value: "-$29,863.92" },
+                                                { label: "Utilities", value: "-$49,670.64" },
+                                                { label: "LLC Admin & Filing Fees", value: "-$750.00" },
+                                            ].map((item, i) => (
+                                                <div key={i} className="flex justify-between items-center text-sm">
+                                                    <span className="text-brand-sage font-medium">{item.label}</span>
+                                                    <span className="text-brand-dark font-medium">{item.value}</span>
+                                                </div>
+                                            ))}
+                                            <div className="border-t border-brand-lightGray pt-2 flex justify-between items-center mt-2">
+                                                <span className="text-brand-dark font-bold text-sm">Annual Cash Flow</span>
+                                                <span className="text-brand-medium font-bold">$30,064</span>
+                                            </div>
+                                        </div>
+                                     </div>
+                                 </div>
+
+                                 <div>
+                                     <h3 className="font-bold text-brand-dark mb-4 border-b border-brand-lightGray pb-2">Acquisition Breakdown</h3>
+                                     <div className="bg-white border border-brand-lightGray rounded-xl p-6 space-y-4">
+                                         {[
+                                             { label: "Underlying Asset Price", value: "$350,000" },
+                                             { label: "Closing Costs", value: "$22,200" },
+                                             { label: "Upfront DAO Fees", value: "$550" },
+                                             { label: "Operating Reserve (0%)", value: "$1,147" },
+                                         ].map((item, i) => (
+                                             <div key={i} className="flex justify-between items-center text-sm">
+                                                 <span className="text-brand-sage font-medium">{item.label}</span>
+                                                 <span className="text-brand-dark font-medium">{item.value}</span>
+                                             </div>
+                                         ))}
+                                         <div className="border-t border-brand-lightGray pt-4 flex justify-between items-center">
+                                             <span className="text-brand-dark font-bold">Total Investment Value</span>
+                                             <span className="text-brand-deep font-bold text-lg">$373,897</span>
+                                         </div>
+                                     </div>
+                                 </div>
+                             </div>
+                        )}
+                    </div>
+                </div>
             </div>
-          </div>
 
-          {/* Right Column - Sticky Invest Box */}
-          <div className="w-80 lg:w-96 flex-shrink-0">
-            <div className="bg-white border border-brand-lightGray rounded-2xl p-6 shadow-lg sticky top-6">
-              <h3 className="font-bold text-xl text-brand-dark mb-6">Invest</h3>
-              
-              {/* Key Investment Stats */}
-              <div className="space-y-4 mb-6">
-                <div className="flex justify-between items-center py-3 border-b border-brand-lightGray">
-                  <span className="text-brand-sage font-medium">Token Price</span>
-                  <span className="font-bold text-brand-dark text-lg">${property.tokenPrice}</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-brand-lightGray">
-                  <span className="text-brand-sage font-medium">Rental Yield</span>
-                  <span className="font-bold text-brand-medium text-lg">{property.rentalYield}%</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-brand-lightGray">
-                  <span className="text-brand-sage font-medium">Projected Annual Return</span>
-                  <span className="font-bold text-brand-medium text-lg">{(property.rentalYield + 2.5).toFixed(1)}%</span>
-                </div>
-                <div className="flex justify-between items-center py-3">
-                  <span className="text-brand-sage font-medium">Max Tokens Available</span>
-                  <span className="font-bold text-brand-dark text-lg">{property.tokensAvailable.toLocaleString()}</span>
-                </div>
-              </div>
+            <div className="col-span-1">
+                <div className="bg-white border border-brand-lightGray rounded-xl p-6 shadow-sm sticky top-6">
+                    <h3 className="font-bold text-xl text-brand-dark mb-4">Invest</h3>
+                    
+                    <div className="space-y-4 mb-6">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-brand-sage">Token Price</span>
+                            <span className="font-bold text-brand-dark">${property.tokenPrice}</span>
+                        </div>
+                         <div className="flex justify-between items-center text-sm">
+                            <span className="text-brand-sage">Available</span>
+                            <span className="font-bold text-brand-dark">{property.tokensAvailable} Tokens</span>
+                        </div>
+                         <div className="flex justify-between items-center text-sm">
+                            <span className="text-brand-sage">Projected APY</span>
+                            <span className="font-bold text-brand-medium">{property.rentalYield}%</span>
+                        </div>
+                    </div>
 
-              {/* Token Amount Input */}
-              <div className="bg-brand-offWhite p-4 rounded-xl mb-6">
-                <div className="flex justify-between mb-2">
-                  <span className="text-xs font-bold text-brand-sage uppercase tracking-wide">Amount</span>
-                  <button 
-                    onClick={() => setTokenAmount(property.tokensAvailable)}
-                    className="text-xs font-bold text-brand-deep cursor-pointer hover:underline"
-                  >
-                    MAX
-                  </button>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="number" 
-                    placeholder="0"
-                    min="1"
-                    max={property.tokensAvailable}
-                    value={tokenAmount || ''}
-                    onChange={(e) => setTokenAmount(Math.min(Number(e.target.value), property.tokensAvailable))}
-                    className="bg-transparent text-2xl font-bold text-brand-dark w-full outline-none" 
-                  />
-                  <span className="text-brand-sage font-medium">TOKENS</span>
-                </div>
-                <div className="text-right text-sm text-brand-sage mt-2">
-                  ≈ ${(tokenAmount * property.tokenPrice).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})} USDC
-                </div>
-              </div>
+                    <div className="bg-brand-offWhite p-4 rounded-lg mb-6">
+                        <div className="flex justify-between mb-2">
+                            <span className="text-xs font-bold text-brand-sage">AMOUNT</span>
+                            <button 
+                                onClick={() => setTokenAmount(property.tokensAvailable)}
+                                className="text-xs font-bold text-brand-deep cursor-pointer hover:underline"
+                            >
+                                MAX
+                            </button>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <input 
+                                type="number" 
+                                placeholder="0"
+                                min="1"
+                                max={property.tokensAvailable}
+                                value={tokenAmount || ''}
+                                onChange={(e) => setTokenAmount(Math.min(Number(e.target.value), property.tokensAvailable))}
+                                className="bg-transparent text-2xl font-bold text-brand-dark w-full outline-none" 
+                            />
+                            <span className="text-brand-sage font-medium">TOKENS</span>
+                        </div>
+                        <div className="text-right text-xs text-brand-sage mt-1">
+                            ≈ ${(tokenAmount * property.tokenPrice).toFixed(2)} USDC
+                        </div>
+                    </div>
 
-              {/* Buy/Sell Buttons */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <button 
-                  onClick={() => handleBuy(property.id, tokenAmount, property.tokenPrice)}
-                  className={`w-full py-3.5 rounded-xl font-bold text-white shadow-sm transition-all ${
-                    property.tokensAvailable === 0 || buyState === 'checking' 
-                      ? 'bg-brand-sage cursor-not-allowed' 
-                      : 'bg-brand-deep hover:bg-brand-dark'
-                  }`}
-                  disabled={property.tokensAvailable === 0 || buyState === 'checking'}
-                >
-                  {buyState === 'checking' ? (
-                    <><i className="fa-solid fa-spinner fa-spin mr-2"></i>Checking...</>
-                  ) : 'Buy'}
-                </button>
-                <button 
-                  className="w-full py-3.5 rounded-xl font-bold text-brand-deep border-2 border-brand-deep hover:bg-brand-offWhite transition-all"
-                >
-                  Sell
-                </button>
-              </div>
-              
-              <p className="text-xs text-center text-brand-sage">
-                By purchasing, you agree to the <span className="underline cursor-pointer hover:text-brand-dark">Terms of Service</span>.
-              </p>
+                    <div className="grid grid-cols-2 gap-3">
+                         <button 
+                            onClick={() => handleBuy(property.id, tokenAmount, property.tokenPrice)}
+                            className={`w-full py-3 rounded-lg font-bold text-white shadow-sm transition-all text-sm ${
+                                 property.tokensAvailable === 0 || buyState === 'checking' 
+                                   ? 'bg-brand-sage cursor-not-allowed' 
+                                   : 'bg-brand-deep hover:bg-brand-dark'
+                            }`}
+                            disabled={property.tokensAvailable === 0 || buyState === 'checking'}
+                        >
+                             {buyState === 'checking' ? (
+                               <><i className="fa-solid fa-spinner fa-spin mr-2"></i>Checking...</>
+                             ) : 'Buy'}
+                        </button>
+                        <button 
+                             className="w-full py-3 rounded-lg font-bold text-brand-deep border border-brand-deep hover:bg-brand-offWhite transition-all text-sm"
+                        >
+                             Sell
+                        </button>
+                    </div>
+                    
+                    <p className="text-xs text-center text-brand-sage mt-4">
+                        By purchasing, you agree to the <span className="underline cursor-pointer">Terms of Service</span>.
+                    </p>
+                </div>
             </div>
-          </div>
         </div>
       </div>
 
