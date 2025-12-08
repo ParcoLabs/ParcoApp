@@ -201,33 +201,41 @@ export const TokenDetails: React.FC = () => {
                 <div className="flex gap-6">
                     <img src={property.image} alt={property.title} className="w-32 h-32 object-cover rounded-xl bg-brand-lightGray shadow-sm" />
                     <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
+                        <h1 className="text-3xl font-bold text-brand-dark mb-2">{property.title}</h1>
+                        <div className="flex items-center gap-3 mb-1">
                              <span className="bg-brand-mint text-brand-deep px-2 py-1 rounded text-xs font-bold uppercase tracking-wide">{property.type}</span>
                              <ChainIndicator chain={property.chain} size="sm" />
-                             <span className="text-brand-sage text-sm"><i className="fa-solid fa-location-dot"></i> {property.location}</span>
                         </div>
-                        <h1 className="text-3xl font-bold text-brand-dark mb-1">{property.title}</h1>
-                        <div className="text-2xl font-bold text-brand-dark">
-                            ${property.totalValue.toLocaleString()} <span className="text-brand-medium text-lg ml-2 font-semibold">+2.1%</span>
-                        </div>
+                        <span className="text-brand-sage text-sm"><i className="fa-solid fa-location-dot mr-1"></i>{property.location}</span>
                     </div>
-                    <div className="w-64 h-32 min-w-[256px] min-h-[128px]">
-                        <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={100}>
-                            <AreaChart data={CHART_DATA}>
-                                <defs>
-                                    <linearGradient id="colorValueHeader" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#41b39a" stopOpacity={0.3}/>
-                                        <stop offset="95%" stopColor="#41b39a" stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#7ebea6', fontSize: 10}} />
-                                <YAxis hide />
-                                <Tooltip 
-                                    contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
-                                />
-                                <Area type="monotone" dataKey="value" stroke="#41b39a" strokeWidth={2} fillOpacity={1} fill="url(#colorValueHeader)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                    <div className="w-72 min-w-[288px]">
+                        <div className="bg-white border border-brand-lightGray rounded-xl p-4 shadow-sm">
+                            <div className="flex justify-between items-center mb-2">
+                                <div>
+                                    <p className="text-xs text-brand-sage font-medium">Current Value</p>
+                                    <p className="text-xl font-bold text-brand-dark">${property.totalValue.toLocaleString()}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-xs text-brand-sage font-medium">Returns</p>
+                                    <p className="text-lg font-bold text-brand-medium">+2.1%</p>
+                                </div>
+                            </div>
+                            <div className="h-20 min-h-[80px]">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={60}>
+                                    <AreaChart data={CHART_DATA}>
+                                        <defs>
+                                            <linearGradient id="colorValueHeader" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="#41b39a" stopOpacity={0.3}/>
+                                                <stop offset="95%" stopColor="#41b39a" stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#7ebea6', fontSize: 9}} />
+                                        <YAxis hide />
+                                        <Area type="monotone" dataKey="value" stroke="#41b39a" strokeWidth={2} fillOpacity={1} fill="url(#colorValueHeader)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
