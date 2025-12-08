@@ -200,7 +200,7 @@ export const TokenDetails: React.FC = () => {
                 
                 <div className="flex gap-6">
                     <img src={property.image} alt={property.title} className="w-32 h-32 object-cover rounded-xl bg-brand-lightGray shadow-sm" />
-                    <div>
+                    <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                              <span className="bg-brand-mint text-brand-deep px-2 py-1 rounded text-xs font-bold uppercase tracking-wide">{property.type}</span>
                              <ChainIndicator chain={property.chain} size="sm" />
@@ -210,6 +210,24 @@ export const TokenDetails: React.FC = () => {
                         <div className="text-2xl font-bold text-brand-dark">
                             ${property.totalValue.toLocaleString()} <span className="text-brand-medium text-lg ml-2 font-semibold">+2.1%</span>
                         </div>
+                    </div>
+                    <div className="w-64 h-32 min-w-[256px] min-h-[128px]">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={100}>
+                            <AreaChart data={CHART_DATA}>
+                                <defs>
+                                    <linearGradient id="colorValueHeader" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#41b39a" stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor="#41b39a" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#7ebea6', fontSize: 10}} />
+                                <YAxis hide />
+                                <Tooltip 
+                                    contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
+                                />
+                                <Area type="monotone" dataKey="value" stroke="#41b39a" strokeWidth={2} fillOpacity={1} fill="url(#colorValueHeader)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
 
@@ -233,26 +251,6 @@ export const TokenDetails: React.FC = () => {
                     <div className="min-h-[200px]">
                         {activeTab === 'Overview' && (
                             <div className="space-y-6">
-                                <div className="bg-white border border-brand-lightGray rounded-xl p-6 h-80">
-                                   <h3 className="font-bold text-brand-dark mb-4">Price History</h3>
-                                   <ResponsiveContainer width="100%" height="100%">
-                                      <AreaChart data={CHART_DATA}>
-                                        <defs>
-                                          <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#41b39a" stopOpacity={0.3}/>
-                                            <stop offset="95%" stopColor="#41b39a" stopOpacity={0}/>
-                                          </linearGradient>
-                                        </defs>
-                                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#7ebea6', fontSize: 12}} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{fill: '#7ebea6', fontSize: 12}} />
-                                        <Tooltip 
-                                            contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
-                                        />
-                                        <Area type="monotone" dataKey="value" stroke="#41b39a" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
-                                      </AreaChart>
-                                   </ResponsiveContainer>
-                                </div>
-
                                 <div className="bg-brand-mint/20 border border-brand-mint rounded-xl p-6">
                                    <div className="grid grid-cols-3 gap-6">
                                        <div className="border-r border-brand-mint/50 pr-4">
@@ -291,6 +289,31 @@ export const TokenDetails: React.FC = () => {
                                         <li>Quarterly valuation updates ensured by independent appraisers.</li>
                                         <li>Instant liquidity via the Parco marketplace (Phase 2).</li>
                                     </ul>
+                                </div>
+
+                                <div className="bg-white border border-brand-lightGray rounded-xl p-6">
+                                    <h4 className="font-bold text-brand-dark text-lg mb-3">Why {property.location.split(',')[0]}?</h4>
+                                    <p className="text-brand-sage mb-6">
+                                        This city offers a unique combination of economic growth, strong rental demand, and favorable market conditions for real estate investors. The local market has shown consistent appreciation over the past decade with continued growth expected.
+                                    </p>
+                                    <div className="h-48 min-h-[192px]">
+                                        <ResponsiveContainer width="100%" height="100%" minWidth={300} minHeight={150}>
+                                            <AreaChart data={CHART_DATA}>
+                                                <defs>
+                                                    <linearGradient id="colorValueLocal" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#41b39a" stopOpacity={0.3}/>
+                                                        <stop offset="95%" stopColor="#41b39a" stopOpacity={0}/>
+                                                    </linearGradient>
+                                                </defs>
+                                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#7ebea6', fontSize: 12}} />
+                                                <YAxis axisLine={false} tickLine={false} tick={{fill: '#7ebea6', fontSize: 12}} />
+                                                <Tooltip 
+                                                    contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)'}}
+                                                />
+                                                <Area type="monotone" dataKey="value" stroke="#41b39a" strokeWidth={3} fillOpacity={1} fill="url(#colorValueLocal)" />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
                                 </div>
                             </div>
                         )}
@@ -430,8 +453,12 @@ export const TokenDetails: React.FC = () => {
                             <span className="font-bold text-brand-dark">{property.tokensAvailable} Tokens</span>
                         </div>
                          <div className="flex justify-between items-center text-sm">
-                            <span className="text-brand-sage">Projected APY</span>
+                            <span className="text-brand-sage">Rental Yield</span>
                             <span className="font-bold text-brand-medium">{property.rentalYield}%</span>
+                        </div>
+                         <div className="flex justify-between items-center text-sm">
+                            <span className="text-brand-sage">Projected Annual Return</span>
+                            <span className="font-bold text-brand-medium">{(property.rentalYield + 2.5).toFixed(2)}%</span>
                         </div>
                     </div>
 
