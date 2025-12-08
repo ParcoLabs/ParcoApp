@@ -255,10 +255,10 @@ export const TokenDetails: React.FC = () => {
                                    <div className="grid grid-cols-3 gap-6">
                                        <div className="border-r border-brand-mint/50 pr-4">
                                            <div className="flex items-center gap-1 mb-1">
-                                               <span className="text-sm font-bold text-brand-dark">Starting Price</span>
+                                               <span className="text-sm font-bold text-brand-dark">Property Value</span>
                                                <i className="fa-regular fa-circle-info text-brand-sage text-xs"></i>
                                            </div>
-                                           <p className="text-2xl font-bold text-brand-deep">${property.tokenPrice.toFixed(2)}</p>
+                                           <p className="text-2xl font-bold text-brand-deep">${property.totalValue.toLocaleString()}</p>
                                        </div>
                                        <div className="border-r border-brand-mint/50 px-4">
                                            <div className="flex items-center gap-1 mb-1">
