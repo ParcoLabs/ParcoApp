@@ -374,51 +374,49 @@ export const TokenDetails: React.FC = () => {
                         )}
 
                         {activeTab === 'Financials' && (
-                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                 <div className="space-y-8">
-                                     <div className="bg-brand-offWhite p-6 rounded-xl border border-brand-lightGray">
-                                        <h3 className="font-bold text-brand-dark mb-4 border-b border-brand-lightGray pb-2">Projected Returns</h3>
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-brand-dark font-medium text-sm">Annual Return</span>
-                                                <span className="text-brand-deep font-bold">12.25%</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-brand-sage font-medium text-sm">Rental Yield</span>
-                                                <span className="text-brand-dark font-medium">10.79%</span>
-                                            </div>
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-brand-sage font-medium text-sm">Appreciation</span>
-                                                <span className="text-brand-dark font-medium">1.70%</span>
-                                            </div>
+                             <div className="space-y-8">
+                                 <div className="bg-brand-offWhite p-6 rounded-xl border border-brand-lightGray">
+                                    <h3 className="font-bold text-brand-dark mb-4 border-b border-brand-lightGray pb-2">Projected Returns</h3>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-brand-dark font-medium text-sm">Annual Return</span>
+                                            <span className="text-brand-deep font-bold">12.25%</span>
                                         </div>
-                                     </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-brand-sage font-medium text-sm">Rental Yield</span>
+                                            <span className="text-brand-dark font-medium">10.79%</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-brand-sage font-medium text-sm">Appreciation</span>
+                                            <span className="text-brand-dark font-medium">1.70%</span>
+                                        </div>
+                                    </div>
+                                 </div>
 
-                                     <div>
-                                        <h3 className="font-bold text-brand-dark mb-4 border-b border-brand-lightGray pb-2">Operating Financials</h3>
-                                        <div className="space-y-3">
-                                            <div className="flex justify-between items-center">
-                                                <span className="text-brand-dark font-bold text-sm">Annual Gross Rents</span>
-                                                <span className="text-brand-medium font-bold">$119,455</span>
-                                            </div>
-                                            {[
-                                                { label: "Property Taxes", value: "-$5,729.28" },
-                                                { label: "Homeowners Insurance", value: "-$3,378.00" },
-                                                { label: "Property Management", value: "-$29,863.92" },
-                                                { label: "Utilities", value: "-$49,670.64" },
-                                                { label: "LLC Admin & Filing Fees", value: "-$750.00" },
-                                            ].map((item, i) => (
-                                                <div key={i} className="flex justify-between items-center text-sm">
-                                                    <span className="text-brand-sage font-medium">{item.label}</span>
-                                                    <span className="text-brand-dark font-medium">{item.value}</span>
-                                                </div>
-                                            ))}
-                                            <div className="border-t border-brand-lightGray pt-2 flex justify-between items-center mt-2">
-                                                <span className="text-brand-dark font-bold text-sm">Annual Cash Flow</span>
-                                                <span className="text-brand-medium font-bold">$30,064</span>
-                                            </div>
+                                 <div>
+                                    <h3 className="font-bold text-brand-dark mb-4 border-b border-brand-lightGray pb-2">Operating Financials</h3>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-brand-dark font-bold text-sm">Annual Gross Rents</span>
+                                            <span className="text-brand-medium font-bold">$119,455</span>
                                         </div>
-                                     </div>
+                                        {[
+                                            { label: "Property Taxes", value: "-$5,729.28" },
+                                            { label: "Homeowners Insurance", value: "-$3,378.00" },
+                                            { label: "Property Management", value: "-$29,863.92" },
+                                            { label: "Utilities", value: "-$49,670.64" },
+                                            { label: "LLC Admin & Filing Fees", value: "-$750.00" },
+                                        ].map((item, i) => (
+                                            <div key={i} className="flex justify-between items-center text-sm">
+                                                <span className="text-brand-sage font-medium">{item.label}</span>
+                                                <span className="text-brand-dark font-medium">{item.value}</span>
+                                            </div>
+                                        ))}
+                                        <div className="border-t border-brand-lightGray pt-2 flex justify-between items-center mt-2">
+                                            <span className="text-brand-dark font-bold text-sm">Annual Cash Flow</span>
+                                            <span className="text-brand-medium font-bold">$30,064</span>
+                                        </div>
+                                    </div>
                                  </div>
 
                                  <div>
