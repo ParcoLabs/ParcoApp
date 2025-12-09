@@ -592,6 +592,22 @@ enum VoteChoice {
   ABSTAIN
 }
 
+model DemoHolding {
+  id            String   @id @default(cuid())
+  userId        String
+  propertyId    String
+  propertyName  String
+  quantity      Int      @default(0)
+  averageCost   Decimal  @default(0) @db.Decimal(18, 6)
+  totalInvested Decimal  @default(0) @db.Decimal(18, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, propertyId])
+  @@index([userId])
+  @@index([propertyId])
+}
+
 model DemoLendingPool {
   id        String                @id @default(cuid())
   name      String                @unique

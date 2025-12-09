@@ -8,6 +8,15 @@ const router = Router();
 const DEMO_WALLET_PREFIX = 'demo_wallet_';
 const INITIAL_DEMO_BALANCE = 25000;
 
+// Mock properties for demo mode (matches frontend mockData.ts)
+const MOCK_PROPERTIES: Record<string, { id: string; title: string; tokenPrice: number; availableTokens: number; rentalYield: number }> = {
+  '1': { id: '1', title: '560 State St', tokenPrice: 50, availableTokens: 450, rentalYield: 9.8 },
+  '2': { id: '2', title: '88 Oakely Lane', tokenPrice: 50, availableTokens: 120, rentalYield: 13.8 },
+  '3': { id: '3', title: '112 Biscayne Rd', tokenPrice: 100, availableTokens: 20, rentalYield: 10.1 },
+  '4': { id: '4', title: '1492 E 84th St', tokenPrice: 50, availableTokens: 0, rentalYield: 9.8 },
+  '5': { id: '5', title: 'Austin Tech Park', tokenPrice: 100, availableTokens: 5000, rentalYield: 6.9 },
+};
+
 const requireDemoMode = (req: any, res: any, next: any) => {
   console.log('[requireDemoMode] Checking demo mode, isDemoMode():', isDemoMode());
   if (!isDemoMode()) {
@@ -236,8 +245,10 @@ router.post('/buy', requireDemoMode, apiAuth, async (req, res) => {
     }
 
     const { propertyId, quantity, paymentMethod = 'usdc' } = req.body;
+    console.log('[Demo Buy] Body:', { propertyId, quantity, paymentMethod });
 
     if (!propertyId || !quantity || quantity < 1) {
+      console.log('[Demo Buy] Invalid input - returning 400');
       return res.status(400).json({
         success: false,
         error: 'Property ID and quantity are required',
@@ -246,37 +257,52 @@ router.post('/buy', requireDemoMode, apiAuth, async (req, res) => {
 
     const validPaymentMethods = ['usdc', 'btc', 'parco'];
     if (!validPaymentMethods.includes(paymentMethod)) {
+      console.log('[Demo Buy] Invalid payment method - returning 400');
       return res.status(400).json({
         success: false,
         error: 'Invalid payment method. Use usdc, btc, or parco.',
       });
     }
 
+    console.log('[Demo Buy] Looking up user...');
     const user = await prisma.user.findUnique({
       where: { clerkId },
       include: { vaultAccount: true },
     });
+    console.log('[Demo Buy] User found:', !!user, 'Vault:', !!user?.vaultAccount);
 
     if (!user || !user.vaultAccount) {
+      console.log('[Demo Buy] User or vault not found - returning 404');
       return res.status(404).json({
         success: false,
         error: 'User or vault not found. Please setup demo first.',
       });
     }
 
-    const property = await prisma.property.findUnique({
+    console.log('[Demo Buy] Looking up property:', propertyId);
+    
+    // First try database, then fall back to mock properties
+    let property = await prisma.property.findUnique({
       where: { id: propertyId },
       include: { token: true },
     });
+    
+    // Check if we have a mock property for demo mode
+    const mockProperty = MOCK_PROPERTIES[propertyId];
+    const useMockProperty = !property && mockProperty;
+    
+    console.log('[Demo Buy] DB Property found:', !!property, 'Mock Property found:', !!mockProperty);
 
-    if (!property || !property.token) {
+    if (!property && !mockProperty) {
+      console.log('[Demo Buy] Property not found - returning 404');
       return res.status(404).json({
         success: false,
         error: 'Property not found',
       });
     }
 
-    const tokenPrice = Number(property.tokenPrice);
+    const tokenPrice = useMockProperty ? mockProperty.tokenPrice : Number(property!.tokenPrice);
+    const availableTokens = useMockProperty ? mockProperty.availableTokens : property!.availableTokens;
     const totalCost = tokenPrice * quantity;
     
     const vault = user.vaultAccount;
@@ -297,12 +323,79 @@ router.post('/buy', requireDemoMode, apiAuth, async (req, res) => {
       });
     }
 
-    if (quantity > property.availableTokens) {
+    if (quantity > availableTokens) {
       return res.status(400).json({
         success: false,
         error: 'Not enough tokens available',
         requested: quantity,
-        available: property.availableTokens,
+        available: availableTokens,
+      });
+    }
+
+    // For mock properties in demo mode, we create a simulated purchase record
+    // without requiring actual database property/token
+    if (useMockProperty) {
+      console.log('[Demo Buy] Using mock property for demo purchase');
+      
+      // Just deduct balance and create a demo holding record
+      await prisma.vaultAccount.update({
+        where: { id: vault.id },
+        data: {
+          [balanceField]: { decrement: totalCost },
+        },
+      });
+      
+      // Create or update demo holding
+      const existingDemoHolding = await prisma.demoHolding.findUnique({
+        where: {
+          userId_propertyId: {
+            userId: user.id,
+            propertyId: propertyId,
+          },
+        },
+      });
+      
+      let demoHolding;
+      if (existingDemoHolding) {
+        const newQuantity = existingDemoHolding.quantity + quantity;
+        const newTotalInvested = Number(existingDemoHolding.totalInvested) + totalCost;
+        const newAverageCost = newTotalInvested / newQuantity;
+
+        demoHolding = await prisma.demoHolding.update({
+          where: { id: existingDemoHolding.id },
+          data: {
+            quantity: newQuantity,
+            totalInvested: newTotalInvested,
+            averageCost: newAverageCost,
+          },
+        });
+      } else {
+        demoHolding = await prisma.demoHolding.create({
+          data: {
+            userId: user.id,
+            propertyId: propertyId,
+            propertyName: mockProperty.title,
+            quantity,
+            averageCost: tokenPrice,
+            totalInvested: totalCost,
+          },
+        });
+      }
+      
+      console.log('[Demo Buy] Mock purchase complete');
+      return res.json({
+        success: true,
+        data: {
+          holdingId: demoHolding.id,
+          propertyId: propertyId,
+          propertyName: mockProperty.title,
+          quantity,
+          tokenPrice,
+          totalCost,
+          paymentMethod,
+          newBalance: paymentBalance - totalCost,
+          isDemo: true,
+        },
       });
     }
 
@@ -311,7 +404,7 @@ router.post('/buy', requireDemoMode, apiAuth, async (req, res) => {
         where: {
           userId_propertyId: {
             userId: user.id,
-            propertyId: property.id,
+            propertyId: property!.id,
           },
         },
       });
@@ -334,8 +427,8 @@ router.post('/buy', requireDemoMode, apiAuth, async (req, res) => {
         holding = await tx.holding.create({
           data: {
             userId: user.id,
-            propertyId: property.id,
-            tokenId: property.token!.id,
+            propertyId: property!.id,
+            tokenId: property!.token!.id,
             quantity,
             averageCost: tokenPrice,
             totalInvested: totalCost,
@@ -344,7 +437,7 @@ router.post('/buy', requireDemoMode, apiAuth, async (req, res) => {
       }
 
       await tx.property.update({
-        where: { id: property.id },
+        where: { id: property!.id },
         data: {
           availableTokens: { decrement: quantity },
         },
