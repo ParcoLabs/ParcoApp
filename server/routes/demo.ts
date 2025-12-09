@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { isDemoMode } from '../lib/demoMode';
-import { validateAuth } from '../middleware/auth';
+import { apiAuth } from '../middleware/auth';
 
 const router = Router();
 
@@ -9,17 +9,20 @@ const DEMO_WALLET_PREFIX = 'demo_wallet_';
 const INITIAL_DEMO_BALANCE = 25000;
 
 const requireDemoMode = (req: any, res: any, next: any) => {
+  console.log('[requireDemoMode] Checking demo mode, isDemoMode():', isDemoMode());
   if (!isDemoMode()) {
+    console.log('[requireDemoMode] Demo mode disabled, returning 403');
     return res.status(403).json({
       success: false,
       error: 'Demo mode is not enabled',
       code: 'DEMO_MODE_DISABLED',
     });
   }
+  console.log('[requireDemoMode] Demo mode enabled, proceeding');
   next();
 };
 
-router.post('/create-user', requireDemoMode, validateAuth, async (req, res) => {
+router.post('/create-user', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -190,7 +193,7 @@ const getDemoBalancesFromVault = (vault: { demoUsdcBalance: any; demoBtcBalance:
   };
 };
 
-router.get('/wallet-balances', requireDemoMode, validateAuth, async (req, res) => {
+router.get('/wallet-balances', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -222,10 +225,13 @@ router.get('/wallet-balances', requireDemoMode, validateAuth, async (req, res) =
   }
 });
 
-router.post('/buy', requireDemoMode, validateAuth, async (req, res) => {
+router.post('/buy', requireDemoMode, apiAuth, async (req, res) => {
+  console.log('[Demo Buy] Request received');
   try {
     const clerkId = (req as any).auth?.userId;
+    console.log('[Demo Buy] clerkId:', clerkId);
     if (!clerkId) {
+      console.log('[Demo Buy] No clerkId, returning 401');
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
@@ -422,7 +428,7 @@ router.post('/buy', requireDemoMode, validateAuth, async (req, res) => {
   }
 });
 
-router.post('/run-rent-cycle', requireDemoMode, validateAuth, async (req, res) => {
+router.post('/run-rent-cycle', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -568,7 +574,7 @@ router.post('/run-rent-cycle', requireDemoMode, validateAuth, async (req, res) =
   }
 });
 
-router.post('/borrow', requireDemoMode, validateAuth, async (req, res) => {
+router.post('/borrow', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -732,7 +738,7 @@ router.post('/borrow', requireDemoMode, validateAuth, async (req, res) => {
   }
 });
 
-router.post('/repay', requireDemoMode, validateAuth, async (req, res) => {
+router.post('/repay', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -959,7 +965,7 @@ router.get('/proposals', requireDemoMode, async (req, res) => {
   }
 });
 
-router.post('/proposals/create', requireDemoMode, validateAuth, async (req, res) => {
+router.post('/proposals/create', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -1021,7 +1027,7 @@ router.post('/proposals/create', requireDemoMode, validateAuth, async (req, res)
   }
 });
 
-router.post('/proposals/vote', requireDemoMode, validateAuth, async (req, res) => {
+router.post('/proposals/vote', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -1147,7 +1153,7 @@ router.post('/proposals/vote', requireDemoMode, validateAuth, async (req, res) =
   }
 });
 
-router.post('/reset', requireDemoMode, validateAuth, async (req, res) => {
+router.post('/reset', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -1289,7 +1295,7 @@ router.post('/reset', requireDemoMode, validateAuth, async (req, res) => {
   }
 });
 
-router.get('/status', requireDemoMode, validateAuth, async (req, res) => {
+router.get('/status', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -1360,7 +1366,7 @@ router.get('/status', requireDemoMode, validateAuth, async (req, res) => {
   }
 });
 
-router.get('/portfolio', requireDemoMode, validateAuth, async (req, res) => {
+router.get('/portfolio', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -1462,7 +1468,7 @@ router.get('/portfolio', requireDemoMode, validateAuth, async (req, res) => {
   }
 });
 
-router.get('/lending-pools', requireDemoMode, validateAuth, async (req, res) => {
+router.get('/lending-pools', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -1517,7 +1523,7 @@ router.get('/lending-pools', requireDemoMode, validateAuth, async (req, res) => 
   }
 });
 
-router.post('/lending-pools/deposit', requireDemoMode, validateAuth, async (req, res) => {
+router.post('/lending-pools/deposit', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -1613,7 +1619,7 @@ router.post('/lending-pools/deposit', requireDemoMode, validateAuth, async (req,
   }
 });
 
-router.post('/lending-pools/withdraw', requireDemoMode, validateAuth, async (req, res) => {
+router.post('/lending-pools/withdraw', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -1701,7 +1707,7 @@ router.post('/lending-pools/withdraw', requireDemoMode, validateAuth, async (req
   }
 });
 
-router.get('/governance-proposals', requireDemoMode, validateAuth, async (req, res) => {
+router.get('/governance-proposals', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
@@ -1769,7 +1775,7 @@ router.get('/governance-proposals', requireDemoMode, validateAuth, async (req, r
   }
 });
 
-router.post('/governance-proposals/vote', requireDemoMode, validateAuth, async (req, res) => {
+router.post('/governance-proposals/vote', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
     if (!clerkId) {
