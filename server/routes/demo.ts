@@ -1487,7 +1487,13 @@ router.get('/portfolio', requireDemoMode, apiAuth, async (req, res) => {
       take: 10,
     });
 
-    const propertyHoldings = user.holdings.map(h => {
+    // Fetch demo holdings (from mock property purchases)
+    const demoHoldings = await prisma.demoHolding.findMany({
+      where: { userId: user.id },
+    });
+
+    // Map database property holdings
+    const dbPropertyHoldings = user.holdings.map(h => {
       const avgCost = Number(h.averageCost);
       const currentPrice = Number(h.property.tokenPrice);
       const change = avgCost > 0 ? ((currentPrice - avgCost) / avgCost) * 100 : 0;
@@ -1503,10 +1509,55 @@ router.get('/portfolio', requireDemoMode, apiAuth, async (req, res) => {
         currentPrice,
         totalValue: h.quantity * currentPrice,
         totalInvested: Number(h.totalInvested),
-        rentEarned: Number(h.rentEarned),
+        rentEarned: 0,
         change,
+        isDemoHolding: false,
       };
     });
+
+    // Map demo holdings (mock property purchases)
+    const demoPropertyHoldings = demoHoldings.map(h => {
+      const mockProp = MOCK_PROPERTIES[h.propertyId];
+      const avgCost = Number(h.averageCost);
+      const currentPrice = mockProp?.tokenPrice || avgCost;
+      const change = avgCost > 0 ? ((currentPrice - avgCost) / avgCost) * 100 : 0;
+      
+      // Get mock property images
+      const mockImages: Record<string, string> = {
+        '1': 'https://images.unsplash.com/photo-1577495508048-b635879837f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+        '2': 'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+        '3': 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+        '4': 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+        '5': 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+      };
+      
+      const mockLocations: Record<string, string> = {
+        '1': 'New York, NY',
+        '2': 'New Orleans, LA',
+        '3': 'Miami, FL',
+        '4': 'New York, NY',
+        '5': 'Austin, TX',
+      };
+      
+      return {
+        id: h.propertyId,
+        title: h.propertyName,
+        location: mockLocations[h.propertyId] || 'USA',
+        image: mockImages[h.propertyId] || 'https://picsum.photos/200/200?random=' + h.propertyId,
+        tokensOwned: h.quantity,
+        lockedTokens: 0,
+        avgCost,
+        currentPrice,
+        totalValue: h.quantity * currentPrice,
+        totalInvested: Number(h.totalInvested),
+        rentEarned: 0,
+        change,
+        isDemoHolding: true,
+      };
+    });
+
+    // Combine both types of holdings
+    const propertyHoldings = [...dbPropertyHoldings, ...demoPropertyHoldings];
 
     const totalPropertyValue = propertyHoldings.reduce((sum, h) => sum + h.totalValue, 0);
     const totalInvested = propertyHoldings.reduce((sum, h) => sum + h.totalInvested, 0);
