@@ -62,7 +62,7 @@ export const Settings: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-brand-offWhite p-4 md:p-8">
+    <div className="min-h-screen bg-brand-offWhite p-4 md:p-8 pt-20 md:pt-8 pb-24 md:pb-8">
       <div className="max-w-2xl mx-auto">
         
         {/* Header */}

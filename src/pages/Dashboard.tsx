@@ -39,15 +39,14 @@ const CRYPTO_ICONS: Record<string, { icon: string; color: string }> = {
   parco: { icon: parcoLogo, color: '#41b39a' },
 };
 
-const DEMO_CHART_DATA = [
-  { name: 'Jan', value: 24000 },
-  { name: 'Feb', value: 24200 },
-  { name: 'Mar', value: 24800 },
-  { name: 'Apr', value: 25100 },
-  { name: 'May', value: 25400 },
-  { name: 'Jun', value: 25800 },
-  { name: 'Jul', value: 25000 },
-];
+const generateChartData = (currentTotal: number) => {
+  const months = ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
+  const startValue = currentTotal * 0.92;
+  return months.map((name, i) => ({
+    name,
+    value: Math.round(startValue + (currentTotal - startValue) * ((i + 1) / months.length) * (1 + (Math.random() - 0.5) * 0.02)),
+  }));
+};
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -115,10 +114,17 @@ export const Dashboard: React.FC = () => {
   };
   const recentActivity = portfolioData?.recentActivity || [];
 
+  const totalPortfolioValue = summary.totalPropertyValue + 
+    (walletBalances.usdc?.balance || 0) + 
+    (walletBalances.btc?.balance || 0) + 
+    (walletBalances.parco?.balance || 0);
+  
+  const chartData = generateChartData(totalPortfolioValue);
+
   if (demoMode) {
     if (isLoading) {
       return (
-        <div className="p-4 md:p-8 max-w-5xl mx-auto">
+        <div className="p-4 md:p-8 max-w-5xl mx-auto pt-20 md:pt-8">
           <div className="animate-pulse space-y-6">
             <div className="h-12 bg-brand-lightGray rounded w-1/3"></div>
             <div className="h-48 bg-brand-lightGray rounded"></div>
@@ -129,14 +135,14 @@ export const Dashboard: React.FC = () => {
     }
 
     return (
-      <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
+      <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6 pt-20 md:pt-8 pb-24 md:pb-8">
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <p className="text-xs text-brand-sage font-medium uppercase tracking-wide mb-1">Total Balance</p>
-            <div className="flex items-baseline gap-3 mb-1">
+            <div className="flex items-baseline gap-3 mb-1 flex-wrap">
               <h1 className="text-4xl font-bold text-brand-black">
-                ${summary.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${totalPortfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h1>
               <span className={`text-sm font-bold ${summary.netGains >= 0 ? 'text-brand-medium' : 'text-red-500'}`}>
                 {summary.netGains >= 0 ? '+' : ''}${summary.netGains.toLocaleString('en-US', { minimumFractionDigits: 2 })} ({summary.netGainsPercent.toFixed(2)}%)
@@ -146,7 +152,7 @@ export const Dashboard: React.FC = () => {
             
             <div className="bg-white rounded-xl border border-brand-lightGray p-4 mt-4 h-48 min-h-[192px]">
               <ResponsiveContainer width="100%" height="100%" minWidth={300} minHeight={150}>
-                <AreaChart data={DEMO_CHART_DATA}>
+                <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorValueDemo" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#41b39a" stopOpacity={0.3}/>
@@ -354,7 +360,7 @@ export const Dashboard: React.FC = () => {
   }
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8 pt-20 md:pt-8 pb-24 md:pb-8">
       
       <div className="flex justify-between items-start">
         <div>

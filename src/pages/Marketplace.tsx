@@ -104,7 +104,7 @@ export const Marketplace: React.FC = () => {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-6 pt-20 md:pt-8 pb-24 md:pb-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-brand-dark">Marketplace</h1>
@@ -112,7 +112,7 @@ export const Marketplace: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0 sticky top-0 md:static z-10 bg-brand-offWhite py-2 md:py-0">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0 sticky top-14 md:top-0 md:static z-10 bg-brand-offWhite py-2 md:py-0">
         {filters.map(f => (
           <button 
             key={f}

@@ -123,16 +123,29 @@ export const Navigation: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Demo Mode Banner */}
+      {/* Mobile Top Header */}
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-brand-offWhite border-b border-brand-lightGray px-4 py-3 flex items-center justify-between z-50">
+        <button onClick={() => navigate('/')} className="flex items-center">
+          <img src="/brand/ParcoLogoGreen.png" alt="Parco Logo" className="w-8 h-8 object-contain" />
+        </button>
+        <button 
+          onClick={() => navigate('/settings')} 
+          className="p-2 text-brand-dark hover:text-brand-deep transition-colors"
+        >
+          <i className="fa-solid fa-bars text-xl"></i>
+        </button>
+      </div>
+
+      {/* Mobile Demo Mode Banner - positioned below header */}
       {demoMode && (
-        <div className="md:hidden fixed top-0 left-0 right-0 bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-center gap-2 z-50">
+        <div className="md:hidden fixed top-[52px] left-0 right-0 bg-amber-50 border-b border-amber-200 px-4 py-1.5 flex items-center justify-center gap-2 z-40">
           <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
           <span className="text-xs font-medium text-amber-700">Demo Mode</span>
         </div>
       )}
 
       {/* Mobile Bottom Tab Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-brand-lightGray px-6 py-3 flex justify-between items-center z-50 pb-safe safe-area-bottom">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-brand-lightGray px-4 py-3 flex justify-around items-center z-50 pb-safe safe-area-bottom">
         {navItems.map((item) => (
           <button
             key={item.path}
@@ -145,15 +158,6 @@ export const Navigation: React.FC = () => {
             <span className="text-[10px] font-medium">{item.label}</span>
           </button>
         ))}
-         <button
-            onClick={() => navigate('/settings')}
-            className={`flex flex-col items-center gap-1 ${
-                isActive('/settings') ? 'text-brand-deep' : 'text-brand-sage'
-            }`}
-          >
-            <i className={`fa-solid fa-gear text-lg mb-1`}></i>
-            <span className="text-[10px] font-medium">Settings</span>
-          </button>
       </div>
     </>
   );

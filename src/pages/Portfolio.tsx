@@ -5,14 +5,14 @@ import { useDemoMode } from '../context/DemoModeContext';
 import { useDemo } from '../hooks/useDemo';
 import parcoLogo from '/brand/logo-green.svg';
 
-const DEMO_CHART_DATA = [
-  { name: 'Jan', v: 24000 }, 
-  { name: 'Feb', v: 24500 }, 
-  { name: 'Mar', v: 24200 }, 
-  { name: 'Apr', v: 25800 }, 
-  { name: 'May', v: 26100 }, 
-  { name: 'Jun', v: 26354 }
-];
+const generateChartData = (currentTotal: number) => {
+  const months = ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
+  const startValue = currentTotal * 0.92;
+  return months.map((name, i) => ({
+    name,
+    v: Math.round(startValue + (currentTotal - startValue) * ((i + 1) / months.length) * (1 + (Math.random() - 0.5) * 0.02)),
+  }));
+};
 
 const CRYPTO_ICONS: Record<string, { icon: string; color: string }> = {
   usdc: { icon: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png', color: '#2775ca' },
@@ -46,7 +46,7 @@ export const Portfolio: React.FC = () => {
 
   if (!demoMode) {
     return (
-      <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="p-4 md:p-8 max-w-7xl mx-auto pt-20 md:pt-8">
         <div className="text-center py-16">
           <i className="fa-solid fa-chart-pie text-6xl text-brand-lightGray mb-4"></i>
           <h2 className="text-2xl font-bold text-brand-dark mb-2">Portfolio</h2>
@@ -58,7 +58,7 @@ export const Portfolio: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="p-4 md:p-8 max-w-7xl mx-auto">
+      <div className="p-4 md:p-8 max-w-7xl mx-auto pt-20 md:pt-8">
         <div className="animate-pulse space-y-6">
           <div className="h-12 bg-brand-lightGray rounded w-1/3"></div>
           <div className="h-64 bg-brand-lightGray rounded"></div>
@@ -86,8 +86,15 @@ export const Portfolio: React.FC = () => {
   };
   const recentActivity = portfolioData?.recentActivity || [];
 
+  const totalPortfolioValue = summary.totalPropertyValue + 
+    (walletBalances.usdc?.balance || 0) + 
+    (walletBalances.btc?.balance || 0) + 
+    (walletBalances.parco?.balance || 0);
+  
+  const chartData = generateChartData(totalPortfolioValue);
+
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 pb-24">
+    <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 pt-20 md:pt-8 pb-24">
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
@@ -95,7 +102,7 @@ export const Portfolio: React.FC = () => {
            <div>
               <p className="text-brand-sage font-bold text-sm uppercase tracking-wide mb-1">Total Balance</p>
               <h1 className="text-4xl md:text-5xl font-bold text-brand-dark mb-2">
-                ${summary.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                ${totalPortfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h1>
               <div className="flex items-center gap-2 text-sm font-bold">
                  <span className={summary.netGains >= 0 ? 'text-brand-medium' : 'text-red-500'}>
@@ -107,7 +114,7 @@ export const Portfolio: React.FC = () => {
 
            <div className="h-64 md:h-80 w-full -ml-2">
              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={DEMO_CHART_DATA}>
+                <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorV" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#41b39a" stopOpacity={0.2}/>

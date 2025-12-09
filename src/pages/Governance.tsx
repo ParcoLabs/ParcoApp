@@ -88,7 +88,7 @@ export const Governance: React.FC = () => {
 
   if (!demoMode) {
     return (
-      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center p-4">
+      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center p-4 pt-20 md:pt-8 pb-24 md:pb-8">
         <div className="text-center">
           <i className="fa-solid fa-gavel text-4xl text-brand-sage mb-4"></i>
           <h2 className="text-xl font-bold text-brand-dark mb-2">Governance Unavailable</h2>
@@ -106,7 +106,7 @@ export const Governance: React.FC = () => {
 
   if (isLoadingStatus) {
     return (
-      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center p-4">
+      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center p-4 pt-20 md:pt-8 pb-24 md:pb-8">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep"></div>
       </div>
     );
@@ -114,7 +114,7 @@ export const Governance: React.FC = () => {
 
   if (!demoStatus?.vault?.balance) {
     return (
-      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center p-4">
+      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center p-4 pt-20 md:pt-8 pb-24 md:pb-8">
         <div className="text-center max-w-md">
           <i className="fa-solid fa-gavel text-4xl text-amber-500 mb-4"></i>
           <h2 className="text-xl font-bold text-brand-dark mb-2">Setup Demo First</h2>
@@ -135,7 +135,7 @@ export const Governance: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-brand-offWhite p-4 md:p-8">
+    <div className="min-h-screen bg-brand-offWhite p-4 md:p-8 pt-20 md:pt-8 pb-24 md:pb-8">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="mb-8">

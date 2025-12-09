@@ -27,9 +27,9 @@ export const DefiMobile: React.FC<DefiMobileProps> = ({
   borrowModalOpen, lendModalOpen, selectedProperty, selectedPool, closeModals 
 }) => {
   return (
-    <div className="pb-24">
+    <div className="pb-24 pt-14">
       {/* Mobile Header */}
-      <div className="p-6 bg-white border-b border-brand-lightGray sticky top-0 z-10">
+      <div className="p-6 bg-white border-b border-brand-lightGray sticky top-14 z-10">
         <h1 className="text-2xl font-bold text-brand-dark">DeFi</h1>
         <p className="text-brand-sage text-sm mt-1">Borrow, Lend, and Earn</p>
         
