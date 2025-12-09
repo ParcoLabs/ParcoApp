@@ -1386,7 +1386,6 @@ router.get('/portfolio', requireDemoMode, validateAuth, async (req, res) => {
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
       take: 10,
-      include: { property: true },
     });
 
     const propertyHoldings = user.holdings.map(h => {
@@ -1432,7 +1431,7 @@ router.get('/portfolio', requireDemoMode, validateAuth, async (req, res) => {
       type: tx.type,
       date: tx.completedAt || tx.createdAt,
       amount: tx.type === 'RENT_DISTRIBUTION' || tx.type === 'DEPOSIT' ? `+ $${Number(tx.amount).toFixed(2)}` : `- $${Number(tx.amount).toFixed(2)}`,
-      asset: tx.property?.name || tx.currency || 'USDC',
+      asset: tx.description || tx.currency || 'USDC',
       positive: ['RENT_DISTRIBUTION', 'DEPOSIT', 'BORROW'].includes(tx.type),
     }));
 
