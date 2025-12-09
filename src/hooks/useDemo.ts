@@ -229,7 +229,9 @@ export const useDemo = () => {
   }, [demoMode]);
 
   const getBorrowableHoldings = useCallback(async (): Promise<any[] | null> => {
+    console.log('[useDemo] getBorrowableHoldings called, demoMode:', demoMode);
     if (!demoMode) {
+      console.log('[useDemo] demoMode is false, returning null');
       setError('Demo mode is not enabled');
       return null;
     }
@@ -239,10 +241,12 @@ export const useDemo = () => {
 
     try {
       const headers = await getAuthHeaders();
+      console.log('[useDemo] Making API call to /api/demo/borrowable-holdings');
       const response = await fetch('/api/demo/borrowable-holdings', {
         headers,
         credentials: 'include',
       });
+      console.log('[useDemo] API response status:', response.status);
 
       const data = await response.json();
       

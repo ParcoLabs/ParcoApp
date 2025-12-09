@@ -50,6 +50,7 @@ export const DefiPage: React.FC = () => {
   const { getLendingPools, depositToPool, withdrawFromPool, getBorrowableHoldings, demoBorrow, loading, error } = useDemo();
 
   useEffect(() => {
+    console.log('[DefiPage] useEffect triggered, demoMode:', demoMode);
     if (demoMode) {
       loadLendingPools();
       loadBorrowableHoldings();
@@ -64,7 +65,9 @@ export const DefiPage: React.FC = () => {
   };
 
   const loadBorrowableHoldings = async () => {
+    console.log('[DefiPage] loadBorrowableHoldings called');
     const holdings = await getBorrowableHoldings();
+    console.log('[DefiPage] borrowable holdings result:', holdings);
     if (holdings) {
       setBorrowableHoldings(holdings);
     }

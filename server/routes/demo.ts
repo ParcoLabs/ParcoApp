@@ -695,8 +695,10 @@ router.post('/run-rent-cycle', requireDemoMode, apiAuth, async (req, res) => {
 
 // Get borrowable holdings (including DemoHolding)
 router.get('/borrowable-holdings', requireDemoMode, apiAuth, async (req, res) => {
+  console.log('[Borrowable Holdings] Request received');
   try {
     const clerkId = (req as any).auth?.userId;
+    console.log('[Borrowable Holdings] clerkId:', clerkId);
     if (!clerkId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -708,6 +710,8 @@ router.get('/borrowable-holdings', requireDemoMode, apiAuth, async (req, res) =>
       },
     });
 
+    console.log('[Borrowable Holdings] User found:', !!user);
+
     if (!user) {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
@@ -716,6 +720,9 @@ router.get('/borrowable-holdings', requireDemoMode, apiAuth, async (req, res) =>
     const demoHoldings = await prisma.demoHolding.findMany({
       where: { userId: user.id },
     });
+
+    console.log('[Borrowable Holdings] DB Holdings:', user.holdings.length);
+    console.log('[Borrowable Holdings] Demo Holdings:', demoHoldings.length, demoHoldings.map(h => ({ id: h.propertyId, qty: h.quantity })));
 
     // Map database holdings
     const dbBorrowable = user.holdings
