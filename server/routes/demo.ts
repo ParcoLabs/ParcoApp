@@ -1360,6 +1360,109 @@ router.get('/status', requireDemoMode, validateAuth, async (req, res) => {
   }
 });
 
+router.get('/portfolio', requireDemoMode, validateAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      include: {
+        vaultAccount: true,
+        holdings: { 
+          include: { property: true },
+          where: { quantity: { gt: 0 } },
+        },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const transactions = await prisma.transaction.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      include: { property: true },
+    });
+
+    const propertyHoldings = user.holdings.map(h => {
+      const avgCost = Number(h.averageCost);
+      const currentPrice = Number(h.property.tokenPrice);
+      const change = avgCost > 0 ? ((currentPrice - avgCost) / avgCost) * 100 : 0;
+      
+      return {
+        id: h.propertyId,
+        title: h.property.name,
+        location: `${h.property.city}, ${h.property.state}`,
+        image: h.property.images[0] || h.property.imageUrl || 'https://picsum.photos/200/200?random=1',
+        tokensOwned: h.quantity,
+        lockedTokens: h.demoLockedQuantity,
+        avgCost,
+        currentPrice,
+        totalValue: h.quantity * currentPrice,
+        totalInvested: Number(h.totalInvested),
+        rentEarned: Number(h.rentEarned),
+        change,
+      };
+    });
+
+    const totalPropertyValue = propertyHoldings.reduce((sum, h) => sum + h.totalValue, 0);
+    const totalInvested = propertyHoldings.reduce((sum, h) => sum + h.totalInvested, 0);
+    const totalRentEarned = propertyHoldings.reduce((sum, h) => sum + h.rentEarned, 0);
+
+    const walletBalances = user.vaultAccount ? {
+      usdc: { name: 'USDC', symbol: 'USDC', balance: Number(user.vaultAccount.demoUsdcBalance) },
+      btc: { name: 'Bitcoin', symbol: 'BTC', balance: Number(user.vaultAccount.demoBtcBalance) },
+      parco: { name: 'Parco Token', symbol: 'PARCO', balance: Number(user.vaultAccount.demoParcoBalance) },
+    } : null;
+
+    const totalCryptoValue = walletBalances 
+      ? walletBalances.usdc.balance + walletBalances.btc.balance + walletBalances.parco.balance
+      : 0;
+
+    const totalBalance = totalPropertyValue + totalCryptoValue;
+    const netGains = totalPropertyValue - totalInvested + totalRentEarned;
+
+    const recentActivity = transactions.map(tx => ({
+      id: tx.id,
+      type: tx.type,
+      date: tx.completedAt || tx.createdAt,
+      amount: tx.type === 'RENT_DISTRIBUTION' || tx.type === 'DEPOSIT' ? `+ $${Number(tx.amount).toFixed(2)}` : `- $${Number(tx.amount).toFixed(2)}`,
+      asset: tx.property?.name || tx.currency || 'USDC',
+      positive: ['RENT_DISTRIBUTION', 'DEPOSIT', 'BORROW'].includes(tx.type),
+    }));
+
+    res.json({
+      success: true,
+      demoMode: true,
+      data: {
+        summary: {
+          totalBalance,
+          totalPropertyValue,
+          totalCryptoValue,
+          totalInvested,
+          totalRentEarned,
+          netGains,
+          netGainsPercent: totalInvested > 0 ? (netGains / totalInvested) * 100 : 0,
+        },
+        properties: propertyHoldings,
+        walletBalances,
+        recentActivity,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching demo portfolio:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch portfolio details',
+    });
+  }
+});
+
 router.get('/lending-pools', requireDemoMode, validateAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;

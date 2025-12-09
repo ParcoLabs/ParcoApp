@@ -449,6 +449,54 @@ export const useDemo = () => {
     }
   }, [demoMode]);
 
+  const getWalletBalances = useCallback(async () => {
+    if (!demoMode) {
+      setError('Demo mode is not enabled');
+      return null;
+    }
+
+    try {
+      const response = await fetch('/api/demo/wallet-balances', {
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to get wallet balances');
+      }
+
+      return data.data.balances;
+    } catch (err: any) {
+      setError(err.message);
+      return null;
+    }
+  }, [demoMode]);
+
+  const getPortfolioDetails = useCallback(async () => {
+    if (!demoMode) {
+      setError('Demo mode is not enabled');
+      return null;
+    }
+
+    try {
+      const response = await fetch('/api/demo/portfolio', {
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to get portfolio details');
+      }
+
+      return data.data;
+    } catch (err: any) {
+      setError(err.message);
+      return null;
+    }
+  }, [demoMode]);
+
   const getLendingPools = useCallback(async () => {
     if (!demoMode) {
       setError('Demo mode is not enabled');
@@ -617,6 +665,8 @@ export const useDemo = () => {
     voteOnProposal,
     resetDemo,
     getDemoStatus,
+    getWalletBalances,
+    getPortfolioDetails,
     getLendingPools,
     depositToPool,
     withdrawFromPool,

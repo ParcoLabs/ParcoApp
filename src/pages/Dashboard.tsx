@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
-import { BrandColors } from '../brand';
+import { useNavigate } from 'react-router-dom';
 import { useDemoMode } from '../context/DemoModeContext';
 import { useDemo } from '../hooks/useDemo';
 import { useAuth } from '../context/AuthContext';
@@ -34,51 +33,11 @@ const PREVIEW_PROPERTIES = [
   }
 ];
 
-const DEMO_OWNED_PROPERTIES = [
-  {
-    id: '1',
-    title: '560 State St',
-    location: 'New York, NY',
-    value: 7000,
-    change: '+8%',
-    image: 'https://picsum.photos/200/200?random=1'
-  },
-  {
-    id: '2',
-    title: '88 Oakley Lane',
-    location: 'New Orleans, LA',
-    value: 5000,
-    change: '+2.4%',
-    image: 'https://picsum.photos/200/200?random=2'
-  }
-];
-
-const DEMO_CRYPTO_BALANCES = [
-  {
-    id: 'usdc',
-    name: 'USDC',
-    symbol: 'USDC',
-    balance: 10000,
-    icon: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png',
-    color: '#2775ca'
-  },
-  {
-    id: 'btc',
-    name: 'Bitcoin',
-    symbol: 'BTC',
-    balance: 2000,
-    icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png',
-    color: '#f7931a'
-  },
-  {
-    id: 'parco',
-    name: 'Parco Token',
-    symbol: 'PARCO',
-    balance: 1000,
-    icon: parcoLogo,
-    color: '#41b39a'
-  }
-];
+const CRYPTO_ICONS: Record<string, { icon: string; color: string }> = {
+  usdc: { icon: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png', color: '#2775ca' },
+  btc: { icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', color: '#f7931a' },
+  parco: { icon: parcoLogo, color: '#41b39a' },
+};
 
 const DEMO_CHART_DATA = [
   { name: 'Jan', value: 24000 },
@@ -90,22 +49,14 @@ const DEMO_CHART_DATA = [
   { name: 'Jul', value: 25000 },
 ];
 
-const DEMO_ACTIVITY = [
-  { type: 'rent', label: 'Rent Payout', detail: 'Sep 24 • 560 State St', amount: '+$45.10', positive: true },
-  { type: 'buy', label: 'Buy', detail: 'Sep 18 • 88 Oakley Lane', amount: '-$500.00', positive: false },
-  { type: 'deposit', label: 'Deposit', detail: 'Sep 15 • USDC', amount: '+$1,000.00', positive: true },
-];
-
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'properties' | 'crypto'>('properties');
   const { demoMode } = useDemoMode();
-  const { setupDemoUser, runRentCycle, getDemoStatus, loading, error } = useDemo();
-  const { user, refreshUser } = useAuth();
-  const [demoStatus, setDemoStatus] = useState<any>(null);
-  const [rentResult, setRentResult] = useState<any>(null);
-  const [showRentModal, setShowRentModal] = useState(false);
-  const [isSettingUp, setIsSettingUp] = useState(false);
+  const { setupDemoUser, runRentCycle, getPortfolioDetails, loading } = useDemo();
+  const { user } = useAuth();
+  const [portfolioData, setPortfolioData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (user?.role === 'TOKENIZER') {
@@ -116,46 +67,63 @@ export const Dashboard: React.FC = () => {
   }, [user?.role, navigate]);
 
   useEffect(() => {
-    if (demoMode && user) {
-      getDemoStatus().then(status => {
-        if (status) setDemoStatus(status);
-      });
-    }
+    const fetchData = async () => {
+      if (demoMode && user) {
+        setIsLoading(true);
+        await setupDemoUser();
+        const data = await getPortfolioDetails();
+        if (data) {
+          setPortfolioData(data);
+        }
+        setIsLoading(false);
+      }
+    };
+    fetchData();
   }, [demoMode, user]);
 
   if (user?.role === 'TOKENIZER' || user?.role === 'ADMIN') {
     return null;
   }
 
-  const handleSetupDemo = async () => {
-    setIsSettingUp(true);
-    const result = await setupDemoUser();
-    if (result) {
-      const status = await getDemoStatus();
-      if (status) setDemoStatus(status);
-    }
-    setIsSettingUp(false);
-  };
-
   const handleRunRentCycle = async () => {
     const result = await runRentCycle();
     if (result) {
-      setRentResult(result);
-      setShowRentModal(true);
-      const status = await getDemoStatus();
-      if (status) setDemoStatus(status);
+      const data = await getPortfolioDetails();
+      if (data) setPortfolioData(data);
     }
   };
 
-  const vaultBalance = demoStatus?.vault?.balance || 0;
-  const portfolioValue = demoStatus?.portfolio?.totalValue || 0;
-  const totalEarned = demoStatus?.vault?.totalEarned || 0;
+  const summary = portfolioData?.summary || {
+    totalBalance: 25000,
+    totalPropertyValue: 12000,
+    totalCryptoValue: 13000,
+    totalInvested: 24000,
+    netGains: 1000,
+    netGainsPercent: 4.17,
+    totalRentEarned: 0,
+  };
 
-  const demoPropertyValue = DEMO_OWNED_PROPERTIES.reduce((sum, p) => sum + p.value, 0);
-  const demoCryptoValue = DEMO_CRYPTO_BALANCES.reduce((sum, c) => sum + c.balance, 0);
-  const demoTotalBalance = demoPropertyValue + demoCryptoValue;
+  const properties = portfolioData?.properties || [];
+  const walletBalances = portfolioData?.walletBalances || {
+    usdc: { name: 'USDC', symbol: 'USDC', balance: 10000 },
+    btc: { name: 'Bitcoin', symbol: 'BTC', balance: 2000 },
+    parco: { name: 'Parco Token', symbol: 'PARCO', balance: 1000 },
+  };
+  const recentActivity = portfolioData?.recentActivity || [];
 
   if (demoMode) {
+    if (isLoading) {
+      return (
+        <div className="p-4 md:p-8 max-w-5xl mx-auto">
+          <div className="animate-pulse space-y-6">
+            <div className="h-12 bg-brand-lightGray rounded w-1/3"></div>
+            <div className="h-48 bg-brand-lightGray rounded"></div>
+            <div className="h-32 bg-brand-lightGray rounded"></div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
         
@@ -163,8 +131,12 @@ export const Dashboard: React.FC = () => {
           <div className="lg:col-span-2">
             <p className="text-xs text-brand-sage font-medium uppercase tracking-wide mb-1">Total Balance</p>
             <div className="flex items-baseline gap-3 mb-1">
-              <h1 className="text-4xl font-bold text-brand-black">${demoTotalBalance.toLocaleString()}.00</h1>
-              <span className="text-brand-medium text-sm font-bold">+$1,254.00 (4.89%)</span>
+              <h1 className="text-4xl font-bold text-brand-black">
+                ${summary.totalBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </h1>
+              <span className={`text-sm font-bold ${summary.netGains >= 0 ? 'text-brand-medium' : 'text-red-500'}`}>
+                {summary.netGains >= 0 ? '+' : ''}${summary.netGains.toLocaleString('en-US', { minimumFractionDigits: 2 })} ({summary.netGainsPercent.toFixed(2)}%)
+              </span>
               <span className="text-brand-sage text-xs">Past Month</span>
             </div>
             
@@ -194,15 +166,15 @@ export const Dashboard: React.FC = () => {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <span className="text-sm text-brand-sage">Net Invested</span>
-                <span className="font-bold text-brand-dark">$25,100.00</span>
+                <span className="font-bold text-brand-dark">${summary.totalInvested.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-brand-sage">Earned to Date</span>
-                <span className="font-bold text-brand-medium">+$650.00</span>
+                <span className="font-bold text-brand-medium">+${summary.netGains.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-sm text-brand-sage">Rent Payouts</span>
-                <span className="font-bold text-brand-medium">+$154.50</span>
+                <span className="font-bold text-brand-medium">+${summary.totalRentEarned.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
             <button 
@@ -237,40 +209,50 @@ export const Dashboard: React.FC = () => {
 
           {activeTab === 'properties' ? (
             <div className="space-y-3">
-              {DEMO_OWNED_PROPERTIES.map((prop) => (
-                <div 
-                  key={prop.id}
-                  className="bg-white border border-brand-lightGray rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/marketplace/${prop.id}`)}
-                >
-                  <div className="flex items-center gap-4">
-                    <img src={prop.image} alt={prop.title} className="w-12 h-12 object-cover rounded-lg bg-brand-lightGray" />
-                    <div>
-                      <h3 className="text-sm font-bold text-brand-dark">{prop.title}</h3>
-                      <p className="text-xs text-brand-sage">{prop.location}</p>
+              {properties.length > 0 ? (
+                properties.map((prop: any) => (
+                  <div 
+                    key={prop.id}
+                    className="bg-white border border-brand-lightGray rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => navigate(`/marketplace/${prop.id}`)}
+                  >
+                    <div className="flex items-center gap-4">
+                      <img src={prop.image} alt={prop.title} className="w-12 h-12 object-cover rounded-lg bg-brand-lightGray" />
+                      <div>
+                        <h3 className="text-sm font-bold text-brand-dark">{prop.title}</h3>
+                        <p className="text-xs text-brand-sage">{prop.location}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-brand-dark">${prop.totalValue.toLocaleString()}</p>
+                      <p className={`text-xs font-bold ${prop.change >= 0 ? 'text-brand-medium' : 'text-red-500'}`}>
+                        {prop.change > 0 ? '+' : ''}{prop.change.toFixed(1)}%
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-brand-dark">${prop.value.toLocaleString()}</p>
-                    <p className="text-xs text-brand-medium font-bold">{prop.change}</p>
-                  </div>
+                ))
+              ) : (
+                <div className="bg-white border border-brand-lightGray rounded-lg p-8 text-center">
+                  <i className="fa-solid fa-building text-4xl text-brand-lightGray mb-3"></i>
+                  <p className="text-brand-sage">No property tokens owned yet.</p>
+                  <p className="text-brand-sage text-sm">Visit the Marketplace to buy property tokens.</p>
                 </div>
-              ))}
+              )}
             </div>
           ) : (
             <div className="space-y-3">
-              {DEMO_CRYPTO_BALANCES.map((crypto) => (
+              {Object.entries(walletBalances).map(([key, crypto]: [string, any]) => (
                 <div 
-                  key={crypto.id}
+                  key={key}
                   className="bg-white border border-brand-lightGray rounded-lg p-3 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-4">
                     <div 
                       className="w-10 h-10 rounded-full flex items-center justify-center"
-                      style={{ backgroundColor: `${crypto.color}15` }}
+                      style={{ backgroundColor: `${CRYPTO_ICONS[key]?.color || '#ccc'}15` }}
                     >
                       <img 
-                        src={crypto.icon} 
+                        src={CRYPTO_ICONS[key]?.icon} 
                         alt={crypto.name} 
                         className="w-6 h-6 object-contain"
                         onError={(e) => {
@@ -324,35 +306,41 @@ export const Dashboard: React.FC = () => {
           </button>
         </div>
 
-        <div>
-          <h2 className="text-xl font-bold text-brand-black mb-4">Recent Activity</h2>
-          <div className="space-y-3">
-            {DEMO_ACTIVITY.map((activity, idx) => (
-              <div key={idx} className="bg-white border border-brand-lightGray rounded-lg p-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    activity.type === 'rent' ? 'bg-green-100 text-green-600' :
-                    activity.type === 'buy' ? 'bg-blue-100 text-blue-600' :
-                    'bg-brand-mint text-brand-deep'
-                  }`}>
-                    <i className={`fa-solid ${
-                      activity.type === 'rent' ? 'fa-coins' :
-                      activity.type === 'buy' ? 'fa-shopping-cart' :
-                      'fa-arrow-down'
-                    }`}></i>
+        {recentActivity.length > 0 && (
+          <div>
+            <h2 className="text-xl font-bold text-brand-black mb-4">Recent Activity</h2>
+            <div className="space-y-3">
+              {recentActivity.slice(0, 5).map((activity: any) => (
+                <div key={activity.id} className="bg-white border border-brand-lightGray rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      activity.positive ? 'bg-green-100 text-green-600' : 'bg-brand-lightGray text-brand-dark'
+                    }`}>
+                      <i className={`fa-solid ${
+                        activity.type === 'RENT_DISTRIBUTION' ? 'fa-coins' :
+                        activity.type === 'BUY' ? 'fa-shopping-cart' :
+                        'fa-arrow-down'
+                      }`}></i>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-brand-dark">
+                        {activity.type === 'RENT_DISTRIBUTION' ? 'Rent Payout' : 
+                         activity.type === 'BUY' ? 'Buy' : 
+                         activity.type === 'DEPOSIT' ? 'Deposit' : activity.type}
+                      </p>
+                      <p className="text-xs text-brand-sage">
+                        {new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {activity.asset}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-brand-dark">{activity.label}</p>
-                    <p className="text-xs text-brand-sage">{activity.detail}</p>
-                  </div>
+                  <span className={`font-bold ${activity.positive ? 'text-brand-medium' : 'text-brand-dark'}`}>
+                    {activity.amount}
+                  </span>
                 </div>
-                <span className={`font-bold ${activity.positive ? 'text-brand-medium' : 'text-brand-dark'}`}>
-                  {activity.amount}
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
     );
@@ -364,7 +352,7 @@ export const Dashboard: React.FC = () => {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-4xl font-bold text-brand-black mb-1">
-            ${portfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            $0.00
           </h1>
           <p className="text-brand-black text-sm font-bold tracking-wide uppercase">Total Property Value</p>
         </div>
