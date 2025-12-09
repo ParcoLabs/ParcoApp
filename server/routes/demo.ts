@@ -695,10 +695,8 @@ router.post('/run-rent-cycle', requireDemoMode, apiAuth, async (req, res) => {
 
 // Get borrowable holdings (including DemoHolding)
 router.get('/borrowable-holdings', requireDemoMode, apiAuth, async (req, res) => {
-  console.log('[Borrowable Holdings] Request received');
   try {
     const clerkId = (req as any).auth?.userId;
-    console.log('[Borrowable Holdings] clerkId:', clerkId);
     if (!clerkId) {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
@@ -710,8 +708,6 @@ router.get('/borrowable-holdings', requireDemoMode, apiAuth, async (req, res) =>
       },
     });
 
-    console.log('[Borrowable Holdings] User found:', !!user);
-
     if (!user) {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
@@ -720,9 +716,6 @@ router.get('/borrowable-holdings', requireDemoMode, apiAuth, async (req, res) =>
     const demoHoldings = await prisma.demoHolding.findMany({
       where: { userId: user.id },
     });
-
-    console.log('[Borrowable Holdings] DB Holdings:', user.holdings.length);
-    console.log('[Borrowable Holdings] Demo Holdings:', demoHoldings.length, demoHoldings.map(h => ({ id: h.propertyId, qty: h.quantity })));
 
     // Map database holdings
     const dbBorrowable = user.holdings
@@ -756,19 +749,20 @@ router.get('/borrowable-holdings', requireDemoMode, apiAuth, async (req, res) =>
       '5': 'Austin, TX',
     };
 
-    // Map demo holdings
+    // Map demo holdings (DemoHolding doesn't have lockedQuantity field, default to 0)
     const demoBorrowable = demoHoldings
-      .filter(h => h.quantity - h.lockedQuantity > 0)
+      .filter(h => h.quantity > 0)
       .map(h => {
         const mockProp = MOCK_PROPERTIES[h.propertyId];
+        const lockedQty = 0; // DemoHolding doesn't track locked tokens yet
         return {
           id: h.propertyId,
           title: h.propertyName,
           location: mockLocations[h.propertyId] || 'USA',
           image: mockImages[h.propertyId] || 'https://picsum.photos/200/200?random=' + h.propertyId,
           tokensOwned: h.quantity,
-          lockedTokens: h.lockedQuantity,
-          availableTokens: h.quantity - h.lockedQuantity,
+          lockedTokens: lockedQty,
+          availableTokens: h.quantity - lockedQty,
           tokenPrice: mockProp?.tokenPrice || Number(h.averageCost),
           maxLTV: 0.5,
           isDemoHolding: true,
