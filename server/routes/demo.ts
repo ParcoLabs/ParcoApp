@@ -155,6 +155,50 @@ router.post('/create-user', requireDemoMode, validateAuth, async (req, res) => {
   }
 });
 
+const INITIAL_DEMO_BALANCES = {
+  usdc: { name: 'USDC', balance: 10000 },
+  btc: { name: 'Bitcoin', balance: 2000 },
+  parco: { name: 'Parco Token', balance: 1000 },
+};
+
+const userDemoWallets = new Map<string, Record<string, { name: string; balance: number }>>();
+
+const getUserDemoWallet = (userId: string): Record<string, { name: string; balance: number }> => {
+  if (!userDemoWallets.has(userId)) {
+    userDemoWallets.set(userId, JSON.parse(JSON.stringify(INITIAL_DEMO_BALANCES)));
+  }
+  return userDemoWallets.get(userId)!;
+};
+
+router.get('/wallet-balances', requireDemoMode, validateAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { clerkId } });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const userBalances = getUserDemoWallet(user.id);
+
+    res.json({
+      success: true,
+      data: {
+        balances: userBalances,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error fetching demo wallet balances:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch wallet balances',
+    });
+  }
+});
+
 router.post('/buy', requireDemoMode, validateAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
@@ -162,12 +206,20 @@ router.post('/buy', requireDemoMode, validateAuth, async (req, res) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const { propertyId, quantity } = req.body;
+    const { propertyId, quantity, paymentMethod = 'usdc' } = req.body;
 
     if (!propertyId || !quantity || quantity < 1) {
       return res.status(400).json({
         success: false,
         error: 'Property ID and quantity are required',
+      });
+    }
+
+    const validPaymentMethods = ['usdc', 'btc', 'parco'];
+    if (!validPaymentMethods.includes(paymentMethod)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid payment method. Use usdc, btc, or parco.',
       });
     }
 
@@ -197,14 +249,16 @@ router.post('/buy', requireDemoMode, validateAuth, async (req, res) => {
 
     const tokenPrice = Number(property.tokenPrice);
     const totalCost = tokenPrice * quantity;
-    const vaultBalance = Number(user.vaultAccount.usdcBalance);
+    
+    const userWallet = getUserDemoWallet(user.id);
+    const paymentBalance = userWallet[paymentMethod]?.balance || 0;
 
-    if (totalCost > vaultBalance) {
+    if (totalCost > paymentBalance) {
       return res.status(400).json({
         success: false,
-        error: 'Insufficient demo balance',
+        error: `Insufficient ${userWallet[paymentMethod]?.name || paymentMethod} balance`,
         required: totalCost,
-        available: vaultBalance,
+        available: paymentBalance,
       });
     }
 
@@ -217,14 +271,9 @@ router.post('/buy', requireDemoMode, validateAuth, async (req, res) => {
       });
     }
 
-    const result = await prisma.$transaction(async (tx) => {
-      await tx.vaultAccount.update({
-        where: { id: user.vaultAccount!.id },
-        data: {
-          usdcBalance: { decrement: totalCost },
-        },
-      });
+    userWallet[paymentMethod].balance -= totalCost;
 
+    const result = await prisma.$transaction(async (tx) => {
       const existingHolding = await tx.holding.findUnique({
         where: {
           userId_propertyId: {
@@ -268,27 +317,29 @@ router.post('/buy', requireDemoMode, validateAuth, async (req, res) => {
         },
       });
 
+      const currencyMap: Record<string, string> = {
+        usdc: 'USDC',
+        btc: 'BTC',
+        parco: 'PARCO',
+      };
+
       const transaction = await tx.transaction.create({
         data: {
           userId: user.id,
           type: 'BUY',
           status: 'COMPLETED',
           amount: totalCost,
-          currency: 'USDC',
+          currency: currencyMap[paymentMethod] || 'USDC',
           propertyId: property.id,
           tokenQuantity: quantity,
           tokenPrice: tokenPrice,
           txHash: `demo_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          description: `Demo purchase of ${quantity} tokens of ${property.name}`,
+          description: `Demo purchase of ${quantity} tokens of ${property.name} with ${userWallet[paymentMethod]?.name || paymentMethod}`,
           completedAt: new Date(),
         },
       });
 
       return { holding, transaction };
-    });
-
-    const updatedVault = await prisma.vaultAccount.findUnique({
-      where: { id: user.vaultAccount.id },
     });
 
     const holdings = await prisma.holding.findMany({
@@ -306,11 +357,10 @@ router.post('/buy', requireDemoMode, validateAuth, async (req, res) => {
           amount: totalCost,
           quantity,
           propertyName: property.name,
+          paymentMethod: paymentMethod,
           txHash: result.transaction.txHash,
         },
-        vault: {
-          balance: Number(updatedVault?.usdcBalance || 0),
-        },
+        walletBalances: userWallet,
         portfolio: holdings.map(h => ({
           propertyId: h.propertyId,
           propertyName: h.property.name,

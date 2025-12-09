@@ -5,6 +5,7 @@ import { useDemoMode } from '../context/DemoModeContext';
 import { useDemo } from '../hooks/useDemo';
 import { useAuth } from '../context/AuthContext';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import parcoLogo from '/brand/logo-green.svg';
 
 const PREVIEW_PROPERTIES = [
   {
@@ -38,17 +39,44 @@ const DEMO_OWNED_PROPERTIES = [
     id: '1',
     title: '560 State St',
     location: 'New York, NY',
-    value: 9500,
+    value: 7000,
     change: '+8%',
     image: 'https://picsum.photos/200/200?random=1'
   },
   {
     id: '2',
-    title: '88 Oakely Lane',
+    title: '88 Oakley Lane',
     location: 'New Orleans, LA',
-    value: 870,
+    value: 5000,
     change: '+2.4%',
     image: 'https://picsum.photos/200/200?random=2'
+  }
+];
+
+const DEMO_CRYPTO_BALANCES = [
+  {
+    id: 'usdc',
+    name: 'USDC',
+    symbol: 'USDC',
+    balance: 10000,
+    icon: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png',
+    color: '#2775ca'
+  },
+  {
+    id: 'btc',
+    name: 'Bitcoin',
+    symbol: 'BTC',
+    balance: 2000,
+    icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png',
+    color: '#f7931a'
+  },
+  {
+    id: 'parco',
+    name: 'Parco Token',
+    symbol: 'PARCO',
+    balance: 1000,
+    icon: parcoLogo,
+    color: '#41b39a'
   }
 ];
 
@@ -59,12 +87,12 @@ const DEMO_CHART_DATA = [
   { name: 'Apr', value: 25100 },
   { name: 'May', value: 25400 },
   { name: 'Jun', value: 25800 },
-  { name: 'Jul', value: 26354 },
+  { name: 'Jul', value: 25000 },
 ];
 
 const DEMO_ACTIVITY = [
   { type: 'rent', label: 'Rent Payout', detail: 'Sep 24 • 560 State St', amount: '+$45.10', positive: true },
-  { type: 'buy', label: 'Buy', detail: 'Sep 18 • 88 Oakely Lane', amount: '-$500.00', positive: false },
+  { type: 'buy', label: 'Buy', detail: 'Sep 18 • 88 Oakley Lane', amount: '-$500.00', positive: false },
   { type: 'deposit', label: 'Deposit', detail: 'Sep 15 • USDC', amount: '+$1,000.00', positive: true },
 ];
 
@@ -123,6 +151,10 @@ export const Dashboard: React.FC = () => {
   const portfolioValue = demoStatus?.portfolio?.totalValue || 0;
   const totalEarned = demoStatus?.vault?.totalEarned || 0;
 
+  const demoPropertyValue = DEMO_OWNED_PROPERTIES.reduce((sum, p) => sum + p.value, 0);
+  const demoCryptoValue = DEMO_CRYPTO_BALANCES.reduce((sum, c) => sum + c.balance, 0);
+  const demoTotalBalance = demoPropertyValue + demoCryptoValue;
+
   if (demoMode) {
     return (
       <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-6">
@@ -131,7 +163,7 @@ export const Dashboard: React.FC = () => {
           <div className="lg:col-span-2">
             <p className="text-xs text-brand-sage font-medium uppercase tracking-wide mb-1">Total Balance</p>
             <div className="flex items-baseline gap-3 mb-1">
-              <h1 className="text-4xl font-bold text-brand-black">$26,354.00</h1>
+              <h1 className="text-4xl font-bold text-brand-black">${demoTotalBalance.toLocaleString()}.00</h1>
               <span className="text-brand-medium text-sm font-bold">+$1,254.00 (4.89%)</span>
               <span className="text-brand-sage text-xs">Past Month</span>
             </div>
@@ -203,27 +235,61 @@ export const Dashboard: React.FC = () => {
             </button>
           </div>
 
-          <div className="space-y-3">
-            {DEMO_OWNED_PROPERTIES.map((prop) => (
-              <div 
-                key={prop.id}
-                className="bg-white border border-brand-lightGray rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => navigate(`/marketplace/${prop.id}`)}
-              >
-                <div className="flex items-center gap-4">
-                  <img src={prop.image} alt={prop.title} className="w-12 h-12 object-cover rounded-lg bg-brand-lightGray" />
-                  <div>
-                    <h3 className="text-sm font-bold text-brand-dark">{prop.title}</h3>
-                    <p className="text-xs text-brand-sage">{prop.location}</p>
+          {activeTab === 'properties' ? (
+            <div className="space-y-3">
+              {DEMO_OWNED_PROPERTIES.map((prop) => (
+                <div 
+                  key={prop.id}
+                  className="bg-white border border-brand-lightGray rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/marketplace/${prop.id}`)}
+                >
+                  <div className="flex items-center gap-4">
+                    <img src={prop.image} alt={prop.title} className="w-12 h-12 object-cover rounded-lg bg-brand-lightGray" />
+                    <div>
+                      <h3 className="text-sm font-bold text-brand-dark">{prop.title}</h3>
+                      <p className="text-xs text-brand-sage">{prop.location}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-brand-dark">${prop.value.toLocaleString()}</p>
+                    <p className="text-xs text-brand-medium font-bold">{prop.change}</p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-brand-dark">${prop.value.toLocaleString()}</p>
-                  <p className="text-xs text-brand-medium font-bold">{prop.change}</p>
+              ))}
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {DEMO_CRYPTO_BALANCES.map((crypto) => (
+                <div 
+                  key={crypto.id}
+                  className="bg-white border border-brand-lightGray rounded-lg p-3 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-4">
+                    <div 
+                      className="w-10 h-10 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: `${crypto.color}15` }}
+                    >
+                      <img 
+                        src={crypto.icon} 
+                        alt={crypto.name} 
+                        className="w-6 h-6 object-contain"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-brand-dark">{crypto.name}</h3>
+                      <p className="text-xs text-brand-sage">{crypto.symbol}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-brand-dark">${crypto.balance.toLocaleString()}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>

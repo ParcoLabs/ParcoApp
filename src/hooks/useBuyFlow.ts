@@ -67,6 +67,32 @@ export const useBuyFlow = (): UseBuyFlowResult => {
     }
   };
 
+  const fetchDemoWalletBalances = async (): Promise<Record<string, { name: string; balance: number }>> => {
+    try {
+      const response = await fetch('/api/demo/wallet-balances', {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        return {
+          usdc: { name: 'USDC', balance: 10000 },
+          btc: { name: 'Bitcoin', balance: 2000 },
+          parco: { name: 'Parco Token', balance: 1000 },
+        };
+      }
+      
+      const data = await response.json();
+      return data.data?.balances || {};
+    } catch (err) {
+      console.error('Failed to fetch demo wallet balances:', err);
+      return {
+        usdc: { name: 'USDC', balance: 10000 },
+        btc: { name: 'Bitcoin', balance: 2000 },
+        parco: { name: 'Parco Token', balance: 1000 },
+      };
+    }
+  };
+
   const checkKycStatus = async (): Promise<KycStatus> => {
     try {
       const response = await fetch('/api/kyc/sumsub/status', {
@@ -144,24 +170,31 @@ export const useBuyFlow = (): UseBuyFlowResult => {
 
     try {
       if (demoMode) {
-        const demoBalance = await fetchDemoVaultBalance();
+        const demoBalances = await fetchDemoWalletBalances();
         
-        if (demoBalance === 0) {
-          navigate('/');
-          setState('idle');
-          return;
-        }
-
         const demoMethods: PaymentMethod[] = [
           {
-            id: 'vault',
-            type: 'vault' as const,
-            balance: demoBalance,
+            id: 'usdc',
+            type: 'crypto' as const,
+            brand: 'USDC',
+            balance: demoBalances.usdc?.balance || 10000,
+          },
+          {
+            id: 'btc',
+            type: 'crypto' as const,
+            brand: 'Bitcoin',
+            balance: demoBalances.btc?.balance || 2000,
+          },
+          {
+            id: 'parco',
+            type: 'crypto' as const,
+            brand: 'Parco Token',
+            balance: demoBalances.parco?.balance || 1000,
           },
         ];
 
         setPaymentMethods(demoMethods);
-        setVaultBalance(demoBalance);
+        setVaultBalance(demoBalances.usdc?.balance || 10000);
         setIsModalOpen(true);
         setState('ready');
         return;

@@ -35,7 +35,7 @@ export const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
   const vaultMethod = paymentMethods.find(m => m.type === 'vault');
   const cardMethods = paymentMethods.filter(m => m.type === 'card');
   const bankMethods = paymentMethods.filter(m => m.type === 'bank');
-  const cryptoMethod = paymentMethods.find(m => m.type === 'crypto');
+  const cryptoMethods = paymentMethods.filter(m => m.type === 'crypto');
 
   const hasInsufficientVaultBalance = vaultBalance < totalAmount;
 
@@ -121,10 +121,19 @@ export const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
               </div>
             )}
 
-            {cryptoMethod && renderPaymentOption(
-              cryptoMethod,
-              'Pay with Crypto',
-              'BTC, ETH, SOL, USDC, and more'
+            {cryptoMethods.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-brand-sage uppercase tracking-wide">Crypto Wallets</p>
+                {cryptoMethods.map(crypto => {
+                  const hasInsufficientBalance = (crypto.balance || 0) < totalAmount;
+                  return renderPaymentOption(
+                    crypto,
+                    crypto.brand || 'Crypto',
+                    `Balance: $${(crypto.balance || 0).toLocaleString()}${hasInsufficientBalance ? ' (Insufficient)' : ''}`,
+                    hasInsufficientBalance
+                  );
+                })}
+              </div>
             )}
 
             <button
@@ -196,11 +205,15 @@ export const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
             `•••• ${bank.last4}`
           ))}
 
-          {cryptoMethod && renderPaymentOption(
-            cryptoMethod,
-            'Pay with Crypto',
-            'BTC, ETH, SOL, USDC'
-          )}
+          {cryptoMethods.length > 0 && cryptoMethods.map(crypto => {
+            const hasInsufficientBalance = (crypto.balance || 0) < totalAmount;
+            return renderPaymentOption(
+              crypto,
+              crypto.brand || 'Crypto',
+              `$${(crypto.balance || 0).toLocaleString()}${hasInsufficientBalance ? ' - Insufficient' : ''}`,
+              hasInsufficientBalance
+            );
+          })}
 
           <button
             onClick={() => {

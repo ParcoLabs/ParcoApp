@@ -1,0 +1,167 @@
+DEMO MODE — BORROW AGAINST TOKENS
+
+PROMPT:
+
+"Expand Demo Borrow functionality:
+
+Borrow Flow:
+
+User selects a property token in their portfolio.
+
+User chooses an amount to borrow.
+
+Demo Mode should:
+
+Lock the chosen property tokens.
+
+Create or update a demo BorrowPosition.
+
+Add borrowed USDC to the user’s Crypto tab.
+
+Show the token as Locked in Vault in the Properties tab.
+
+Update the portfolio’s ‘Borrowed Amount’ display.
+
+Requirements:
+
+All borrow mechanics must be demo logic only.
+
+No real vault, no real minting, no real payouts.
+
+Ensure the UI visibly marks the borrowed-against token as Locked.
+
+Ensure borrowed USDC shows up instantly.
+
+Use or extend the existing /api/demo/borrow route."
+
+💰 4. DEMO MODE — PARTICIPATE IN LENDING POOLS
+
+PROMPT:
+
+"Add Demo Mode interaction with DeFi lending pools:
+
+Requirements:
+
+User can deposit demo USDC or demo Parco Tokens into Pool 1 or Pool 2.
+
+Update pool shares, pool position, and yield APY display in the DeFi tab.
+
+Add demo yield accumulation (simple multiplier or static APY shown visually).
+
+When user deposits:
+
+Deduct demo asset from wallet.
+
+Increase user’s pool position.
+
+When user withdraws:
+
+Return demo asset to wallet.
+
+Reduce pool position.
+
+Notes:
+
+All values are demo/simulated only.
+
+Do NOT modify real DeFi logic.
+
+Integrate into existing DeFi UI using demo endpoints only."
+
+🗳️ 5. DEMO MODE — SHOW GOVERNANCE PROPOSAL + VOTING
+
+PROMPT:
+
+"Add a sample governance proposal in Demo Mode:
+
+Proposal Title:
+
+Convert Garage to Additional Bedroom — 88 Oakley Lane
+
+Proposal Details:
+
+Estimated Cost: $22,000
+
+Timeline: 6 weeks
+
+Value Added: Increased rental potential + projected +8% annual appreciation
+
+Requirements:
+
+Proposal must appear automatically in the Governance tab when Demo Mode is active.
+
+User must be able to vote Yes or No.
+
+Track vote count in demo-only tables.
+
+No blockchain interaction, no smart contract.
+
+Use existing demo governance models.
+
+Display:
+
+Proposal description
+
+Cost
+
+Timeline
+
+Expected value impact
+
+Vote counts
+
+User’s vote status
+
+This must NOT overwrite real governance logic."
+
+🏠 6. DEMO MODE — RENT BALANCE + WITHDRAWAL
+
+PROMPT:
+
+"Add a demo rent balance system:
+
+Rent Flow:
+
+Create a demo rent balance for one of the demo-owned properties.
+
+Show rent accumulated in the user’s portfolio under a dedicated ‘Rent Balance’ section.
+
+Allow the user to click Withdraw Rent.
+
+When withdrawing:
+
+Deduct rent balance.
+
+Add equivalent USDC to user’s demo wallet.
+
+Insert a demo Transaction entry.
+
+Requirements:
+
+No real payout.
+
+No real USDC transfer.
+
+Pure demo logic.
+
+Must use or extend /api/demo/run-rent-cycle and new /api/demo/rent-withdraw endpoint if needed.
+
+This feature must appear ONLY in Demo Mode."
+
+🎯 7. IMPORTANT RULES FOR ALL PROMPTS
+
+PROMPT:
+
+"Throughout these changes:
+
+Demo logic must NEVER touch production logic.
+
+No real blockchain calls.
+
+No real minting.
+
+No interaction with Stripe, Circle, Coinbase Commerce, or real USDC.
+
+Demo balances must remain isolated in demo tables or in-memory stores.
+
+UI must clearly reflect updates immediately after demo operations.

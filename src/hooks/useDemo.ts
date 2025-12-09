@@ -152,7 +152,8 @@ export const useDemo = () => {
 
   const demoBuy = useCallback(async (
     propertyId: string,
-    quantity: number
+    quantity: number,
+    paymentMethod: string = 'usdc'
   ): Promise<DemoBuyResult | null> => {
     if (!demoMode) {
       setError('Demo mode is not enabled');
@@ -167,7 +168,7 @@ export const useDemo = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ propertyId, quantity }),
+        body: JSON.stringify({ propertyId, quantity, paymentMethod }),
       });
 
       const data = await response.json();

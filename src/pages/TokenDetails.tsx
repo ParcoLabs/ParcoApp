@@ -97,14 +97,15 @@ export const TokenDetails: React.FC = () => {
     
     setPurchaseError(null);
     
-    if (demoMode && selectedMethod.type === 'vault') {
-      const result = await demoBuy(property.id, tokenAmount);
+    if (demoMode && (selectedMethod.type === 'vault' || selectedMethod.type === 'crypto')) {
+      const paymentMethod = selectedMethod.id || 'usdc';
+      const result = await demoBuy(property.id, tokenAmount, paymentMethod);
       if (result) {
         setPurchaseSuccess(true);
         closeModal();
         setTimeout(() => {
           setPurchaseSuccess(false);
-          navigate('/portfolio');
+          navigate('/');
         }, 2000);
       } else {
         setPurchaseError('Purchase failed. Please try again.');
