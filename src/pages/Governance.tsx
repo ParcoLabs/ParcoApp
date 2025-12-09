@@ -3,34 +3,31 @@ import { useNavigate } from 'react-router-dom';
 import { useDemoMode } from '../context/DemoModeContext';
 import { useDemo } from '../hooks/useDemo';
 
-interface Proposal {
+interface DemoProposal {
   id: string;
   title: string;
   description: string;
+  estimatedCost: number;
+  timelineWeeks: number;
+  expectedAppreciation: number;
   status: string;
   forVotes: number;
   againstVotes: number;
-  abstainVotes: number;
   totalVotes: number;
-  votingEndsAt: string | null;
+  userVote: 'FOR' | 'AGAINST' | null;
   createdAt: string;
 }
 
 export const Governance: React.FC = () => {
   const navigate = useNavigate();
   const { demoMode } = useDemoMode();
-  const { getProposals, createProposal, voteOnProposal, loading, error } = useDemo();
+  const { getDemoGovernanceProposals, voteOnDemoProposal, getDemoStatus, setupDemoUser, loading, error } = useDemo();
   
-  const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newDescription, setNewDescription] = useState('');
-  const [votingDays, setVotingDays] = useState(7);
-  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
+  const [proposals, setProposals] = useState<DemoProposal[]>([]);
+  const [selectedProposal, setSelectedProposal] = useState<DemoProposal | null>(null);
   const [voteSuccess, setVoteSuccess] = useState<string | null>(null);
   const [demoStatus, setDemoStatus] = useState<any>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
-  const { getDemoStatus, setupDemoUser } = useDemo();
 
   useEffect(() => {
     const checkDemoStatus = async () => {
@@ -50,24 +47,12 @@ export const Governance: React.FC = () => {
   }, [demoMode]);
 
   const loadProposals = async () => {
-    const data = await getProposals();
+    const data = await getDemoGovernanceProposals();
     if (data) setProposals(data);
   };
 
-  const handleCreateProposal = async () => {
-    if (!newTitle.trim() || !newDescription.trim()) return;
-    
-    const result = await createProposal(newTitle, newDescription, votingDays);
-    if (result) {
-      setShowCreateModal(false);
-      setNewTitle('');
-      setNewDescription('');
-      await loadProposals();
-    }
-  };
-
-  const handleVote = async (proposalId: string, choice: 'FOR' | 'AGAINST' | 'ABSTAIN') => {
-    const result = await voteOnProposal(proposalId, choice);
+  const handleVote = async (proposalId: string, choice: 'FOR' | 'AGAINST') => {
+    const result = await voteOnDemoProposal(proposalId, choice);
     if (result) {
       setVoteSuccess(`Vote recorded: ${choice}`);
       setSelectedProposal(null);
@@ -153,39 +138,31 @@ export const Governance: React.FC = () => {
     <div className="min-h-screen bg-brand-offWhite p-4 md:p-8">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-brand-dark">Governance</h1>
-            <p className="text-sm text-brand-sage">Vote on proposals and shape the platform</p>
-          </div>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-brand-deep hover:bg-brand-dark text-white px-4 py-2 rounded-lg font-bold text-sm transition-colors flex items-center gap-2"
-          >
-            <i className="fa-solid fa-plus"></i>
-            New Proposal
-          </button>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-brand-dark">Governance</h1>
+          <p className="text-sm text-brand-sage">Vote on property improvement proposals</p>
         </div>
 
         {/* Demo Mode Badge */}
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6 flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-          <span className="text-sm text-amber-800">Demo Governance - Create and vote on proposals</span>
+          <span className="text-sm text-amber-800">Demo Governance - Vote on property improvement proposals</span>
         </div>
+
+        {voteSuccess && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6 flex items-center gap-2">
+            <i className="fa-solid fa-check-circle text-green-600"></i>
+            <span className="text-sm text-green-800">{voteSuccess}</span>
+          </div>
+        )}
 
         {/* Proposals List */}
         <div className="space-y-4">
           {proposals.length === 0 ? (
             <div className="bg-white rounded-xl border border-brand-lightGray p-8 text-center">
               <i className="fa-solid fa-inbox text-4xl text-brand-sage mb-4"></i>
-              <h3 className="text-lg font-bold text-brand-dark mb-2">No Proposals Yet</h3>
-              <p className="text-sm text-brand-sage mb-4">Be the first to create a proposal!</p>
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-brand-deep hover:bg-brand-dark text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors"
-              >
-                Create Proposal
-              </button>
+              <h3 className="text-lg font-bold text-brand-dark mb-2">Loading Proposals...</h3>
+              <p className="text-sm text-brand-sage">Fetching governance proposals...</p>
             </div>
           ) : (
             proposals.map((proposal) => (
@@ -212,7 +189,23 @@ export const Governance: React.FC = () => {
                       </span>
                     </div>
                     <h3 className="text-lg font-bold text-brand-dark">{proposal.title}</h3>
-                    <p className="text-sm text-brand-sage mt-1 line-clamp-2">{proposal.description}</p>
+                    <p className="text-sm text-brand-sage mt-1">{proposal.description}</p>
+                  </div>
+                </div>
+
+                {/* Proposal Details */}
+                <div className="grid grid-cols-3 gap-4 mb-4 bg-brand-offWhite rounded-lg p-3">
+                  <div className="text-center">
+                    <p className="text-xs text-brand-sage">Est. Cost</p>
+                    <p className="font-bold text-brand-dark">${proposal.estimatedCost?.toLocaleString() || '0'}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-brand-sage">Timeline</p>
+                    <p className="font-bold text-brand-dark">{proposal.timelineWeeks || 0} weeks</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs text-brand-sage">Exp. Appreciation</p>
+                    <p className="font-bold text-brand-medium">+{proposal.expectedAppreciation || 0}%</p>
                   </div>
                 </div>
 
@@ -221,99 +214,39 @@ export const Governance: React.FC = () => {
                   <div className="flex justify-between text-xs text-brand-sage mb-1">
                     <span>For: {proposal.forVotes}</span>
                     <span>Against: {proposal.againstVotes}</span>
-                    <span>Abstain: {proposal.abstainVotes}</span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden flex">
                     <div
-                      className="bg-green-500 h-full"
+                      className="bg-green-500 h-full transition-all"
                       style={{ width: `${getVotePercentage(proposal.forVotes, proposal.totalVotes)}%` }}
                     ></div>
                     <div
-                      className="bg-red-500 h-full"
+                      className="bg-red-500 h-full transition-all"
                       style={{ width: `${getVotePercentage(proposal.againstVotes, proposal.totalVotes)}%` }}
                     ></div>
-                    <div
-                      className="bg-gray-400 h-full"
-                      style={{ width: `${getVotePercentage(proposal.abstainVotes, proposal.totalVotes)}%` }}
-                    ></div>
                   </div>
-                  <p className="text-xs text-brand-sage mt-1">
-                    {proposal.totalVotes} total votes
-                    {proposal.votingEndsAt && ` | Voting ends ${formatDate(proposal.votingEndsAt)}`}
-                  </p>
+                  <p className="text-xs text-brand-sage mt-1">{proposal.totalVotes} total votes</p>
                 </div>
 
-                {/* Vote Button */}
-                {proposal.status === 'ACTIVE' && (
+                {/* Vote Button or Status */}
+                {proposal.userVote ? (
+                  <div className="w-full text-center py-2.5 rounded-lg bg-brand-offWhite">
+                    <span className="text-sm text-brand-sage">
+                      You voted: <span className={`font-bold ${proposal.userVote === 'FOR' ? 'text-green-600' : 'text-red-600'}`}>{proposal.userVote}</span>
+                    </span>
+                  </div>
+                ) : proposal.status === 'ACTIVE' ? (
                   <button
                     onClick={() => setSelectedProposal(proposal)}
                     className="w-full bg-brand-deep hover:bg-brand-dark text-white py-2.5 rounded-lg font-bold text-sm transition-colors"
                   >
                     Cast Vote
                   </button>
-                )}
+                ) : null}
               </div>
             ))
           )}
         </div>
-
-        {/* Create Proposal Modal */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl p-6 max-w-md w-full">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-brand-dark">Create Proposal</h3>
-                <button onClick={() => setShowCreateModal(false)} className="text-brand-sage hover:text-brand-dark">
-                  <i className="fa-solid fa-times text-xl"></i>
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-bold text-brand-dark mb-1">Title</label>
-                  <input
-                    type="text"
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="Enter proposal title"
-                    className="w-full px-4 py-2.5 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-brand-dark mb-1">Description</label>
-                  <textarea
-                    value={newDescription}
-                    onChange={(e) => setNewDescription(e.target.value)}
-                    placeholder="Describe your proposal"
-                    rows={4}
-                    className="w-full px-4 py-2.5 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep resize-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-bold text-brand-dark mb-1">Voting Duration (days)</label>
-                  <input
-                    type="number"
-                    value={votingDays}
-                    onChange={(e) => setVotingDays(parseInt(e.target.value) || 7)}
-                    min={1}
-                    max={30}
-                    className="w-full px-4 py-2.5 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep"
-                  />
-                </div>
-
-                <button
-                  onClick={handleCreateProposal}
-                  disabled={loading || !newTitle.trim() || !newDescription.trim()}
-                  className="w-full bg-brand-deep hover:bg-brand-dark text-white py-3 rounded-lg font-bold text-sm transition-colors disabled:opacity-50"
-                >
-                  {loading ? 'Creating...' : 'Create Proposal'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Vote Modal */}
         {selectedProposal && (
@@ -328,7 +261,22 @@ export const Governance: React.FC = () => {
 
               <div className="mb-4">
                 <h4 className="font-bold text-brand-dark">{selectedProposal.title}</h4>
-                <p className="text-sm text-brand-sage mt-1">{selectedProposal.description}</p>
+                <p className="text-sm text-brand-sage mt-1 line-clamp-3">{selectedProposal.description}</p>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 mb-4 bg-brand-offWhite rounded-lg p-3 text-sm">
+                <div className="text-center">
+                  <p className="text-xs text-brand-sage">Cost</p>
+                  <p className="font-bold text-brand-dark">${selectedProposal.estimatedCost?.toLocaleString()}</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-brand-sage">Timeline</p>
+                  <p className="font-bold text-brand-dark">{selectedProposal.timelineWeeks} wks</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-brand-sage">Appreciation</p>
+                  <p className="font-bold text-brand-medium">+{selectedProposal.expectedAppreciation}%</p>
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -348,23 +296,8 @@ export const Governance: React.FC = () => {
                   <i className="fa-solid fa-times"></i>
                   Vote Against
                 </button>
-                <button
-                  onClick={() => handleVote(selectedProposal.id, 'ABSTAIN')}
-                  disabled={loading}
-                  className="w-full bg-gray-400 hover:bg-gray-500 text-white py-3 rounded-lg font-bold text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  <i className="fa-solid fa-minus"></i>
-                  Abstain
-                </button>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Vote Success Toast */}
-        {voteSuccess && (
-          <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50">
-            {voteSuccess}
           </div>
         )}
 
