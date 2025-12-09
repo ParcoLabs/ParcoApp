@@ -21,6 +21,19 @@ interface LendingPool {
   accruedYield: number;
 }
 
+interface BorrowableHolding {
+  id: string;
+  title: string;
+  location: string;
+  image: string;
+  tokensOwned: number;
+  lockedTokens: number;
+  availableTokens: number;
+  tokenPrice: number;
+  maxLTV: number;
+  isDemoHolding: boolean;
+}
+
 export const DefiPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('Borrow');
   const [borrowModalOpen, setBorrowModalOpen] = useState(false);
@@ -30,14 +43,16 @@ export const DefiPage: React.FC = () => {
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [lendingPools, setLendingPools] = useState<LendingPool[]>([]);
+  const [borrowableHoldings, setBorrowableHoldings] = useState<BorrowableHolding[]>([]);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   const { demoMode } = useDemoMode();
-  const { getLendingPools, depositToPool, withdrawFromPool, loading, error } = useDemo();
+  const { getLendingPools, depositToPool, withdrawFromPool, getBorrowableHoldings, demoBorrow, loading, error } = useDemo();
 
   useEffect(() => {
     if (demoMode) {
       loadLendingPools();
+      loadBorrowableHoldings();
     }
   }, [demoMode]);
 
@@ -48,9 +63,25 @@ export const DefiPage: React.FC = () => {
     }
   };
 
+  const loadBorrowableHoldings = async () => {
+    const holdings = await getBorrowableHoldings();
+    if (holdings) {
+      setBorrowableHoldings(holdings);
+    }
+  };
+
   const handleBorrow = (property: any) => {
     setSelectedProperty(property);
     setBorrowModalOpen(true);
+  };
+
+  const handleConfirmBorrow = async (propertyId: string, tokenAmount: number, borrowAmount: number, isDemoHolding: boolean) => {
+    const result = await demoBorrow(propertyId, tokenAmount, borrowAmount, isDemoHolding);
+    if (result) {
+      setActionSuccess(`Borrowed $${(borrowAmount * 0.99).toFixed(2)} USDC!`);
+      await loadBorrowableHoldings();
+      setTimeout(() => setActionSuccess(null), 3000);
+    }
   };
 
   const handleLend = (pool: any) => {
@@ -142,7 +173,44 @@ export const DefiPage: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-8">
                     <BorrowStatsCard stats={DEFI_STATS} />
-                    <BorrowPropertyList properties={BORROW_PROPERTIES} onBorrow={handleBorrow} />
+                    {demoMode && borrowableHoldings.length > 0 ? (
+                      <div className="bg-white border border-brand-lightGray rounded-2xl overflow-hidden shadow-sm">
+                        <div className="p-4 border-b border-brand-lightGray">
+                          <h3 className="font-bold text-brand-dark">Your Property Tokens</h3>
+                          <p className="text-sm text-brand-sage">Select a property to borrow against</p>
+                        </div>
+                        <div className="divide-y divide-brand-lightGray">
+                          {borrowableHoldings.map((holding) => (
+                            <div key={holding.id} className="p-4 flex items-center justify-between hover:bg-brand-offWhite/30 transition-colors">
+                              <div className="flex items-center gap-4">
+                                <img src={holding.image} alt={holding.title} className="w-12 h-12 rounded-lg object-cover bg-brand-lightGray" />
+                                <div>
+                                  <p className="font-bold text-brand-dark">{holding.title}</p>
+                                  <p className="text-sm text-brand-sage">{holding.location}</p>
+                                  <p className="text-xs text-brand-medium">
+                                    {holding.availableTokens} tokens available (${(holding.availableTokens * holding.tokenPrice).toLocaleString()} value)
+                                  </p>
+                                </div>
+                              </div>
+                              <button 
+                                onClick={() => handleBorrow(holding)}
+                                className="bg-brand-deep hover:bg-brand-dark text-white px-4 py-2 rounded-lg font-bold text-sm transition-colors"
+                              >
+                                Borrow
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : demoMode ? (
+                      <div className="bg-white border border-brand-lightGray rounded-2xl p-8 text-center">
+                        <i className="fa-solid fa-building text-4xl text-brand-lightGray mb-3"></i>
+                        <p className="text-brand-sage font-bold">No property tokens to borrow against</p>
+                        <p className="text-sm text-brand-sage">Purchase property tokens from the Marketplace first</p>
+                      </div>
+                    ) : (
+                      <BorrowPropertyList properties={BORROW_PROPERTIES} onBorrow={handleBorrow} />
+                    )}
                 </div>
                 <div className="bg-brand-mint/20 border border-brand-mint rounded-2xl p-6 h-fit">
                     <h3 className="font-bold text-brand-dark mb-4"><i className="fa-solid fa-circle-info mr-2 text-brand-medium"></i>How it works</h3>
@@ -193,7 +261,14 @@ export const DefiPage: React.FC = () => {
         )}
 
         {/* Modals */}
-        <BorrowModal isOpen={borrowModalOpen} onClose={closeModals} property={selectedProperty} />
+        <BorrowModal 
+          isOpen={borrowModalOpen} 
+          onClose={closeModals} 
+          property={selectedProperty}
+          onConfirmBorrow={handleConfirmBorrow}
+          loading={loading}
+          error={error}
+        />
         
         {/* Lend Modal */}
         {lendModalOpen && selectedPool && (

@@ -382,6 +382,32 @@ router.post('/buy', requireDemoMode, apiAuth, async (req, res) => {
         });
       }
       
+      // Create transaction record for activity feed
+      const CRYPTO_NAMES: Record<string, string> = {
+        usdc: 'USDC',
+        btc: 'BTC',
+        parco: 'PARCO',
+      };
+      await prisma.transaction.create({
+        data: {
+          userId: user.id,
+          type: 'BUY',
+          status: 'COMPLETED',
+          amount: totalCost,
+          currency: CRYPTO_NAMES[paymentMethod] || 'USDC',
+          txHash: `demo_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          description: `Demo purchase of ${quantity} tokens of ${mockProperty.title}`,
+          completedAt: new Date(),
+          metadata: {
+            propertyId,
+            propertyName: mockProperty.title,
+            quantity,
+            tokenPrice,
+            isDemoHolding: true,
+          },
+        },
+      });
+      
       console.log('[Demo Buy] Mock purchase complete');
       return res.json({
         success: true,
@@ -667,6 +693,93 @@ router.post('/run-rent-cycle', requireDemoMode, apiAuth, async (req, res) => {
   }
 });
 
+// Get borrowable holdings (including DemoHolding)
+router.get('/borrowable-holdings', requireDemoMode, apiAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      include: {
+        holdings: { include: { property: true } },
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    // Get demo holdings
+    const demoHoldings = await prisma.demoHolding.findMany({
+      where: { userId: user.id },
+    });
+
+    // Map database holdings
+    const dbBorrowable = user.holdings
+      .filter(h => h.quantity - h.demoLockedQuantity > 0)
+      .map(h => ({
+        id: h.propertyId,
+        title: h.property.name,
+        location: `${h.property.city}, ${h.property.state}`,
+        image: h.property.images[0] || h.property.imageUrl || 'https://picsum.photos/200/200?random=1',
+        tokensOwned: h.quantity,
+        lockedTokens: h.demoLockedQuantity,
+        availableTokens: h.quantity - h.demoLockedQuantity,
+        tokenPrice: Number(h.property.tokenPrice),
+        maxLTV: 0.5,
+        isDemoHolding: false,
+      }));
+
+    // Mock property images and locations for DemoHolding
+    const mockImages: Record<string, string> = {
+      '1': 'https://images.unsplash.com/photo-1577495508048-b635879837f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+      '2': 'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+      '3': 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+      '4': 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+      '5': 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+    };
+    const mockLocations: Record<string, string> = {
+      '1': 'New York, NY',
+      '2': 'New Orleans, LA',
+      '3': 'Miami, FL',
+      '4': 'New York, NY',
+      '5': 'Austin, TX',
+    };
+
+    // Map demo holdings
+    const demoBorrowable = demoHoldings
+      .filter(h => h.quantity - h.lockedQuantity > 0)
+      .map(h => {
+        const mockProp = MOCK_PROPERTIES[h.propertyId];
+        return {
+          id: h.propertyId,
+          title: h.propertyName,
+          location: mockLocations[h.propertyId] || 'USA',
+          image: mockImages[h.propertyId] || 'https://picsum.photos/200/200?random=' + h.propertyId,
+          tokensOwned: h.quantity,
+          lockedTokens: h.lockedQuantity,
+          availableTokens: h.quantity - h.lockedQuantity,
+          tokenPrice: mockProp?.tokenPrice || Number(h.averageCost),
+          maxLTV: 0.5,
+          isDemoHolding: true,
+          demoHoldingId: h.id,
+        };
+      });
+
+    res.json({
+      success: true,
+      demoMode: true,
+      data: [...dbBorrowable, ...demoBorrowable],
+    });
+  } catch (error: any) {
+    console.error('Error fetching borrowable holdings:', error);
+    res.status(500).json({ success: false, error: error.message || 'Failed to fetch borrowable holdings' });
+  }
+});
+
 router.post('/borrow', requireDemoMode, apiAuth, async (req, res) => {
   try {
     const clerkId = (req as any).auth?.userId;
@@ -674,7 +787,7 @@ router.post('/borrow', requireDemoMode, apiAuth, async (req, res) => {
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const { propertyId, tokenAmount, borrowAmount } = req.body;
+    const { propertyId, tokenAmount, borrowAmount, isDemoHolding } = req.body;
 
     if (!propertyId || !tokenAmount || !borrowAmount) {
       return res.status(400).json({
@@ -698,6 +811,109 @@ router.post('/borrow', requireDemoMode, apiAuth, async (req, res) => {
       });
     }
 
+    // Check if this is a DemoHolding (mock property) borrow
+    if (isDemoHolding) {
+      // Handle borrow from DemoHolding
+      const demoHolding = await prisma.demoHolding.findFirst({
+        where: { userId: user.id, propertyId },
+      });
+
+      if (!demoHolding) {
+        return res.status(404).json({ success: false, error: 'Demo holding not found' });
+      }
+
+      const availableTokens = demoHolding.quantity - demoHolding.lockedQuantity;
+      if (availableTokens < tokenAmount) {
+        return res.status(400).json({
+          success: false,
+          error: 'Insufficient unlocked tokens to use as collateral',
+          available: availableTokens,
+          requested: tokenAmount,
+        });
+      }
+
+      // Get token price from mock data
+      const mockProp = MOCK_PROPERTIES[propertyId];
+      const tokenPrice = mockProp?.tokenPrice || Number(demoHolding.averageCost);
+      const collateralValue = tokenPrice * tokenAmount;
+      const maxBorrow = collateralValue * 0.5;
+
+      if (borrowAmount > maxBorrow) {
+        return res.status(400).json({
+          success: false,
+          error: `Borrow amount exceeds 50% LTV. Max: $${maxBorrow.toFixed(2)}`,
+          maxBorrow,
+          collateralValue,
+        });
+      }
+
+      const interestRate = 0.08;
+      const originationFee = borrowAmount * 0.01;
+      const netDisbursement = borrowAmount - originationFee;
+
+      // Update DemoHolding to lock tokens
+      await prisma.demoHolding.update({
+        where: { id: demoHolding.id },
+        data: { lockedQuantity: { increment: tokenAmount } },
+      });
+
+      // Update vault balance with borrowed USDC
+      await prisma.vaultAccount.update({
+        where: { id: user.vaultAccount.id },
+        data: {
+          lockedBalance: { increment: collateralValue },
+          demoUsdcBalance: { increment: netDisbursement },
+        },
+      });
+
+      // Create transaction record for activity feed
+      await prisma.transaction.create({
+        data: {
+          userId: user.id,
+          type: 'BORROW',
+          status: 'COMPLETED',
+          amount: borrowAmount,
+          currency: 'USDC',
+          txHash: `demo_borrow_${Date.now()}`,
+          description: `Borrowed $${netDisbursement.toFixed(2)} against ${tokenAmount} ${demoHolding.propertyName} tokens`,
+          completedAt: new Date(),
+          metadata: {
+            propertyId,
+            propertyName: demoHolding.propertyName,
+            collateralValue,
+            originationFee,
+            netDisbursement,
+            isDemoHolding: true,
+          },
+        },
+      });
+
+      const updatedVault = await prisma.vaultAccount.findUnique({
+        where: { id: user.vaultAccount.id },
+      });
+
+      return res.json({
+        success: true,
+        demoMode: true,
+        data: {
+          borrowPosition: {
+            id: `demo_${Date.now()}`,
+            principal: borrowAmount,
+            interestRate: interestRate * 100,
+            collateralValue,
+            originationFee,
+            netDisbursement,
+            status: 'ACTIVE',
+          },
+          vault: {
+            balance: Number(updatedVault?.demoUsdcBalance || 0),
+            lockedBalance: Number(updatedVault?.lockedBalance || 0),
+          },
+        },
+      });
+    }
+
+    // Original flow for database holdings
     const holding = user.holdings.find(h => h.propertyId === propertyId);
     const availableTokens = holding ? holding.quantity - holding.demoLockedQuantity : 0;
     if (!holding || availableTokens < tokenAmount) {
@@ -1576,14 +1792,18 @@ router.get('/portfolio', requireDemoMode, apiAuth, async (req, res) => {
     const totalBalance = totalPropertyValue + totalCryptoValue;
     const netGains = totalPropertyValue - totalInvested + totalRentEarned;
 
-    const recentActivity = transactions.map(tx => ({
-      id: tx.id,
-      type: tx.type,
-      date: tx.completedAt || tx.createdAt,
-      amount: tx.type === 'RENT_DISTRIBUTION' || tx.type === 'DEPOSIT' ? `+ $${Number(tx.amount).toFixed(2)}` : `- $${Number(tx.amount).toFixed(2)}`,
-      asset: tx.description || tx.currency || 'USDC',
-      positive: ['RENT_DISTRIBUTION', 'DEPOSIT', 'BORROW'].includes(tx.type),
-    }));
+    const recentActivity = transactions.map(tx => {
+      const isPositive = ['RENT_DISTRIBUTION', 'DEPOSIT', 'BORROW'].includes(tx.type);
+      const amountPrefix = isPositive ? '+ $' : '- $';
+      return {
+        id: tx.id,
+        type: tx.type,
+        date: tx.completedAt || tx.createdAt,
+        amount: `${amountPrefix}${Number(tx.amount).toFixed(2)}`,
+        asset: tx.description || tx.currency || 'USDC',
+        positive: isPositive,
+      };
+    });
 
     res.json({
       success: true,

@@ -109,9 +109,50 @@ export const StakeComingSoonCard: React.FC = () => (
 );
 
 // --- BORROW MODAL ---
-export const BorrowModal: React.FC<{ isOpen: boolean, onClose: () => void, property: any }> = ({ isOpen, onClose, property }) => {
-  const [amount, setAmount] = useState<number>(0);
+export const BorrowModal: React.FC<{ 
+  isOpen: boolean, 
+  onClose: () => void, 
+  property: any,
+  onConfirmBorrow?: (propertyId: string, tokenAmount: number, borrowAmount: number, isDemoHolding: boolean) => Promise<void>,
+  loading?: boolean,
+  error?: string | null
+}> = ({ isOpen, onClose, property, onConfirmBorrow, loading, error }) => {
+  const [borrowAmount, setBorrowAmount] = useState<number>(0);
+  const [tokenAmount, setTokenAmount] = useState<number>(0);
+  const [success, setSuccess] = useState<string | null>(null);
+  
   if (!isOpen || !property) return null;
+
+  const availableTokens = property.availableTokens || property.tokensOwned || 0;
+  const tokenPrice = property.tokenPrice || 100;
+  const collateralValue = tokenAmount * tokenPrice;
+  const maxBorrow = collateralValue * 0.5;
+  const ltvPercent = collateralValue > 0 ? (borrowAmount / collateralValue) * 100 : 0;
+  const isDemoHolding = property.isDemoHolding === true;
+
+  const handleConfirm = async () => {
+    if (!onConfirmBorrow || tokenAmount <= 0 || borrowAmount <= 0) return;
+    
+    try {
+      await onConfirmBorrow(property.id, tokenAmount, borrowAmount, isDemoHolding);
+      setSuccess(`Successfully borrowed $${(borrowAmount * 0.99).toFixed(2)}!`);
+      setTimeout(() => {
+        setSuccess(null);
+        setBorrowAmount(0);
+        setTokenAmount(0);
+        onClose();
+      }, 2000);
+    } catch (err) {
+      console.error('Borrow failed:', err);
+    }
+  };
+
+  const handleTokenAmountChange = (amount: number) => {
+    const clamped = Math.min(Math.max(0, amount), availableTokens);
+    setTokenAmount(clamped);
+    const newCollateral = clamped * tokenPrice;
+    setBorrowAmount(Math.min(borrowAmount, newCollateral * 0.5));
+  };
 
   return (
     <div className="fixed inset-0 z-[110] flex items-end md:items-center justify-center bg-black/50 backdrop-blur-sm p-4 md:p-0">
@@ -121,18 +162,48 @@ export const BorrowModal: React.FC<{ isOpen: boolean, onClose: () => void, prope
             <button onClick={onClose} className="text-brand-sage hover:text-brand-dark"><i className="fa-solid fa-xmark text-xl"></i></button>
         </div>
 
+        {success && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm font-medium flex items-center gap-2">
+            <i className="fa-solid fa-check-circle"></i>
+            {success}
+          </div>
+        )}
+
         <div className="flex items-center gap-4 mb-6 p-3 bg-brand-offWhite rounded-xl border border-brand-lightGray">
             <img src={property.image} className="w-12 h-12 rounded-lg object-cover" />
             <div>
                 <p className="font-bold text-brand-dark text-sm">{property.title}</p>
-                <p className="text-xs text-brand-sage">Collateral Value: ${property.maxBorrow / (property.ltv/100)}</p>
+                <p className="text-xs text-brand-sage">{availableTokens} tokens available @ ${tokenPrice} each</p>
             </div>
         </div>
 
-        <div className="mb-8">
+        <div className="mb-6">
             <div className="flex justify-between mb-2">
-                <span className="text-sm font-bold text-brand-sage">Amount</span>
-                <span className="text-sm font-bold text-brand-deep">Max: ${property.maxBorrow}</span>
+                <span className="text-sm font-bold text-brand-sage">Tokens to Lock</span>
+                <span className="text-sm font-bold text-brand-deep">Max: {availableTokens}</span>
+            </div>
+            <input 
+                type="number" 
+                className="w-full px-4 py-3 rounded-xl border border-brand-lightGray focus:border-brand-deep focus:ring-1 focus:ring-brand-deep outline-none font-bold text-lg text-brand-dark"
+                placeholder="0"
+                value={tokenAmount || ''}
+                onChange={(e) => handleTokenAmountChange(Number(e.target.value))}
+            />
+            <input 
+                type="range" 
+                min="0" 
+                max={availableTokens} 
+                value={tokenAmount}
+                onChange={(e) => handleTokenAmountChange(Number(e.target.value))}
+                className="w-full mt-2 accent-brand-deep h-1 bg-brand-lightGray rounded-lg appearance-none cursor-pointer"
+            />
+            <p className="text-xs text-brand-sage mt-1">Collateral Value: ${collateralValue.toLocaleString()}</p>
+        </div>
+
+        <div className="mb-6">
+            <div className="flex justify-between mb-2">
+                <span className="text-sm font-bold text-brand-sage">Borrow Amount</span>
+                <span className="text-sm font-bold text-brand-deep">Max: ${maxBorrow.toFixed(2)}</span>
             </div>
             <div className="relative">
                 <span className="absolute left-4 top-3.5 text-brand-dark font-bold text-lg">$</span>
@@ -140,36 +211,43 @@ export const BorrowModal: React.FC<{ isOpen: boolean, onClose: () => void, prope
                     type="number" 
                     className="w-full pl-8 pr-4 py-3 rounded-xl border border-brand-lightGray focus:border-brand-deep focus:ring-1 focus:ring-brand-deep outline-none font-bold text-lg text-brand-dark"
                     placeholder="0.00"
-                    onChange={(e) => setAmount(Number(e.target.value))}
+                    value={borrowAmount || ''}
+                    onChange={(e) => setBorrowAmount(Math.min(Number(e.target.value), maxBorrow))}
                 />
             </div>
-            <input 
-                type="range" 
-                min="0" 
-                max={property.maxBorrow} 
-                value={amount}
-                onChange={(e) => setAmount(Number(e.target.value))}
-                className="w-full mt-4 accent-brand-deep h-1 bg-brand-lightGray rounded-lg appearance-none cursor-pointer"
-            />
             <div className="flex justify-between mt-2 text-xs font-bold">
-                <span className="text-brand-sage">LTV: {((amount / (property.maxBorrow / 0.6)) * 100).toFixed(1)}%</span>
-                <span className="text-brand-medium">Safe Limit: 60%</span>
+                <span className={`${ltvPercent > 50 ? 'text-red-500' : 'text-brand-sage'}`}>
+                  LTV: {ltvPercent.toFixed(1)}%
+                </span>
+                <span className="text-brand-medium">Safe Limit: 50%</span>
             </div>
         </div>
 
         <div className="space-y-3 mb-6 bg-brand-offWhite/50 p-4 rounded-xl">
             <div className="flex justify-between text-sm">
                 <span className="text-brand-sage">Annual Interest</span>
-                <span className="font-bold text-brand-dark">5.5%</span>
+                <span className="font-bold text-brand-dark">8%</span>
             </div>
             <div className="flex justify-between text-sm">
-                <span className="text-brand-sage">Liquidation Price</span>
-                <span className="font-bold text-brand-dark">$38.50</span>
+                <span className="text-brand-sage">Origination Fee (1%)</span>
+                <span className="font-bold text-brand-dark">${(borrowAmount * 0.01).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-sm border-t border-brand-lightGray pt-2">
+                <span className="text-brand-sage">You'll Receive</span>
+                <span className="font-bold text-brand-medium">${(borrowAmount * 0.99).toFixed(2)}</span>
             </div>
         </div>
 
-        <button className="w-full bg-brand-deep hover:bg-brand-dark text-white py-3.5 rounded-xl font-bold text-sm shadow-md transition-colors">
-            Confirm Borrow
+        {error && (
+          <p className="text-red-500 text-sm mb-3 text-center">{error}</p>
+        )}
+
+        <button 
+          onClick={handleConfirm}
+          disabled={loading || tokenAmount <= 0 || borrowAmount <= 0 || ltvPercent > 50}
+          className="w-full bg-brand-deep hover:bg-brand-dark text-white py-3.5 rounded-xl font-bold text-sm shadow-md transition-colors disabled:opacity-50"
+        >
+            {loading ? 'Processing...' : 'Confirm Borrow'}
         </button>
       </div>
     </div>

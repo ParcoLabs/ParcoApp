@@ -228,10 +228,42 @@ export const useDemo = () => {
     }
   }, [demoMode]);
 
+  const getBorrowableHoldings = useCallback(async (): Promise<any[] | null> => {
+    if (!demoMode) {
+      setError('Demo mode is not enabled');
+      return null;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch('/api/demo/borrowable-holdings', {
+        headers,
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch borrowable holdings');
+      }
+
+      return data.data;
+    } catch (err: any) {
+      setError(err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [demoMode]);
+
   const demoBorrow = useCallback(async (
     propertyId: string,
     tokenAmount: number,
-    borrowAmount: number
+    borrowAmount: number,
+    isDemoHolding: boolean = false
   ): Promise<DemoBorrowResult | null> => {
     if (!demoMode) {
       setError('Demo mode is not enabled');
@@ -247,7 +279,7 @@ export const useDemo = () => {
         method: 'POST',
         headers,
         credentials: 'include',
-        body: JSON.stringify({ propertyId, tokenAmount, borrowAmount }),
+        body: JSON.stringify({ propertyId, tokenAmount, borrowAmount, isDemoHolding }),
       });
 
       const data = await response.json();
@@ -703,5 +735,6 @@ export const useDemo = () => {
     withdrawFromPool,
     getDemoGovernanceProposals,
     voteOnDemoProposal,
+    getBorrowableHoldings,
   };
 };
