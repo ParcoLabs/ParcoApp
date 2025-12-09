@@ -76,16 +76,31 @@ router.post('/create-user', requireDemoMode, validateAuth, async (req, res) => {
               walletAddress: `${DEMO_WALLET_PREFIX}${existingUser.id}`,
               usdcBalance: INITIAL_DEMO_BALANCE,
               totalDeposited: INITIAL_DEMO_BALANCE,
+              demoUsdcBalance: INITIAL_DEMO_BALANCES.usdc,
+              demoBtcBalance: INITIAL_DEMO_BALANCES.btc,
+              demoParcoBalance: INITIAL_DEMO_BALANCES.parco,
+              demoInitialized: true,
             },
           });
         } else {
+          const vault = existingUser.vaultAccount;
+          
+          const updateData: any = {
+            usdcBalance: INITIAL_DEMO_BALANCE,
+            totalDeposited: INITIAL_DEMO_BALANCE,
+            lockedBalance: 0,
+          };
+          
+          if (!vault.demoInitialized) {
+            updateData.demoUsdcBalance = INITIAL_DEMO_BALANCES.usdc;
+            updateData.demoBtcBalance = INITIAL_DEMO_BALANCES.btc;
+            updateData.demoParcoBalance = INITIAL_DEMO_BALANCES.parco;
+            updateData.demoInitialized = true;
+          }
+          
           await tx.vaultAccount.update({
-            where: { id: existingUser.vaultAccount.id },
-            data: {
-              usdcBalance: INITIAL_DEMO_BALANCE,
-              totalDeposited: INITIAL_DEMO_BALANCE,
-              lockedBalance: 0,
-            },
+            where: { id: vault.id },
+            data: updateData,
           });
         }
 
@@ -156,18 +171,23 @@ router.post('/create-user', requireDemoMode, validateAuth, async (req, res) => {
 });
 
 const INITIAL_DEMO_BALANCES = {
-  usdc: { name: 'USDC', balance: 10000 },
-  btc: { name: 'Bitcoin', balance: 2000 },
-  parco: { name: 'Parco Token', balance: 1000 },
+  usdc: 10000,
+  btc: 2000,
+  parco: 1000,
 };
 
-const userDemoWallets = new Map<string, Record<string, { name: string; balance: number }>>();
+const CRYPTO_NAMES: Record<string, string> = {
+  usdc: 'USDC',
+  btc: 'Bitcoin',
+  parco: 'Parco Token',
+};
 
-const getUserDemoWallet = (userId: string): Record<string, { name: string; balance: number }> => {
-  if (!userDemoWallets.has(userId)) {
-    userDemoWallets.set(userId, JSON.parse(JSON.stringify(INITIAL_DEMO_BALANCES)));
-  }
-  return userDemoWallets.get(userId)!;
+const getDemoBalancesFromVault = (vault: { demoUsdcBalance: any; demoBtcBalance: any; demoParcoBalance: any }) => {
+  return {
+    usdc: { name: CRYPTO_NAMES.usdc, balance: Number(vault.demoUsdcBalance) },
+    btc: { name: CRYPTO_NAMES.btc, balance: Number(vault.demoBtcBalance) },
+    parco: { name: CRYPTO_NAMES.parco, balance: Number(vault.demoParcoBalance) },
+  };
 };
 
 router.get('/wallet-balances', requireDemoMode, validateAuth, async (req, res) => {
@@ -177,17 +197,20 @@ router.get('/wallet-balances', requireDemoMode, validateAuth, async (req, res) =
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
-    const user = await prisma.user.findUnique({ where: { clerkId } });
-    if (!user) {
-      return res.status(404).json({ success: false, error: 'User not found' });
+    const user = await prisma.user.findUnique({ 
+      where: { clerkId },
+      include: { vaultAccount: true },
+    });
+    if (!user || !user.vaultAccount) {
+      return res.status(404).json({ success: false, error: 'User or vault not found' });
     }
 
-    const userBalances = getUserDemoWallet(user.id);
+    const balances = getDemoBalancesFromVault(user.vaultAccount);
 
     res.json({
       success: true,
       data: {
-        balances: userBalances,
+        balances,
       },
     });
   } catch (error: any) {
@@ -250,13 +273,19 @@ router.post('/buy', requireDemoMode, validateAuth, async (req, res) => {
     const tokenPrice = Number(property.tokenPrice);
     const totalCost = tokenPrice * quantity;
     
-    const userWallet = getUserDemoWallet(user.id);
-    const paymentBalance = userWallet[paymentMethod]?.balance || 0;
+    const vault = user.vaultAccount;
+    const balanceFieldMap: Record<string, keyof typeof vault> = {
+      usdc: 'demoUsdcBalance',
+      btc: 'demoBtcBalance',
+      parco: 'demoParcoBalance',
+    };
+    const balanceField = balanceFieldMap[paymentMethod];
+    const paymentBalance = Number(vault[balanceField as keyof typeof vault]);
 
     if (totalCost > paymentBalance) {
       return res.status(400).json({
         success: false,
-        error: `Insufficient ${userWallet[paymentMethod]?.name || paymentMethod} balance`,
+        error: `Insufficient ${CRYPTO_NAMES[paymentMethod]} balance`,
         required: totalCost,
         available: paymentBalance,
       });
@@ -270,8 +299,6 @@ router.post('/buy', requireDemoMode, validateAuth, async (req, res) => {
         available: property.availableTokens,
       });
     }
-
-    userWallet[paymentMethod].balance -= totalCost;
 
     const result = await prisma.$transaction(async (tx) => {
       const existingHolding = await tx.holding.findUnique({
@@ -317,6 +344,20 @@ router.post('/buy', requireDemoMode, validateAuth, async (req, res) => {
         },
       });
 
+      const updateData: Record<string, { decrement: number }> = {};
+      if (paymentMethod === 'usdc') {
+        updateData.demoUsdcBalance = { decrement: totalCost };
+      } else if (paymentMethod === 'btc') {
+        updateData.demoBtcBalance = { decrement: totalCost };
+      } else if (paymentMethod === 'parco') {
+        updateData.demoParcoBalance = { decrement: totalCost };
+      }
+
+      const updatedVault = await tx.vaultAccount.update({
+        where: { id: vault.id },
+        data: updateData,
+      });
+
       const currencyMap: Record<string, string> = {
         usdc: 'USDC',
         btc: 'BTC',
@@ -334,18 +375,20 @@ router.post('/buy', requireDemoMode, validateAuth, async (req, res) => {
           tokenQuantity: quantity,
           tokenPrice: tokenPrice,
           txHash: `demo_tx_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          description: `Demo purchase of ${quantity} tokens of ${property.name} with ${userWallet[paymentMethod]?.name || paymentMethod}`,
+          description: `Demo purchase of ${quantity} tokens of ${property.name} with ${CRYPTO_NAMES[paymentMethod]}`,
           completedAt: new Date(),
         },
       });
 
-      return { holding, transaction };
+      return { holding, transaction, updatedVault };
     });
 
     const holdings = await prisma.holding.findMany({
       where: { userId: user.id },
       include: { property: true },
     });
+
+    const updatedBalances = getDemoBalancesFromVault(result.updatedVault);
 
     res.json({
       success: true,
@@ -360,7 +403,7 @@ router.post('/buy', requireDemoMode, validateAuth, async (req, res) => {
           paymentMethod: paymentMethod,
           txHash: result.transaction.txHash,
         },
-        walletBalances: userWallet,
+        walletBalances: updatedBalances,
         portfolio: holdings.map(h => ({
           propertyId: h.propertyId,
           propertyName: h.property.name,
@@ -1198,6 +1241,9 @@ router.post('/reset', requireDemoMode, validateAuth, async (req, res) => {
             totalDeposited: INITIAL_DEMO_BALANCE,
             totalWithdrawn: 0,
             totalEarned: 0,
+            demoUsdcBalance: INITIAL_DEMO_BALANCES.usdc,
+            demoBtcBalance: INITIAL_DEMO_BALANCES.btc,
+            demoParcoBalance: INITIAL_DEMO_BALANCES.parco,
           },
         });
       }
