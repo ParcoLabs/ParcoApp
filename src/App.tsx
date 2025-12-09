@@ -5,6 +5,7 @@ import { Navigation } from './components/Navigation';
 import { Dashboard } from './pages/Dashboard';
 import { Marketplace } from './pages/Marketplace';
 import { TokenDetails } from './pages/TokenDetails';
+import { HoldingDetails } from './pages/HoldingDetails';
 import { Portfolio } from './pages/Portfolio';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -132,6 +133,7 @@ const App: React.FC = () => {
             <Route path="/marketplace" element={<ViewableRoute><Marketplace /></ViewableRoute>} />
             <Route path="/marketplace/:id" element={<ViewableRoute><TokenDetails /></ViewableRoute>} />
             <Route path="/portfolio" element={<ProtectedRoute><Portfolio /></ProtectedRoute>} />
+            <Route path="/holdings/:id" element={<ProtectedRoute><HoldingDetails /></ProtectedRoute>} />
             <Route path="/defi" element={<ProtectedRoute><DefiPage /></ProtectedRoute>} />
             <Route path="/governance" element={<ProtectedRoute><Governance /></ProtectedRoute>} />
             <Route path="/kyc" element={<ProtectedRoute><KYC /></ProtectedRoute>} />

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis } from 'recharts';
 import { useDemoMode } from '../context/DemoModeContext';
 import { useDemo } from '../hooks/useDemo';
@@ -198,22 +199,29 @@ export const Portfolio: React.FC = () => {
                {assetTab === 'properties' ? (
                    properties.length > 0 ? (
                      properties.map((h: any) => (
-                        <div key={h.id} className="p-4 flex items-center justify-between hover:bg-brand-offWhite/30 transition-colors cursor-pointer group">
+                        <Link 
+                          key={h.id} 
+                          to={`/holdings/${h.propertyId || h.id}`}
+                          className="p-4 flex items-center justify-between hover:bg-brand-offWhite/30 transition-colors cursor-pointer group block"
+                        >
                             <div className="flex items-center gap-4">
                                <img src={h.image} alt={h.title} className="w-10 h-10 rounded-full object-cover bg-brand-lightGray" />
                                <div>
-                                  <p className="font-bold text-brand-dark text-base">{h.title}</p>
+                                  <p className="font-bold text-brand-dark text-base group-hover:text-brand-deep transition-colors">{h.title}</p>
                                   <p className="text-xs text-brand-sage font-medium">{h.location}</p>
                                </div>
                             </div>
 
-                            <div className="text-right">
-                               <p className="font-bold text-brand-dark text-base">${h.totalValue.toLocaleString()}</p>
-                               <p className={`text-xs font-bold ${h.change >= 0 ? 'text-brand-medium' : 'text-red-500'}`}>
-                                  {h.change > 0 ? '+' : ''}{h.change.toFixed(1)}%
-                               </p>
+                            <div className="flex items-center gap-3">
+                              <div className="text-right">
+                                 <p className="font-bold text-brand-dark text-base">${h.totalValue.toLocaleString()}</p>
+                                 <p className={`text-xs font-bold ${h.change >= 0 ? 'text-brand-medium' : 'text-red-500'}`}>
+                                    {h.change > 0 ? '+' : ''}{h.change.toFixed(1)}%
+                                 </p>
+                              </div>
+                              <i className="fa-solid fa-chevron-right text-brand-lightGray group-hover:text-brand-sage transition-colors"></i>
                             </div>
-                        </div>
+                        </Link>
                      ))
                    ) : (
                      <div className="p-8 text-center">

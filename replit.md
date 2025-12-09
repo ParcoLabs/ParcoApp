@@ -24,6 +24,13 @@ The platform uses React for the frontend, styled with TailwindCSS and featuring 
 - **Authentication System**: Login/Register with Clerk, protected routes.
 - **Marketplace**: Browse and purchase tokenized properties.
 - **Portfolio Management**: Track assets, performance, and transaction history.
+- **Holding Details Page**: Detailed view for individual token holdings (/holdings/:id) with:
+  - Price chart with time period selectors (1D, 1W, 1M, 1Y, All)
+  - Balance tab: Total value, tokens owned, monthly/all-time returns
+  - Insights tab: Property details and key insights
+  - Governance tab: Active proposals to vote on, past voting history (demo mode)
+  - Buy & Sell and DeFi action buttons
+  - Mobile and desktop responsive layouts
 - **Payment Processing**: Supports credit/debit cards, ACH, and cryptocurrencies.
 - **KYC/Compliance**: Integrated Sumsub for identity verification.
 - **Blockchain Integration**: USDC deposits, ERC-1155 token minting for ownership, role-based access control.

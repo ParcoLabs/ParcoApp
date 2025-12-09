@@ -217,21 +217,24 @@ export const Dashboard: React.FC = () => {
                 properties.map((prop: any) => (
                   <div 
                     key={prop.id}
-                    className="bg-white border border-brand-lightGray rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => navigate(`/marketplace/${prop.id}`)}
+                    className="bg-white border border-brand-lightGray rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group"
+                    onClick={() => navigate(`/holdings/${prop.propertyId || prop.id}`)}
                   >
                     <div className="flex items-center gap-4">
                       <img src={prop.image} alt={prop.title} className="w-12 h-12 object-cover rounded-lg bg-brand-lightGray" />
                       <div>
-                        <h3 className="text-sm font-bold text-brand-dark">{prop.title}</h3>
+                        <h3 className="text-sm font-bold text-brand-dark group-hover:text-brand-deep transition-colors">{prop.title}</h3>
                         <p className="text-xs text-brand-sage">{prop.location}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-brand-dark">${prop.totalValue.toLocaleString()}</p>
-                      <p className={`text-xs font-bold ${prop.change >= 0 ? 'text-brand-medium' : 'text-red-500'}`}>
-                        {prop.change > 0 ? '+' : ''}{prop.change.toFixed(1)}%
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <p className="font-bold text-brand-dark">${prop.totalValue.toLocaleString()}</p>
+                        <p className={`text-xs font-bold ${prop.change >= 0 ? 'text-brand-medium' : 'text-red-500'}`}>
+                          {prop.change > 0 ? '+' : ''}{prop.change.toFixed(1)}%
+                        </p>
+                      </div>
+                      <i className="fa-solid fa-chevron-right text-brand-lightGray group-hover:text-brand-sage transition-colors"></i>
                     </div>
                   </div>
                 ))
