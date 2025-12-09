@@ -600,11 +600,12 @@ router.post('/borrow', requireDemoMode, validateAuth, async (req, res) => {
     }
 
     const holding = user.holdings.find(h => h.propertyId === propertyId);
-    if (!holding || holding.quantity < tokenAmount) {
+    const availableTokens = holding ? holding.quantity - holding.demoLockedQuantity : 0;
+    if (!holding || availableTokens < tokenAmount) {
       return res.status(400).json({
         success: false,
-        error: 'Insufficient tokens to use as collateral',
-        available: holding?.quantity || 0,
+        error: 'Insufficient unlocked tokens to use as collateral',
+        available: availableTokens,
         requested: tokenAmount,
       });
     }
@@ -640,7 +641,7 @@ router.post('/borrow', requireDemoMode, validateAuth, async (req, res) => {
       await tx.holding.update({
         where: { id: holding.id },
         data: {
-          quantity: { decrement: tokenAmount },
+          demoLockedQuantity: { increment: tokenAmount },
         },
       });
 
@@ -648,7 +649,7 @@ router.post('/borrow', requireDemoMode, validateAuth, async (req, res) => {
         where: { id: user.vaultAccount!.id },
         data: {
           lockedBalance: { increment: collateralValue },
-          usdcBalance: { increment: netDisbursement },
+          demoUsdcBalance: { increment: netDisbursement },
         },
       });
 
@@ -1355,6 +1356,404 @@ router.get('/status', requireDemoMode, validateAuth, async (req, res) => {
     res.status(500).json({
       success: false,
       error: error.message || 'Failed to fetch demo status',
+    });
+  }
+});
+
+router.get('/lending-pools', requireDemoMode, validateAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { clerkId } });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    let pools = await prisma.demoLendingPool.findMany();
+    
+    if (pools.length === 0) {
+      await prisma.demoLendingPool.createMany({
+        data: [
+          { name: 'USDC-RE Index Pool', apy: 8.2, tvl: 5200000 },
+          { name: 'High Yield Residential', apy: 12.5, tvl: 1200000 },
+        ],
+      });
+      pools = await prisma.demoLendingPool.findMany();
+    }
+
+    const positions = await prisma.demoLendingPosition.findMany({
+      where: { userId: user.id },
+      include: { pool: true },
+    });
+
+    const poolsWithUserPosition = pools.map(pool => {
+      const position = positions.find(p => p.poolId === pool.id);
+      return {
+        id: pool.id,
+        name: pool.name,
+        apy: Number(pool.apy),
+        tvl: Number(pool.tvl),
+        userDeposit: position ? Number(position.depositedAmount) : 0,
+        accruedYield: position ? Number(position.accruedYield) : 0,
+      };
+    });
+
+    res.json({
+      success: true,
+      demoMode: true,
+      data: poolsWithUserPosition,
+    });
+  } catch (error: any) {
+    console.error('Error fetching demo lending pools:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch lending pools',
+    });
+  }
+});
+
+router.post('/lending-pools/deposit', requireDemoMode, validateAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const { poolId, amount } = req.body;
+
+    if (!poolId || !amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Pool ID and positive amount are required',
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      include: { vaultAccount: true },
+    });
+
+    if (!user || !user.vaultAccount) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const demoBalance = Number(user.vaultAccount.demoUsdcBalance);
+    if (amount > demoBalance) {
+      return res.status(400).json({
+        success: false,
+        error: 'Insufficient USDC balance',
+        available: demoBalance,
+        required: amount,
+      });
+    }
+
+    const pool = await prisma.demoLendingPool.findUnique({ where: { id: poolId } });
+    if (!pool) {
+      return res.status(404).json({ success: false, error: 'Pool not found' });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      await tx.vaultAccount.update({
+        where: { id: user.vaultAccount!.id },
+        data: { demoUsdcBalance: { decrement: amount } },
+      });
+
+      await tx.demoLendingPool.update({
+        where: { id: poolId },
+        data: { tvl: { increment: amount } },
+      });
+
+      const position = await tx.demoLendingPosition.upsert({
+        where: { userId_poolId: { userId: user.id, poolId } },
+        create: {
+          userId: user.id,
+          poolId,
+          depositedAmount: amount,
+        },
+        update: {
+          depositedAmount: { increment: amount },
+        },
+      });
+
+      return position;
+    });
+
+    const updatedVault = await prisma.vaultAccount.findUnique({
+      where: { id: user.vaultAccount.id },
+    });
+
+    res.json({
+      success: true,
+      demoMode: true,
+      data: {
+        deposit: {
+          poolId,
+          poolName: pool.name,
+          amount,
+          totalDeposited: Number(result.depositedAmount),
+        },
+        walletBalances: {
+          usdc: { name: 'USDC', balance: Number(updatedVault?.demoUsdcBalance || 0) },
+          btc: { name: 'Bitcoin', balance: Number(updatedVault?.demoBtcBalance || 0) },
+          parco: { name: 'Parco Token', balance: Number(updatedVault?.demoParcoBalance || 0) },
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error('Error depositing to demo pool:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to deposit to pool',
+    });
+  }
+});
+
+router.post('/lending-pools/withdraw', requireDemoMode, validateAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const { poolId, amount } = req.body;
+
+    if (!poolId || !amount || amount <= 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'Pool ID and positive amount are required',
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      include: { vaultAccount: true },
+    });
+
+    if (!user || !user.vaultAccount) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const position = await prisma.demoLendingPosition.findUnique({
+      where: { userId_poolId: { userId: user.id, poolId } },
+      include: { pool: true },
+    });
+
+    if (!position || Number(position.depositedAmount) < amount) {
+      return res.status(400).json({
+        success: false,
+        error: 'Insufficient pool position',
+        available: position ? Number(position.depositedAmount) : 0,
+        required: amount,
+      });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      await tx.vaultAccount.update({
+        where: { id: user.vaultAccount!.id },
+        data: { demoUsdcBalance: { increment: amount } },
+      });
+
+      await tx.demoLendingPool.update({
+        where: { id: poolId },
+        data: { tvl: { decrement: amount } },
+      });
+
+      const updatedPosition = await tx.demoLendingPosition.update({
+        where: { userId_poolId: { userId: user.id, poolId } },
+        data: { depositedAmount: { decrement: amount } },
+      });
+
+      return updatedPosition;
+    });
+
+    const updatedVault = await prisma.vaultAccount.findUnique({
+      where: { id: user.vaultAccount.id },
+    });
+
+    res.json({
+      success: true,
+      demoMode: true,
+      data: {
+        withdrawal: {
+          poolId,
+          poolName: position.pool.name,
+          amount,
+          remainingDeposit: Number(result.depositedAmount),
+        },
+        walletBalances: {
+          usdc: { name: 'USDC', balance: Number(updatedVault?.demoUsdcBalance || 0) },
+          btc: { name: 'Bitcoin', balance: Number(updatedVault?.demoBtcBalance || 0) },
+          parco: { name: 'Parco Token', balance: Number(updatedVault?.demoParcoBalance || 0) },
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error('Error withdrawing from demo pool:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to withdraw from pool',
+    });
+  }
+});
+
+router.get('/governance-proposals', requireDemoMode, validateAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { clerkId } });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    let proposals = await prisma.demoGovernanceProposal.findMany({
+      include: { votes: true },
+    });
+
+    if (proposals.length === 0) {
+      await prisma.demoGovernanceProposal.create({
+        data: {
+          title: 'Convert Garage to Additional Bedroom — 88 Oakley Lane',
+          description: 'Proposal to convert the existing two-car garage at 88 Oakley Lane into an additional bedroom. This improvement would increase the property\'s rental potential and market value. The renovation includes insulation, drywall, flooring, electrical work, and HVAC extension.',
+          estimatedCost: 22000,
+          timelineWeeks: 6,
+          expectedAppreciation: 8,
+          status: 'ACTIVE',
+        },
+      });
+      proposals = await prisma.demoGovernanceProposal.findMany({
+        include: { votes: true },
+      });
+    }
+
+    const userVotes = await prisma.demoGovernanceVote.findMany({
+      where: { userId: user.id },
+    });
+
+    const proposalsWithVotes = proposals.map(p => {
+      const userVote = userVotes.find(v => v.proposalId === p.id);
+      return {
+        id: p.id,
+        title: p.title,
+        description: p.description,
+        estimatedCost: Number(p.estimatedCost),
+        timelineWeeks: p.timelineWeeks,
+        expectedAppreciation: Number(p.expectedAppreciation),
+        status: p.status,
+        forVotes: p.forVotes,
+        againstVotes: p.againstVotes,
+        totalVotes: p.forVotes + p.againstVotes,
+        userVote: userVote?.choice || null,
+        createdAt: p.createdAt,
+      };
+    });
+
+    res.json({
+      success: true,
+      demoMode: true,
+      data: proposalsWithVotes,
+    });
+  } catch (error: any) {
+    console.error('Error fetching demo governance proposals:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch proposals',
+    });
+  }
+});
+
+router.post('/governance-proposals/vote', requireDemoMode, validateAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const { proposalId, choice } = req.body;
+
+    if (!proposalId || !choice) {
+      return res.status(400).json({
+        success: false,
+        error: 'Proposal ID and vote choice are required',
+      });
+    }
+
+    if (!['FOR', 'AGAINST'].includes(choice)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Vote choice must be FOR or AGAINST',
+      });
+    }
+
+    const user = await prisma.user.findUnique({ where: { clerkId } });
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const proposal = await prisma.demoGovernanceProposal.findUnique({
+      where: { id: proposalId },
+    });
+
+    if (!proposal) {
+      return res.status(404).json({ success: false, error: 'Proposal not found' });
+    }
+
+    const existingVote = await prisma.demoGovernanceVote.findUnique({
+      where: { proposalId_userId: { proposalId, userId: user.id } },
+    });
+
+    if (existingVote) {
+      return res.status(400).json({
+        success: false,
+        error: 'You have already voted on this proposal',
+        existingVote: existingVote.choice,
+      });
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const vote = await tx.demoGovernanceVote.create({
+        data: {
+          proposalId,
+          userId: user.id,
+          choice: choice as 'FOR' | 'AGAINST',
+        },
+      });
+
+      const updatedProposal = await tx.demoGovernanceProposal.update({
+        where: { id: proposalId },
+        data: choice === 'FOR' ? { forVotes: { increment: 1 } } : { againstVotes: { increment: 1 } },
+      });
+
+      return { vote, updatedProposal };
+    });
+
+    res.json({
+      success: true,
+      demoMode: true,
+      data: {
+        vote: {
+          id: result.vote.id,
+          choice: result.vote.choice,
+          proposalId: result.vote.proposalId,
+        },
+        proposal: {
+          id: result.updatedProposal.id,
+          title: result.updatedProposal.title,
+          forVotes: result.updatedProposal.forVotes,
+          againstVotes: result.updatedProposal.againstVotes,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error('Error voting on demo proposal:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to vote on proposal',
     });
   }
 });

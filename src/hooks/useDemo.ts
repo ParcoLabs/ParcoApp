@@ -449,6 +449,160 @@ export const useDemo = () => {
     }
   }, [demoMode]);
 
+  const getLendingPools = useCallback(async () => {
+    if (!demoMode) {
+      setError('Demo mode is not enabled');
+      return null;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/demo/lending-pools', {
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch lending pools');
+      }
+
+      return data.data;
+    } catch (err: any) {
+      setError(err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [demoMode]);
+
+  const depositToPool = useCallback(async (poolId: string, amount: number) => {
+    if (!demoMode) {
+      setError('Demo mode is not enabled');
+      return null;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/demo/lending-pools/deposit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ poolId, amount }),
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to deposit to pool');
+      }
+
+      return data.data;
+    } catch (err: any) {
+      setError(err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [demoMode]);
+
+  const withdrawFromPool = useCallback(async (poolId: string, amount: number) => {
+    if (!demoMode) {
+      setError('Demo mode is not enabled');
+      return null;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/demo/lending-pools/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ poolId, amount }),
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to withdraw from pool');
+      }
+
+      return data.data;
+    } catch (err: any) {
+      setError(err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [demoMode]);
+
+  const getDemoGovernanceProposals = useCallback(async () => {
+    if (!demoMode) {
+      setError('Demo mode is not enabled');
+      return null;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/demo/governance-proposals', {
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to fetch governance proposals');
+      }
+
+      return data.data;
+    } catch (err: any) {
+      setError(err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [demoMode]);
+
+  const voteOnDemoProposal = useCallback(async (proposalId: string, choice: 'FOR' | 'AGAINST') => {
+    if (!demoMode) {
+      setError('Demo mode is not enabled');
+      return null;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/demo/governance-proposals/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ proposalId, choice }),
+      });
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to vote on proposal');
+      }
+
+      return data.data;
+    } catch (err: any) {
+      setError(err.message);
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [demoMode]);
+
   return {
     loading,
     error,
@@ -463,5 +617,10 @@ export const useDemo = () => {
     voteOnProposal,
     resetDemo,
     getDemoStatus,
+    getLendingPools,
+    depositToPool,
+    withdrawFromPool,
+    getDemoGovernanceProposals,
+    voteOnDemoProposal,
   };
 };
