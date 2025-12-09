@@ -132,20 +132,21 @@ model Token {
 }
 
 model Holding {
-  id            String    @id @default(cuid())
-  userId        String
-  propertyId    String
-  tokenId       String
-  quantity      Int
-  averageCost   Decimal   @db.Decimal(18, 6)
-  totalInvested Decimal   @db.Decimal(18, 2)
-  rentEarned    Decimal   @default(0) @db.Decimal(18, 2)
-  lastRentDate  DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  token         Token     @relation(fields: [tokenId], references: [id], onDelete: Cascade)
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                 String    @id @default(cuid())
+  userId             String
+  propertyId         String
+  tokenId            String
+  quantity           Int
+  averageCost        Decimal   @db.Decimal(18, 6)
+  totalInvested      Decimal   @db.Decimal(18, 2)
+  rentEarned         Decimal   @default(0) @db.Decimal(18, 2)
+  lastRentDate       DateTime?
+  demoLockedQuantity Int       @default(0)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  property           Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  token              Token     @relation(fields: [tokenId], references: [id], onDelete: Cascade)
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, propertyId])
   @@index([userId])
@@ -589,4 +590,62 @@ enum VoteChoice {
   FOR
   AGAINST
   ABSTAIN
+}
+
+model DemoLendingPool {
+  id        String                @id @default(cuid())
+  name      String                @unique
+  apy       Decimal               @db.Decimal(5, 2)
+  tvl       Decimal               @default(0) @db.Decimal(18, 2)
+  createdAt DateTime              @default(now())
+  updatedAt DateTime              @updatedAt
+  positions DemoLendingPosition[]
+}
+
+model DemoLendingPosition {
+  id              String          @id @default(cuid())
+  userId          String
+  poolId          String
+  depositedAmount Decimal         @default(0) @db.Decimal(18, 6)
+  accruedYield    Decimal         @default(0) @db.Decimal(18, 6)
+  lastAccruedAt   DateTime        @default(now())
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  pool            DemoLendingPool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, poolId])
+  @@index([userId])
+  @@index([poolId])
+}
+
+model DemoGovernanceProposal {
+  id                     String               @id @default(cuid())
+  title                  String
+  description            String
+  propertyId             String?
+  estimatedCost          Decimal              @db.Decimal(18, 2)
+  timelineWeeks          Int
+  expectedAppreciation   Decimal              @db.Decimal(5, 2)
+  status                 ProposalStatus       @default(ACTIVE)
+  forVotes               Int                  @default(0)
+  againstVotes           Int                  @default(0)
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+  votes                  DemoGovernanceVote[]
+
+  @@index([status])
+  @@index([propertyId])
+}
+
+model DemoGovernanceVote {
+  id         String                 @id @default(cuid())
+  proposalId String
+  userId     String
+  choice     VoteChoice
+  createdAt  DateTime               @default(now())
+  proposal   DemoGovernanceProposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, userId])
+  @@index([proposalId])
+  @@index([userId])
 }
