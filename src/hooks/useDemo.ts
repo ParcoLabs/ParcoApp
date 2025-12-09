@@ -115,8 +115,16 @@ interface Proposal {
 export const useDemo = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { refreshUser } = useAuth();
+  const { refreshUser, getToken } = useAuth();
   const { demoMode } = useDemoMode();
+
+  const getAuthHeaders = async () => {
+    const token = await getToken();
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    };
+  };
 
   const setupDemoUser = useCallback(async () => {
     if (!demoMode) {
@@ -128,9 +136,10 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/create-user', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
       });
 
@@ -164,9 +173,10 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/buy', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ propertyId, quantity, paymentMethod }),
       });
@@ -196,9 +206,10 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/run-rent-cycle', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
       });
 
@@ -231,9 +242,10 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/borrow', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ propertyId, tokenAmount, borrowAmount }),
       });
@@ -266,9 +278,10 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/repay', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ borrowPositionId, amount }),
       });
@@ -298,7 +311,9 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/proposals', {
+        headers,
         credentials: 'include',
       });
 
@@ -331,9 +346,10 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/proposals/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ title, description, votingDurationDays }),
       });
@@ -366,9 +382,10 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/proposals/vote', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ proposalId, choice }),
       });
@@ -398,9 +415,10 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/reset', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
       });
 
@@ -430,7 +448,9 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/status', {
+        headers,
         credentials: 'include',
       });
 
@@ -456,7 +476,9 @@ export const useDemo = () => {
     }
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/wallet-balances', {
+        headers,
         credentials: 'include',
       });
 
@@ -480,7 +502,9 @@ export const useDemo = () => {
     }
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/portfolio', {
+        headers,
         credentials: 'include',
       });
 
@@ -507,7 +531,9 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/lending-pools', {
+        headers,
         credentials: 'include',
       });
 
@@ -536,9 +562,10 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/lending-pools/deposit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ poolId, amount }),
       });
@@ -568,9 +595,10 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/lending-pools/withdraw', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ poolId, amount }),
       });
@@ -600,7 +628,9 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/governance-proposals', {
+        headers,
         credentials: 'include',
       });
 
@@ -629,9 +659,10 @@ export const useDemo = () => {
     setError(null);
 
     try {
+      const headers = await getAuthHeaders();
       const response = await fetch('/api/demo/governance-proposals/vote', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         credentials: 'include',
         body: JSON.stringify({ proposalId, choice }),
       });
