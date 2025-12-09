@@ -57,6 +57,7 @@ export const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [portfolioData, setPortfolioData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasFetched, setHasFetched] = useState(false);
 
   useEffect(() => {
     if (user?.role === 'TOKENIZER') {
@@ -68,7 +69,8 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (demoMode && user) {
+      if (demoMode && user && !hasFetched) {
+        setHasFetched(true);
         setIsLoading(true);
         await setupDemoUser();
         const data = await getPortfolioDetails();
@@ -76,10 +78,12 @@ export const Dashboard: React.FC = () => {
           setPortfolioData(data);
         }
         setIsLoading(false);
+      } else if (!demoMode) {
+        setIsLoading(false);
       }
     };
     fetchData();
-  }, [demoMode, user]);
+  }, [demoMode, user?.id, hasFetched]);
 
   if (user?.role === 'TOKENIZER' || user?.role === 'ADMIN') {
     return null;

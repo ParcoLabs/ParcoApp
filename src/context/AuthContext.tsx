@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useRef, ReactNode } from 'react';
 import { useUser, useAuth as useClerkAuth, useClerk } from '@clerk/clerk-react';
 import { User, UserKycStatus } from '../types';
 
@@ -22,6 +22,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { signOut } = useClerk();
   const [user, setUser] = React.useState<User | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const hasSyncedRef = useRef<string | null>(null);
 
   const fetchUserRole = async (token: string): Promise<{ role: string; tokenizerViewMode?: string } | null> => {
     try {
@@ -100,12 +101,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     if (isSignedIn && clerkUser) {
+      if (hasSyncedRef.current === clerkUser.id) {
+        setIsLoading(false);
+        return;
+      }
+      hasSyncedRef.current = clerkUser.id;
       syncUser().finally(() => setIsLoading(false));
     } else {
+      hasSyncedRef.current = null;
       setUser(null);
       setIsLoading(false);
     }
-  }, [isClerkLoaded, isSignedIn, clerkUser]);
+  }, [isClerkLoaded, isSignedIn, clerkUser?.id]);
 
   const logout = () => {
     signOut();
