@@ -29,7 +29,14 @@ The platform uses React for the frontend, styled with TailwindCSS and featuring 
 - **Blockchain Integration**: USDC deposits, ERC-1155 token minting for ownership, role-based access control.
 - **Collateral Lending**: Borrow USDC against locked property tokens via BorrowVault smart contract (50% max LTV, 8% annual interest, 1% origination fee, 75% liquidation threshold).
 - **Rent Distribution Engine**: Automated monthly distribution of rent, deducting loan interest from borrowers.
-- **Demo Mode**: Comprehensive simulation environment for testing all platform features without real blockchain/payment interactions, including demo user setup, buy flow, rent cycles, borrow/repay, and governance.
+- **Demo Mode**: Comprehensive simulation environment for testing all platform features without real blockchain/payment interactions:
+  - Demo user setup with funded crypto wallet ($10K USDC, $2K BTC, $1K PARCO tokens)
+  - Property token purchases using demo USDC balance
+  - Borrow-against-tokens functionality (locks tokens via demoLockedQuantity, credits demoUsdcBalance)
+  - DeFi lending pools: deposit/withdraw USDC to earn yield (uses DemoLendingPool/DemoLendingPosition models)
+  - Governance voting on property improvement proposals (uses DemoGovernanceProposal/DemoGovernanceVote models)
+  - Rent cycle simulation with automated distributions
+  - All demo data is isolated in separate database models to avoid contaminating production data
 - **Admin Role System**: Database-driven role-based access control (USER, TOKENIZER, ADMIN) with middleware for secure access to administrative functionalities.
 - **Tokenization Review System**: Workflow for property tokenization submissions (DRAFT → SUBMITTED → IN_REVIEW → APPROVED/REJECTED → PUBLISHED).
 - **Property Management System**: Admin controls for minting, listing, pausing, and unpausing properties.
