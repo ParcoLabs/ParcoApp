@@ -136,14 +136,6 @@ export const Navigation: React.FC = () => {
         </button>
       </div>
 
-      {/* Mobile Demo Mode Banner - positioned below header */}
-      {demoMode && (
-        <div className="md:hidden fixed top-[52px] left-0 right-0 bg-amber-50 border-b border-amber-200 px-4 py-1.5 flex items-center justify-center gap-2 z-40">
-          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-          <span className="text-xs font-medium text-amber-700">Demo Mode</span>
-        </div>
-      )}
-
       {/* Mobile Bottom Tab Bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-brand-lightGray px-4 py-3 flex justify-around items-center z-50 pb-safe safe-area-bottom">
         {navItems.map((item) => (
