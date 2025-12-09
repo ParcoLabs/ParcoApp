@@ -123,7 +123,7 @@ export const Dashboard: React.FC = () => {
             </p>
           )}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
           {demoMode && demoStatus?.vault?.balance > 0 && (
             <button 
               className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm"
@@ -135,10 +135,18 @@ export const Dashboard: React.FC = () => {
           )}
           <button 
             className="bg-brand-deep hover:bg-brand-dark text-white px-6 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm"
-            onClick={() => navigate('/kyc')}
+            onClick={() => navigate('/payment-methods')}
           >
             Add Funds
           </button>
+          {!demoMode && (
+            <button 
+              className="bg-brand-deep hover:bg-brand-dark text-white px-6 py-2.5 rounded-lg font-bold text-sm transition-all shadow-sm"
+              onClick={() => navigate('/kyc')}
+            >
+              Verify Identity
+            </button>
+          )}
         </div>
       </div>
 
@@ -197,14 +205,18 @@ export const Dashboard: React.FC = () => {
         </button>
       </div>
 
-      {/* Onboarding / Hero Card */}
-      <div className="bg-white rounded-lg border border-brand-sage/20 shadow-sm h-64 flex items-center justify-center">
-        <button 
-          className="bg-brand-deep hover:bg-brand-dark text-white px-8 py-3 rounded-lg font-bold text-sm transition-all shadow-md"
-          onClick={() => navigate('/kyc')}
-        >
-          Verify Identity
-        </button>
+      {/* Properties/Crypto Content Card */}
+      <div className="bg-white rounded-lg border border-brand-sage/20 shadow-sm h-48 flex items-center justify-center">
+        {demoMode ? (
+          <button 
+            className="bg-brand-deep hover:bg-brand-dark text-white px-8 py-3 rounded-lg font-bold text-sm transition-all shadow-md"
+            onClick={() => navigate('/kyc')}
+          >
+            Verify Identity
+          </button>
+        ) : (
+          <p className="text-brand-dark text-lg font-medium">No Properties to show</p>
+        )}
       </div>
 
       {/* Marketplace Preview Section */}
