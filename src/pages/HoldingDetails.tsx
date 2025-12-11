@@ -219,11 +219,11 @@ export const HoldingDetails: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-brand-offWhite">
+      <div className="min-h-screen bg-white dark:bg-slate-900">
         <div className="animate-pulse p-6 space-y-6">
-          <div className="h-8 bg-brand-lightGray rounded w-1/4"></div>
-          <div className="h-48 bg-brand-lightGray rounded"></div>
-          <div className="h-32 bg-brand-lightGray rounded"></div>
+          <div className="h-8 bg-brand-lightGray dark:bg-slate-700 rounded w-1/4"></div>
+          <div className="h-48 bg-brand-lightGray dark:bg-slate-700 rounded"></div>
+          <div className="h-32 bg-brand-lightGray dark:bg-slate-700 rounded"></div>
         </div>
       </div>
     );
@@ -234,8 +234,8 @@ export const HoldingDetails: React.FC = () => {
       <div className="min-h-screen flex flex-col items-center justify-center p-8">
         <div className="text-center">
           <i className="fa-solid fa-coins text-6xl text-brand-lightGray mb-4"></i>
-          <h2 className="text-2xl font-bold text-brand-dark mb-2">Holding Not Found</h2>
-          <p className="text-brand-sage mb-6">You don't own any tokens for this property.</p>
+          <h2 className="text-2xl font-bold text-brand-dark dark:text-white mb-2">Holding Not Found</h2>
+          <p className="text-brand-sage dark:text-slate-400 mb-6">You don't own any tokens for this property.</p>
           <button 
             onClick={() => navigate('/portfolio')}
             className="px-6 py-3 bg-brand-deep text-white font-bold rounded-lg hover:bg-brand-dark transition-colors"
@@ -269,19 +269,19 @@ export const HoldingDetails: React.FC = () => {
   return (
     <>
       {/* Mobile View */}
-      <div className="md:hidden min-h-screen bg-brand-offWhite pb-32">
-        <div className="sticky top-0 z-10 bg-brand-offWhite px-4 py-3 flex items-center">
+      <div className="md:hidden min-h-screen bg-white dark:bg-slate-900 pb-32">
+        <div className="sticky top-0 z-10 bg-white dark:bg-slate-900 px-4 py-3 flex items-center">
           <button onClick={() => navigate('/portfolio')} className="p-2 -ml-2">
-            <i className="fa-solid fa-arrow-left text-brand-dark text-lg"></i>
+            <i className="fa-solid fa-arrow-left text-brand-dark dark:text-white text-lg"></i>
           </button>
         </div>
 
         <div className="px-4 pb-4">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h1 className="text-2xl font-bold text-brand-dark">{displayData.propertyName}</h1>
+              <h1 className="text-2xl font-bold text-brand-dark dark:text-white">{displayData.propertyName}</h1>
               <div className="flex items-center gap-2">
-                <span className="text-xl font-bold text-brand-dark">${displayData.currentValue.toLocaleString()}</span>
+                <span className="text-xl font-bold text-brand-dark dark:text-white">${displayData.currentValue.toLocaleString()}</span>
                 <span className={`text-sm font-bold ${displayData.priceChange >= 0 ? 'text-brand-medium' : 'text-red-500'}`}>
                   {displayData.priceChange >= 0 ? '+' : ''}{displayData.priceChange}%
                 </span>
@@ -295,7 +295,7 @@ export const HoldingDetails: React.FC = () => {
           </div>
 
           {/* Price Chart */}
-          <div className="bg-white rounded-2xl p-4 mb-4 shadow-sm border border-brand-lightGray">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-4 mb-4 shadow-sm border border-brand-lightGray dark:border-slate-700">
             <div className="h-40 mb-4">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
@@ -323,7 +323,7 @@ export const HoldingDetails: React.FC = () => {
                   className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
                     chartPeriod === period 
                       ? 'bg-brand-deep text-white' 
-                      : 'bg-brand-lightGray text-brand-sage hover:bg-brand-mint'
+                      : 'bg-brand-lightGray dark:bg-slate-700 text-brand-sage dark:text-slate-400 hover:bg-brand-mint dark:bg-slate-700'
                   }`}
                 >
                   {period}
@@ -333,7 +333,7 @@ export const HoldingDetails: React.FC = () => {
           </div>
 
           {/* Tabs */}
-          <div className="flex border-b border-brand-lightGray mb-4">
+          <div className="flex border-b border-brand-lightGray dark:border-slate-700 mb-4">
             {['Balance', 'Insights', 'Governance'].map(tab => (
               <button
                 key={tab}
@@ -341,7 +341,7 @@ export const HoldingDetails: React.FC = () => {
                 className={`flex-1 py-3 text-sm font-bold transition-colors ${
                   activeTab === tab 
                     ? 'border-b-2 border-brand-deep text-brand-deep' 
-                    : 'text-brand-sage'
+                    : 'text-brand-sage dark:text-slate-400'
                 }`}
               >
                 {tab}
@@ -352,27 +352,27 @@ export const HoldingDetails: React.FC = () => {
           {/* Tab Content */}
           {activeTab === 'Balance' && (
             <div className="space-y-4">
-              <div className="bg-white rounded-xl p-4 border border-brand-lightGray">
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-brand-lightGray dark:border-slate-700">
                 <div className="flex justify-between items-center mb-3">
-                  <span className="text-2xl font-bold text-brand-dark">${displayData.currentValue.toLocaleString()}</span>
-                  <span className="text-brand-sage font-medium">{displayData.quantity} {displayData.propertyName.split(' ')[0]}</span>
+                  <span className="text-2xl font-bold text-brand-dark dark:text-white">${displayData.currentValue.toLocaleString()}</span>
+                  <span className="text-brand-sage dark:text-slate-400 font-medium">{displayData.quantity} {displayData.propertyName.split(' ')[0]}</span>
                 </div>
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-brand-sage">Monthly Returns</span>
+                    <span className="text-brand-sage dark:text-slate-400">Monthly Returns</span>
                     <span className="font-bold text-brand-medium">{displayData.monthlyReturns}%</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-brand-sage">All-time returns</span>
+                    <span className="text-brand-sage dark:text-slate-400">All-time returns</span>
                     <span className="font-bold text-brand-medium">{displayData.allTimeReturns}%</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-brand-sage">Total Invested</span>
-                    <span className="font-bold text-brand-dark">${displayData.totalInvested.toLocaleString()}</span>
+                    <span className="text-brand-sage dark:text-slate-400">Total Invested</span>
+                    <span className="font-bold text-brand-dark dark:text-white">${displayData.totalInvested.toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-brand-sage">Token Price</span>
-                    <span className="font-bold text-brand-dark">${displayData.tokenPrice}</span>
+                    <span className="text-brand-sage dark:text-slate-400">Token Price</span>
+                    <span className="font-bold text-brand-dark dark:text-white">${displayData.tokenPrice}</span>
                   </div>
                 </div>
               </div>
@@ -381,23 +381,23 @@ export const HoldingDetails: React.FC = () => {
 
           {activeTab === 'Insights' && (
             <div className="space-y-4">
-              <div className="bg-white rounded-xl p-4 border border-brand-lightGray">
-                <h3 className="font-bold text-brand-dark mb-3">Property Details</h3>
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-brand-lightGray dark:border-slate-700">
+                <h3 className="font-bold text-brand-dark dark:text-white mb-3">Property Details</h3>
                 <ul className="space-y-3 text-sm">
                   <li className="flex gap-2">
                     <i className="fa-solid fa-location-dot text-brand-medium mt-0.5"></i>
-                    <span className="text-brand-sage">{displayData.location}</span>
+                    <span className="text-brand-sage dark:text-slate-400">{displayData.location}</span>
                   </li>
                   <li className="flex gap-2">
                     <i className="fa-solid fa-percent text-brand-medium mt-0.5"></i>
-                    <span className="text-brand-sage">Rental Yield: {displayData.rentalYield}%</span>
+                    <span className="text-brand-sage dark:text-slate-400">Rental Yield: {displayData.rentalYield}%</span>
                   </li>
                 </ul>
               </div>
               
-              <div className="bg-white rounded-xl p-4 border border-brand-lightGray">
-                <h3 className="font-bold text-brand-dark mb-3">Key Insights</h3>
-                <ul className="space-y-3 text-sm text-brand-sage">
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-brand-lightGray dark:border-slate-700">
+                <h3 className="font-bold text-brand-dark dark:text-white mb-3">Key Insights</h3>
+                <ul className="space-y-3 text-sm text-brand-sage dark:text-slate-400">
                   <li className="flex gap-2">
                     <i className="fa-solid fa-chart-line text-brand-medium"></i>
                     <span>Strong rental demand in area</span>
@@ -418,9 +418,9 @@ export const HoldingDetails: React.FC = () => {
               </div>
 
               {property && (
-                <div className="bg-white rounded-xl p-4 border border-brand-lightGray">
-                  <h3 className="font-bold text-brand-dark mb-3">About this Property</h3>
-                  <p className="text-sm text-brand-sage leading-relaxed">
+                <div className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-brand-lightGray dark:border-slate-700">
+                  <h3 className="font-bold text-brand-dark dark:text-white mb-3">About this Property</h3>
+                  <p className="text-sm text-brand-sage dark:text-slate-400 leading-relaxed">
                     {property.description || `Premium ${property.type.toLowerCase()} asset in ${property.location} with strong rental income and appreciation potential.`}
                   </p>
                 </div>
@@ -439,19 +439,19 @@ export const HoldingDetails: React.FC = () => {
               
               {proposals.filter(p => p.status === 'active').length > 0 && (
                 <div>
-                  <h3 className="font-bold text-brand-dark mb-3">Active Proposals</h3>
+                  <h3 className="font-bold text-brand-dark dark:text-white mb-3">Active Proposals</h3>
                   {proposals.filter(p => p.status === 'active').map(proposal => (
                     <Link
                       key={proposal.id}
                       to={`/governance?proposal=${proposal.id}`}
-                      className="block bg-white rounded-xl p-4 border border-brand-mint mb-3 hover:shadow-md transition-shadow"
+                      className="block bg-white dark:bg-slate-800 rounded-xl p-4 border border-brand-mint mb-3 hover:shadow-md transition-shadow"
                     >
                       <div className="flex justify-between items-start mb-2">
-                        <span className="font-bold text-brand-dark">{proposal.title}</span>
-                        <span className="bg-brand-mint text-brand-deep text-xs px-2 py-1 rounded-full font-bold">VOTE</span>
+                        <span className="font-bold text-brand-dark dark:text-white">{proposal.title}</span>
+                        <span className="bg-brand-mint dark:bg-slate-700 text-brand-deep text-xs px-2 py-1 rounded-full font-bold">VOTE</span>
                       </div>
-                      <p className="text-sm text-brand-sage mb-3 line-clamp-2">{proposal.description}</p>
-                      <div className="flex justify-between text-xs text-brand-sage">
+                      <p className="text-sm text-brand-sage dark:text-slate-400 mb-3 line-clamp-2">{proposal.description}</p>
+                      <div className="flex justify-between text-xs text-brand-sage dark:text-slate-400">
                         <span>Ends {new Date(proposal.endDate).toLocaleDateString()}</span>
                         <span>{proposal.forVotes + proposal.againstVotes} votes</span>
                       </div>
@@ -461,14 +461,14 @@ export const HoldingDetails: React.FC = () => {
               )}
 
               <div>
-                <h3 className="font-bold text-brand-dark mb-3">Past Votes</h3>
+                <h3 className="font-bold text-brand-dark dark:text-white mb-3">Past Votes</h3>
                 {proposals.filter(p => p.status !== 'active').map(proposal => (
                   <div
                     key={proposal.id}
-                    className="bg-white rounded-xl p-4 border border-brand-lightGray mb-3"
+                    className="bg-white dark:bg-slate-800 rounded-xl p-4 border border-brand-lightGray dark:border-slate-700 mb-3"
                   >
                     <div className="flex justify-between items-start mb-2">
-                      <span className="font-bold text-brand-dark">{proposal.title}</span>
+                      <span className="font-bold text-brand-dark dark:text-white">{proposal.title}</span>
                       <span className={`text-xs px-2 py-1 rounded-full font-bold ${
                         proposal.status === 'passed' 
                           ? 'bg-green-100 text-green-700' 
@@ -477,7 +477,7 @@ export const HoldingDetails: React.FC = () => {
                         {proposal.status.toUpperCase()}
                       </span>
                     </div>
-                    <p className="text-sm text-brand-sage mb-2 line-clamp-2">{proposal.description}</p>
+                    <p className="text-sm text-brand-sage dark:text-slate-400 mb-2 line-clamp-2">{proposal.description}</p>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2 text-xs">
                         {proposal.votedFor && (
@@ -491,7 +491,7 @@ export const HoldingDetails: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-brand-sage">
+                      <span className="text-xs text-brand-sage dark:text-slate-400">
                         {proposal.forVotes} for / {proposal.againstVotes} against
                       </span>
                     </div>
@@ -503,7 +503,7 @@ export const HoldingDetails: React.FC = () => {
         </div>
 
         {/* Fixed Bottom Buttons */}
-        <div className="fixed bottom-16 left-0 right-0 p-4 bg-brand-offWhite border-t border-brand-lightGray">
+        <div className="fixed bottom-16 left-0 right-0 p-4 bg-white dark:bg-slate-900 border-t border-brand-lightGray dark:border-slate-700">
           <div className="flex gap-3">
             <Link
               to={`/marketplace/${displayData.propertyId}`}
@@ -513,7 +513,7 @@ export const HoldingDetails: React.FC = () => {
             </Link>
             <Link
               to="/defi"
-              className="flex-1 bg-white border-2 border-brand-deep text-brand-deep font-bold py-3 rounded-xl text-center hover:bg-brand-mint transition-colors"
+              className="flex-1 bg-white dark:bg-slate-800 border-2 border-brand-deep text-brand-deep font-bold py-3 rounded-xl text-center hover:bg-brand-mint dark:bg-slate-700 transition-colors"
             >
               DeFi
             </Link>
@@ -525,7 +525,7 @@ export const HoldingDetails: React.FC = () => {
       <div className="hidden md:block max-w-6xl mx-auto p-8">
         <button 
           onClick={() => navigate('/portfolio')} 
-          className="text-brand-sage hover:text-brand-dark mb-6 flex items-center gap-2 font-medium"
+          className="text-brand-sage dark:text-slate-400 hover:text-brand-dark dark:text-white mb-6 flex items-center gap-2 font-medium"
         >
           <i className="fa-solid fa-arrow-left"></i> Back to Portfolio
         </button>
@@ -540,12 +540,12 @@ export const HoldingDetails: React.FC = () => {
                 className="w-24 h-24 rounded-xl object-cover shadow-sm"
               />
               <div className="flex-1">
-                <h1 className="text-3xl font-bold text-brand-dark mb-1">{displayData.propertyName}</h1>
-                <p className="text-brand-sage mb-2">
+                <h1 className="text-3xl font-bold text-brand-dark dark:text-white mb-1">{displayData.propertyName}</h1>
+                <p className="text-brand-sage dark:text-slate-400 mb-2">
                   <i className="fa-solid fa-location-dot mr-1"></i>{displayData.location}
                 </p>
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl font-bold text-brand-dark">${displayData.currentValue.toLocaleString()}</span>
+                  <span className="text-2xl font-bold text-brand-dark dark:text-white">${displayData.currentValue.toLocaleString()}</span>
                   <span className={`px-2 py-1 rounded text-sm font-bold ${
                     displayData.priceChange >= 0 
                       ? 'bg-green-100 text-green-700' 
@@ -564,7 +564,7 @@ export const HoldingDetails: React.FC = () => {
                 </Link>
                 <Link
                   to="/defi"
-                  className="px-6 py-2 bg-white border-2 border-brand-deep text-brand-deep font-bold rounded-lg hover:bg-brand-mint transition-colors"
+                  className="px-6 py-2 bg-white dark:bg-slate-800 border-2 border-brand-deep text-brand-deep font-bold rounded-lg hover:bg-brand-mint dark:bg-slate-700 transition-colors"
                 >
                   DeFi
                 </Link>
@@ -572,9 +572,9 @@ export const HoldingDetails: React.FC = () => {
             </div>
 
             {/* Price Chart */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-brand-lightGray">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-brand-lightGray dark:border-slate-700">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-brand-dark">Price History</h3>
+                <h3 className="font-bold text-brand-dark dark:text-white">Price History</h3>
                 <div className="flex gap-2">
                   {['1D', '1W', '1M', '1Y', 'All'].map(period => (
                     <button
@@ -583,7 +583,7 @@ export const HoldingDetails: React.FC = () => {
                       className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-colors ${
                         chartPeriod === period 
                           ? 'bg-brand-deep text-white' 
-                          : 'bg-brand-lightGray text-brand-sage hover:bg-brand-mint'
+                          : 'bg-brand-lightGray dark:bg-slate-700 text-brand-sage dark:text-slate-400 hover:bg-brand-mint dark:bg-slate-700'
                       }`}
                     >
                       {period}
@@ -614,7 +614,7 @@ export const HoldingDetails: React.FC = () => {
 
             {/* Tabs */}
             <div>
-              <div className="flex border-b border-brand-lightGray mb-6">
+              <div className="flex border-b border-brand-lightGray dark:border-slate-700 mb-6">
                 {['Balance', 'Insights', 'Governance'].map(tab => (
                   <button
                     key={tab}
@@ -622,7 +622,7 @@ export const HoldingDetails: React.FC = () => {
                     className={`px-6 py-3 font-semibold text-sm transition-colors ${
                       activeTab === tab 
                         ? 'border-b-2 border-brand-deep text-brand-deep' 
-                        : 'text-brand-sage hover:text-brand-dark'
+                        : 'text-brand-sage dark:text-slate-400 hover:text-brand-dark dark:text-white'
                     }`}
                   >
                     {tab}
@@ -632,44 +632,44 @@ export const HoldingDetails: React.FC = () => {
 
               {activeTab === 'Balance' && (
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="bg-brand-mint/20 border border-brand-mint rounded-xl p-6">
-                    <h3 className="font-bold text-brand-dark mb-4">Your Position</h3>
+                  <div className="bg-brand-mint dark:bg-slate-700/20 border border-brand-mint rounded-xl p-6">
+                    <h3 className="font-bold text-brand-dark dark:text-white mb-4">Your Position</h3>
                     <div className="space-y-4">
                       <div className="flex justify-between">
-                        <span className="text-brand-sage">Total Value</span>
-                        <span className="font-bold text-brand-dark text-xl">${displayData.currentValue.toLocaleString()}</span>
+                        <span className="text-brand-sage dark:text-slate-400">Total Value</span>
+                        <span className="font-bold text-brand-dark dark:text-white text-xl">${displayData.currentValue.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-brand-sage">Tokens Owned</span>
-                        <span className="font-bold text-brand-dark">{displayData.quantity}</span>
+                        <span className="text-brand-sage dark:text-slate-400">Tokens Owned</span>
+                        <span className="font-bold text-brand-dark dark:text-white">{displayData.quantity}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-brand-sage">Avg. Cost per Token</span>
-                        <span className="font-bold text-brand-dark">${displayData.averageCost.toFixed(2)}</span>
+                        <span className="text-brand-sage dark:text-slate-400">Avg. Cost per Token</span>
+                        <span className="font-bold text-brand-dark dark:text-white">${displayData.averageCost.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-brand-sage">Total Invested</span>
-                        <span className="font-bold text-brand-dark">${displayData.totalInvested.toLocaleString()}</span>
+                        <span className="text-brand-sage dark:text-slate-400">Total Invested</span>
+                        <span className="font-bold text-brand-dark dark:text-white">${displayData.totalInvested.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="bg-white border border-brand-lightGray rounded-xl p-6">
-                    <h3 className="font-bold text-brand-dark mb-4">Returns</h3>
+                  <div className="bg-white dark:bg-slate-800 border border-brand-lightGray dark:border-slate-700 rounded-xl p-6">
+                    <h3 className="font-bold text-brand-dark dark:text-white mb-4">Returns</h3>
                     <div className="space-y-4">
                       <div className="flex justify-between">
-                        <span className="text-brand-sage">Monthly Returns</span>
+                        <span className="text-brand-sage dark:text-slate-400">Monthly Returns</span>
                         <span className="font-bold text-brand-medium text-xl">{displayData.monthlyReturns}%</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-brand-sage">All-time Returns</span>
+                        <span className="text-brand-sage dark:text-slate-400">All-time Returns</span>
                         <span className="font-bold text-brand-medium">{displayData.allTimeReturns}%</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-brand-sage">Rental Yield</span>
+                        <span className="text-brand-sage dark:text-slate-400">Rental Yield</span>
                         <span className="font-bold text-brand-medium">{displayData.rentalYield}%</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-brand-sage">Price Change</span>
+                        <span className="text-brand-sage dark:text-slate-400">Price Change</span>
                         <span className={`font-bold ${displayData.priceChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {displayData.priceChange >= 0 ? '+' : ''}{displayData.priceChange}%
                         </span>
@@ -681,27 +681,27 @@ export const HoldingDetails: React.FC = () => {
 
               {activeTab === 'Insights' && (
                 <div className="grid grid-cols-2 gap-6">
-                  <div className="bg-white border border-brand-lightGray rounded-xl p-6">
-                    <h3 className="font-bold text-brand-dark mb-4">Property Details</h3>
-                    <ul className="space-y-3 text-sm text-brand-sage">
+                  <div className="bg-white dark:bg-slate-800 border border-brand-lightGray dark:border-slate-700 rounded-xl p-6">
+                    <h3 className="font-bold text-brand-dark dark:text-white mb-4">Property Details</h3>
+                    <ul className="space-y-3 text-sm text-brand-sage dark:text-slate-400">
                       <li className="flex gap-3">
                         <i className="fa-solid fa-location-dot text-brand-medium mt-0.5"></i>
-                        <span><strong className="text-brand-dark">Location:</strong> {displayData.location}</span>
+                        <span><strong className="text-brand-dark dark:text-white">Location:</strong> {displayData.location}</span>
                       </li>
                       <li className="flex gap-3">
                         <i className="fa-solid fa-percent text-brand-medium mt-0.5"></i>
-                        <span><strong className="text-brand-dark">Rental Yield:</strong> {displayData.rentalYield}%</span>
+                        <span><strong className="text-brand-dark dark:text-white">Rental Yield:</strong> {displayData.rentalYield}%</span>
                       </li>
                       <li className="flex gap-3">
                         <i className="fa-solid fa-tag text-brand-medium mt-0.5"></i>
-                        <span><strong className="text-brand-dark">Token Price:</strong> ${displayData.tokenPrice}</span>
+                        <span><strong className="text-brand-dark dark:text-white">Token Price:</strong> ${displayData.tokenPrice}</span>
                       </li>
                     </ul>
                   </div>
                   
-                  <div className="bg-white border border-brand-lightGray rounded-xl p-6">
-                    <h3 className="font-bold text-brand-dark mb-4">Key Insights</h3>
-                    <ul className="space-y-3 text-sm text-brand-sage">
+                  <div className="bg-white dark:bg-slate-800 border border-brand-lightGray dark:border-slate-700 rounded-xl p-6">
+                    <h3 className="font-bold text-brand-dark dark:text-white mb-4">Key Insights</h3>
+                    <ul className="space-y-3 text-sm text-brand-sage dark:text-slate-400">
                       <li className="flex gap-3">
                         <i className="fa-solid fa-chart-line text-brand-medium"></i>
                         <span>Strong rental demand in the area</span>
@@ -722,9 +722,9 @@ export const HoldingDetails: React.FC = () => {
                   </div>
 
                   {property && (
-                    <div className="col-span-2 bg-white border border-brand-lightGray rounded-xl p-6">
-                      <h3 className="font-bold text-brand-dark mb-4">About this Property</h3>
-                      <p className="text-brand-sage leading-relaxed">
+                    <div className="col-span-2 bg-white dark:bg-slate-800 border border-brand-lightGray dark:border-slate-700 rounded-xl p-6">
+                      <h3 className="font-bold text-brand-dark dark:text-white mb-4">About this Property</h3>
+                      <p className="text-brand-sage dark:text-slate-400 leading-relaxed">
                         {property.description || `Premium ${property.type.toLowerCase()} asset in ${property.location} with strong rental income and appreciation potential.`}
                       </p>
                     </div>
@@ -743,20 +743,20 @@ export const HoldingDetails: React.FC = () => {
 
                   {proposals.filter(p => p.status === 'active').length > 0 && (
                     <div>
-                      <h3 className="font-bold text-brand-dark mb-4">Active Proposals</h3>
+                      <h3 className="font-bold text-brand-dark dark:text-white mb-4">Active Proposals</h3>
                       <div className="grid grid-cols-2 gap-4">
                         {proposals.filter(p => p.status === 'active').map(proposal => (
                           <Link
                             key={proposal.id}
                             to={`/governance?proposal=${proposal.id}`}
-                            className="bg-white rounded-xl p-5 border-2 border-brand-mint hover:shadow-lg transition-all"
+                            className="bg-white dark:bg-slate-800 rounded-xl p-5 border-2 border-brand-mint hover:shadow-lg transition-all"
                           >
                             <div className="flex justify-between items-start mb-3">
-                              <span className="font-bold text-brand-dark">{proposal.title}</span>
-                              <span className="bg-brand-mint text-brand-deep text-xs px-3 py-1 rounded-full font-bold">VOTE NOW</span>
+                              <span className="font-bold text-brand-dark dark:text-white">{proposal.title}</span>
+                              <span className="bg-brand-mint dark:bg-slate-700 text-brand-deep text-xs px-3 py-1 rounded-full font-bold">VOTE NOW</span>
                             </div>
-                            <p className="text-sm text-brand-sage mb-4 line-clamp-2">{proposal.description}</p>
-                            <div className="flex justify-between text-xs text-brand-sage">
+                            <p className="text-sm text-brand-sage dark:text-slate-400 mb-4 line-clamp-2">{proposal.description}</p>
+                            <div className="flex justify-between text-xs text-brand-sage dark:text-slate-400">
                               <span>Ends {new Date(proposal.endDate).toLocaleDateString()}</span>
                               <span>{proposal.forVotes + proposal.againstVotes} total votes</span>
                             </div>
@@ -767,17 +767,17 @@ export const HoldingDetails: React.FC = () => {
                   )}
 
                   <div>
-                    <h3 className="font-bold text-brand-dark mb-4">Past Votes</h3>
+                    <h3 className="font-bold text-brand-dark dark:text-white mb-4">Past Votes</h3>
                     <div className="space-y-3">
                       {proposals.filter(p => p.status !== 'active').map(proposal => (
                         <div
                           key={proposal.id}
-                          className="bg-white rounded-xl p-5 border border-brand-lightGray"
+                          className="bg-white dark:bg-slate-800 rounded-xl p-5 border border-brand-lightGray dark:border-slate-700"
                         >
                           <div className="flex justify-between items-start mb-2">
                             <div className="flex-1">
-                              <span className="font-bold text-brand-dark">{proposal.title}</span>
-                              <p className="text-sm text-brand-sage mt-1">{proposal.description}</p>
+                              <span className="font-bold text-brand-dark dark:text-white">{proposal.title}</span>
+                              <p className="text-sm text-brand-sage dark:text-slate-400 mt-1">{proposal.description}</p>
                             </div>
                             <span className={`text-xs px-3 py-1 rounded-full font-bold ml-4 ${
                               proposal.status === 'passed' 
@@ -787,7 +787,7 @@ export const HoldingDetails: React.FC = () => {
                               {proposal.status.toUpperCase()}
                             </span>
                           </div>
-                          <div className="flex justify-between items-center mt-3 pt-3 border-t border-brand-lightGray">
+                          <div className="flex justify-between items-center mt-3 pt-3 border-t border-brand-lightGray dark:border-slate-700">
                             <div className="flex items-center gap-4">
                               {proposal.votedFor && (
                                 <span className="text-green-600 font-medium text-sm">
@@ -800,7 +800,7 @@ export const HoldingDetails: React.FC = () => {
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-brand-sage">
+                            <div className="flex items-center gap-4 text-sm text-brand-sage dark:text-slate-400">
                               <span className="text-green-600">{proposal.forVotes} for</span>
                               <span className="text-red-600">{proposal.againstVotes} against</span>
                             </div>
@@ -816,34 +816,34 @@ export const HoldingDetails: React.FC = () => {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            <div className="bg-white border border-brand-lightGray rounded-2xl p-6 shadow-sm">
-              <h3 className="font-bold text-brand-dark mb-4">Quick Stats</h3>
+            <div className="bg-white dark:bg-slate-800 border border-brand-lightGray dark:border-slate-700 rounded-2xl p-6 shadow-sm">
+              <h3 className="font-bold text-brand-dark dark:text-white mb-4">Quick Stats</h3>
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-brand-sage">Tokens Owned</span>
-                  <span className="font-bold text-brand-dark">{displayData.quantity}</span>
+                  <span className="text-brand-sage dark:text-slate-400">Tokens Owned</span>
+                  <span className="font-bold text-brand-dark dark:text-white">{displayData.quantity}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-brand-sage">Current Value</span>
-                  <span className="font-bold text-brand-dark">${displayData.currentValue.toLocaleString()}</span>
+                  <span className="text-brand-sage dark:text-slate-400">Current Value</span>
+                  <span className="font-bold text-brand-dark dark:text-white">${displayData.currentValue.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-brand-sage">Token Price</span>
-                  <span className="font-bold text-brand-dark">${displayData.tokenPrice}</span>
+                  <span className="text-brand-sage dark:text-slate-400">Token Price</span>
+                  <span className="font-bold text-brand-dark dark:text-white">${displayData.tokenPrice}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-brand-sage">Rental Yield</span>
+                  <span className="text-brand-sage dark:text-slate-400">Rental Yield</span>
                   <span className="font-bold text-brand-medium">{displayData.rentalYield}%</span>
                 </div>
               </div>
             </div>
 
-            <div className="bg-brand-mint/20 border border-brand-mint rounded-2xl p-6">
-              <h3 className="font-bold text-brand-dark mb-3">
+            <div className="bg-brand-mint dark:bg-slate-700/20 border border-brand-mint rounded-2xl p-6">
+              <h3 className="font-bold text-brand-dark dark:text-white mb-3">
                 <i className="fa-solid fa-lightbulb text-brand-medium mr-2"></i>
                 Tip
               </h3>
-              <p className="text-sm text-brand-sage">
+              <p className="text-sm text-brand-sage dark:text-slate-400">
                 You can use your property tokens as collateral in DeFi to borrow USDC while still earning rental income.
               </p>
             </div>

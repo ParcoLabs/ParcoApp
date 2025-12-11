@@ -135,15 +135,15 @@ export const Register: React.FC = () => {
 
   if (pendingVerification) {
     return (
-      <div className="min-h-screen bg-brand-offWhite flex flex-col justify-center items-center p-6">
+      <div className="min-h-screen bg-white dark:bg-slate-900 flex flex-col justify-center items-center p-6">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center md:text-left">
             <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
               <img src="/brand/ParcoLogoGreen.png" alt="Parco Logo" className="w-10 h-10 object-contain" />
               <h1 className="text-3xl font-logo text-brand-deep uppercase">Parco Labs</h1>
             </div>
-            <h2 className="text-2xl font-bold text-brand-dark">Verify your email</h2>
-            <p className="text-brand-sage mt-2">We sent a verification code to {email}</p>
+            <h2 className="text-2xl font-bold text-brand-dark dark:text-white">Verify your email</h2>
+            <p className="text-brand-sage dark:text-slate-400 mt-2">We sent a verification code to {email}</p>
           </div>
 
           {error && (
@@ -154,13 +154,13 @@ export const Register: React.FC = () => {
 
           <form onSubmit={handleVerification} className="space-y-6">
             <div>
-              <label className="block text-sm font-bold text-brand-black mb-2">Verification Code</label>
+              <label className="block text-sm font-bold text-brand-dark dark:text-white mb-2">Verification Code</label>
               <input
                 type="text"
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value)}
                 placeholder="Enter 6-digit code"
-                className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white text-center text-2xl tracking-widest"
+                className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800 text-center text-2xl tracking-widest"
                 required
               />
             </div>
@@ -176,7 +176,7 @@ export const Register: React.FC = () => {
 
           <button 
             onClick={() => setPendingVerification(false)}
-            className="mt-4 text-sm text-brand-sage hover:text-brand-dark"
+            className="mt-4 text-sm text-brand-sage dark:text-slate-400 hover:text-brand-dark dark:text-white"
           >
             Back to registration
           </button>
@@ -186,14 +186,14 @@ export const Register: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-brand-offWhite flex flex-col justify-center items-center p-6">
+    <div className="min-h-screen bg-white dark:bg-slate-900 flex flex-col justify-center items-center p-6">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center md:text-left">
            <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
              <img src="/brand/ParcoLogoGreen.png" alt="Parco Logo" className="w-10 h-10 object-contain" />
              <h1 className="text-3xl font-logo text-brand-deep uppercase">Parco Labs</h1>
            </div>
-           <h2 className="text-2xl font-bold text-brand-dark">Create your Parco account</h2>
+           <h2 className="text-2xl font-bold text-brand-dark dark:text-white">Create your Parco account</h2>
         </div>
 
         {error && (
@@ -205,59 +205,59 @@ export const Register: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold text-brand-black mb-2">First Name</label>
+              <label className="block text-sm font-bold text-brand-dark dark:text-white mb-2">First Name</label>
               <input
                 type="text"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="John"
-                className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white"
+                className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800"
               />
             </div>
             <div>
-              <label className="block text-sm font-bold text-brand-black mb-2">Last Name</label>
+              <label className="block text-sm font-bold text-brand-dark dark:text-white mb-2">Last Name</label>
               <input
                 type="text"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Doe"
-                className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white"
+                className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-brand-black mb-2">Email</label>
+            <label className="block text-sm font-bold text-brand-dark dark:text-white mb-2">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white"
+              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-brand-black mb-2">Password</label>
+            <label className="block text-sm font-bold text-brand-dark dark:text-white mb-2">Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Min 8 characters"
-              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white"
+              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-brand-black mb-2">Re-enter Password</label>
+            <label className="block text-sm font-bold text-brand-dark dark:text-white mb-2">Re-enter Password</label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm password"
-              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white"
+              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800"
               required
             />
           </div>
@@ -272,7 +272,7 @@ export const Register: React.FC = () => {
         </form>
         
         <div className="mt-4 text-center">
-            <span className="text-sm text-brand-sage">Already have an account? </span>
+            <span className="text-sm text-brand-sage dark:text-slate-400">Already have an account? </span>
             <Link to="/login" className="text-sm font-bold text-brand-deep hover:underline">Sign In</Link>
         </div>
 
@@ -281,7 +281,7 @@ export const Register: React.FC = () => {
                 <div className="w-full border-t border-brand-sage/30"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-brand-offWhite text-brand-sage">Or sign up with</span>
+                <span className="px-2 bg-white dark:bg-slate-900 text-brand-sage dark:text-slate-400">Or sign up with</span>
             </div>
         </div>
 
@@ -289,7 +289,7 @@ export const Register: React.FC = () => {
           <button
             onClick={handleGoogleSignUp}
             type="button"
-            className="w-full bg-white border border-brand-dark text-brand-dark font-semibold py-3.5 rounded-lg hover:bg-brand-lightGray transition-colors flex items-center justify-center gap-3"
+            className="w-full bg-white dark:bg-slate-800 border border-brand-dark text-brand-dark dark:text-white font-semibold py-3.5 rounded-lg hover:bg-brand-lightGray dark:bg-slate-700 transition-colors flex items-center justify-center gap-3"
           >
             <i className="fa-brands fa-google text-lg"></i>
             Sign up with Google

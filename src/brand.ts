@@ -4,7 +4,7 @@ export const BrandColors = {
   deep: '#056052',
   offWhite: '#ffffff',
   sage: '#7ebea6',
-  lightGray: '#e5e5e5',
+  lightGray: '#d1d5db',
   mint: '#e5f9f4',
   black: '#101010',
   lime: '#9eefbc',

@@ -14,20 +14,21 @@
 
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
               brand: {
-                dark: '#173726',      // Dark Green
-                medium: '#41b39a',    // Medium Green/Teal
-                deep: '#056052',      // Deep Green
-                offWhite: '#ffffff',  // Pure White Background
-                sage: '#7ebea6',      // Muted Green
-                lightGray: '#e5e5e5', // Clean Gray for borders
-                mint: '#e5f9f4',      // Light Mint
+                dark: '#173726',
+                medium: '#41b39a',
+                deep: '#056052',
+                offWhite: '#ffffff',
+                sage: '#7ebea6',
+                lightGray: '#d1d5db',
+                mint: '#e5f9f4',
                 black: '#101010',
-                lime: '#9eefbc',      // Bright Green
-                tan: '#d5b48c',       // Accent Tan
+                lime: '#9eefbc',
+                tan: '#d5b48c',
               }
             },
             fontFamily: {
@@ -39,13 +40,36 @@
       }
     </script>
     <style>
+      :root {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f9fafb;
+        --bg-card: #ffffff;
+        --text-primary: #173726;
+        --text-secondary: #7ebea6;
+        --border-color: #d1d5db;
+        --nav-bg: #ffffff;
+        --nav-active: #e5f9f4;
+      }
+      
+      .dark {
+        --bg-primary: #0f172a;
+        --bg-secondary: #1e293b;
+        --bg-card: #1e293b;
+        --text-primary: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --border-color: #334155;
+        --nav-bg: #1e293b;
+        --nav-active: #334155;
+      }
+      
       html, body {
         font-family: 'Inter', sans-serif;
-        background-color: #ffffff; /* Pure White */
-        color: #173726; /* brand.dark */
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
         overflow-x: hidden;
         width: 100%;
         max-width: 100vw;
+        transition: background-color 0.2s ease, color 0.2s ease;
       }
       #root {
         overflow-x: hidden;
@@ -70,7 +94,26 @@
       .safe-area-bottom {
         padding-bottom: max(env(safe-area-inset-bottom, 0), 0.75rem);
       }
+      
+      /* Theme-aware utility classes */
+      .bg-theme-primary { background-color: var(--bg-primary); }
+      .bg-theme-secondary { background-color: var(--bg-secondary); }
+      .bg-theme-card { background-color: var(--bg-card); }
+      .text-theme-primary { color: var(--text-primary); }
+      .text-theme-secondary { color: var(--text-secondary); }
+      .border-theme { border-color: var(--border-color); }
+      .nav-theme-bg { background-color: var(--nav-bg); }
+      .nav-theme-active { background-color: var(--nav-active); }
     </style>
+    <script>
+      // Initialize theme from localStorage before page renders to prevent flash
+      (function() {
+        const theme = localStorage.getItem('parco-theme') || 'light';
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

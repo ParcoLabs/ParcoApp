@@ -15,20 +15,20 @@ export const MarketplaceMobile: React.FC<MarketplaceMobileProps> = ({ properties
         <div 
           key={prop.id}
           onClick={() => navigate(`/marketplace/${prop.id}`)}
-          className="bg-white border border-brand-lightGray rounded-2xl p-3 flex gap-4 active:scale-[0.98] transition-transform"
+          className="bg-white dark:bg-slate-800 border border-brand-lightGray dark:border-slate-700 rounded-2xl p-3 flex gap-4 active:scale-[0.98] transition-transform"
         >
           {/* Image */}
           <img 
             src={prop.image} 
             alt={prop.title} 
-            className="w-28 h-28 object-cover rounded-xl bg-brand-lightGray shrink-0"
+            className="w-28 h-28 object-cover rounded-xl bg-brand-lightGray dark:bg-slate-700 shrink-0"
           />
           
           {/* Middle: Info & Button */}
           <div className="flex-1 flex flex-col justify-between py-0.5">
             <div>
-              <h3 className="font-bold text-brand-dark text-base leading-tight">{prop.title}</h3>
-              <p className="text-xs text-brand-sage font-medium">{prop.location}</p>
+              <h3 className="font-bold text-brand-dark dark:text-white text-base leading-tight">{prop.title}</h3>
+              <p className="text-xs text-brand-sage dark:text-slate-400 font-medium">{prop.location}</p>
             </div>
             
             <button className="bg-brand-deep text-white text-xs font-bold py-2 px-4 rounded-full w-fit uppercase tracking-wide">
@@ -39,11 +39,11 @@ export const MarketplaceMobile: React.FC<MarketplaceMobileProps> = ({ properties
           {/* Right: Stats */}
           <div className="flex flex-col justify-between text-right py-0.5 min-w-[70px]">
              <div>
-                <p className="text-[9px] text-brand-sage uppercase font-bold">Value</p>
-                <p className="font-bold text-brand-dark text-sm">${prop.totalValue.toLocaleString()}</p>
+                <p className="text-[9px] text-brand-sage dark:text-slate-400 uppercase font-bold">Value</p>
+                <p className="font-bold text-brand-dark dark:text-white text-sm">${prop.totalValue.toLocaleString()}</p>
              </div>
              <div>
-                 <p className="text-[9px] text-brand-sage uppercase font-bold">APY</p>
+                 <p className="text-[9px] text-brand-sage dark:text-slate-400 uppercase font-bold">APY</p>
                  <span className="inline-block bg-brand-mint text-brand-deep text-xs px-1.5 py-0.5 rounded font-bold">
                    {prop.rentalYield}%
                  </span>

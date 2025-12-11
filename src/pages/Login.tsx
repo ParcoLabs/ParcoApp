@@ -109,14 +109,14 @@ export const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-brand-offWhite flex flex-col justify-center items-center p-6">
+    <div className="min-h-screen bg-white dark:bg-slate-900 flex flex-col justify-center items-center p-6">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center md:text-left">
            <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
              <img src="/brand/ParcoLogoGreen.png" alt="Parco Logo" className="w-10 h-10 object-contain" />
              <h1 className="text-3xl font-logo text-brand-deep uppercase">Parco Labs</h1>
            </div>
-           <h2 className="text-2xl font-bold text-brand-dark">Sign in to your Parco account</h2>
+           <h2 className="text-2xl font-bold text-brand-dark dark:text-white">Sign in to your Parco account</h2>
         </div>
 
         {error && (
@@ -127,27 +127,27 @@ export const Login: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-bold text-brand-black mb-2">Email</label>
+            <label className="block text-sm font-bold text-brand-dark dark:text-white mb-2">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white"
+              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800"
               required
             />
           </div>
 
           <div>
             <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-bold text-brand-black">Password</label>
+                <label className="block text-sm font-bold text-brand-dark dark:text-white">Password</label>
             </div>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Min 8 characters"
-              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white"
+              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800"
               required
             />
           </div>
@@ -163,7 +163,7 @@ export const Login: React.FC = () => {
         
         <div className="mt-4 flex justify-between items-center text-sm">
              <Link to="/register" className="text-brand-deep font-semibold hover:underline">Create Account</Link>
-             <button className="text-brand-sage font-medium hover:text-brand-dark">Forgot Password</button>
+             <button className="text-brand-sage dark:text-slate-400 font-medium hover:text-brand-dark dark:text-white">Forgot Password</button>
         </div>
 
         <div className="relative my-8">
@@ -171,7 +171,7 @@ export const Login: React.FC = () => {
                 <div className="w-full border-t border-brand-sage/30"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-brand-offWhite text-brand-sage">Or continue with</span>
+                <span className="px-2 bg-white dark:bg-slate-900 text-brand-sage dark:text-slate-400">Or continue with</span>
             </div>
         </div>
 
@@ -180,7 +180,7 @@ export const Login: React.FC = () => {
             onClick={handleGoogleLogin}
             type="button"
             disabled={oauthLoading !== null}
-            className="w-full bg-white border border-brand-dark text-brand-dark font-semibold py-3.5 rounded-lg hover:bg-brand-lightGray transition-colors flex items-center justify-center gap-3 disabled:opacity-70"
+            className="w-full bg-white dark:bg-slate-800 border border-brand-dark text-brand-dark dark:text-white font-semibold py-3.5 rounded-lg hover:bg-brand-lightGray dark:bg-slate-700 transition-colors flex items-center justify-center gap-3 disabled:opacity-70"
           >
             {oauthLoading === 'google' ? (
               <>
