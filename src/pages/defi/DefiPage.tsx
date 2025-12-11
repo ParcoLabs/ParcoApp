@@ -10,7 +10,6 @@ import {
 } from '../../components/defi/DefiComponents';
 import { DEFI_STATS, BORROW_PROPERTIES, LEND_POOLS } from '../../api/defiMockData';
 import { useDemoMode } from '../../context/DemoModeContext';
-import { useDemoPortfolio } from '../../context/DemoPortfolioContext';
 import { useDemo } from '../../hooks/useDemo';
 
 interface LendingPool {
@@ -48,7 +47,6 @@ export const DefiPage: React.FC = () => {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   const { demoMode } = useDemoMode();
-  const { refreshPortfolio } = useDemoPortfolio();
   const { getLendingPools, depositToPool, withdrawFromPool, getBorrowableHoldings, demoBorrow, loading, error } = useDemo();
 
   useEffect(() => {
@@ -81,7 +79,7 @@ export const DefiPage: React.FC = () => {
     const result = await demoBorrow(propertyId, tokenAmount, borrowAmount, isDemoHolding);
     if (result) {
       setActionSuccess(`Borrowed $${(borrowAmount * 0.99).toFixed(2)} USDC!`);
-      await Promise.all([loadBorrowableHoldings(), refreshPortfolio()]);
+      await loadBorrowableHoldings();
       setTimeout(() => setActionSuccess(null), 3000);
     }
   };
@@ -100,7 +98,7 @@ export const DefiPage: React.FC = () => {
     if (result) {
       setActionSuccess(`Deposited $${depositAmount} to ${selectedPool.name}`);
       setDepositAmount('');
-      await Promise.all([loadLendingPools(), refreshPortfolio()]);
+      await loadLendingPools();
       setTimeout(() => setActionSuccess(null), 3000);
       setLendModalOpen(false);
     }
@@ -113,7 +111,7 @@ export const DefiPage: React.FC = () => {
     if (result) {
       setActionSuccess(`Withdrew $${withdrawAmount} from ${selectedPool.name}`);
       setWithdrawAmount('');
-      await Promise.all([loadLendingPools(), refreshPortfolio()]);
+      await loadLendingPools();
       setTimeout(() => setActionSuccess(null), 3000);
       setLendModalOpen(false);
     }

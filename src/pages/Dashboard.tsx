@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDemoMode } from '../context/DemoModeContext';
-import { useDemoPortfolio } from '../context/DemoPortfolioContext';
 import { useDemo } from '../hooks/useDemo';
 import { useAuth } from '../context/AuthContext';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -40,22 +39,24 @@ const CRYPTO_ICONS: Record<string, { icon: string; color: string }> = {
   parco: { icon: parcoLogo, color: '#41b39a' },
 };
 
+const generateChartData = (currentTotal: number) => {
+  const months = ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
+  const startValue = currentTotal * 0.92;
+  return months.map((name, i) => ({
+    name,
+    value: Math.round(startValue + (currentTotal - startValue) * ((i + 1) / months.length) * (1 + (Math.random() - 0.5) * 0.02)),
+  }));
+};
+
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'properties' | 'crypto'>('properties');
   const { demoMode } = useDemoMode();
-  const { setupDemoUser, runRentCycle } = useDemo();
+  const { setupDemoUser, runRentCycle, getPortfolioDetails, loading } = useDemo();
   const { user } = useAuth();
-  const { 
-    summary, 
-    walletBalances, 
-    properties, 
-    recentActivity, 
-    portfolioChartData,
-    loading: portfolioLoading,
-    refreshPortfolio 
-  } = useDemoPortfolio();
-  const [hasSetup, setHasSetup] = useState(false);
+  const [portfolioData, setPortfolioData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasFetched, setHasFetched] = useState(false);
 
   useEffect(() => {
     if (user?.role === 'TOKENIZER') {
@@ -66,14 +67,22 @@ export const Dashboard: React.FC = () => {
   }, [user?.role, navigate]);
 
   useEffect(() => {
-    const setup = async () => {
-      if (demoMode && user && !hasSetup) {
-        setHasSetup(true);
+    const fetchData = async () => {
+      if (demoMode && user && !hasFetched) {
+        setHasFetched(true);
+        setIsLoading(true);
         await setupDemoUser();
+        const data = await getPortfolioDetails();
+        if (data) {
+          setPortfolioData(data);
+        }
+        setIsLoading(false);
+      } else if (!demoMode) {
+        setIsLoading(false);
       }
     };
-    setup();
-  }, [demoMode, user?.id, hasSetup, setupDemoUser]);
+    fetchData();
+  }, [demoMode, user?.id, hasFetched]);
 
   if (user?.role === 'TOKENIZER' || user?.role === 'ADMIN') {
     return null;
@@ -82,21 +91,38 @@ export const Dashboard: React.FC = () => {
   const handleRunRentCycle = async () => {
     const result = await runRentCycle();
     if (result) {
-      await refreshPortfolio();
+      const data = await getPortfolioDetails();
+      if (data) setPortfolioData(data);
     }
   };
+
+  const summary = portfolioData?.summary || {
+    totalBalance: 25000,
+    totalPropertyValue: 12000,
+    totalCryptoValue: 13000,
+    totalInvested: 24000,
+    netGains: 1000,
+    netGainsPercent: 4.17,
+    totalRentEarned: 0,
+  };
+
+  const properties = portfolioData?.properties || [];
+  const walletBalances = portfolioData?.walletBalances || {
+    usdc: { name: 'USDC', symbol: 'USDC', balance: 10000 },
+    btc: { name: 'Bitcoin', symbol: 'BTC', balance: 2000 },
+    parco: { name: 'Parco Token', symbol: 'PARCO', balance: 1000 },
+  };
+  const recentActivity = portfolioData?.recentActivity || [];
 
   const totalPortfolioValue = summary.totalPropertyValue + 
     (walletBalances.usdc?.balance || 0) + 
     (walletBalances.btc?.balance || 0) + 
     (walletBalances.parco?.balance || 0);
   
-  const chartData = portfolioChartData.length > 0 ? portfolioChartData : [
-    { name: 'Now', value: totalPortfolioValue }
-  ];
+  const chartData = generateChartData(totalPortfolioValue);
 
   if (demoMode) {
-    if (portfolioLoading) {
+    if (isLoading) {
       return (
         <div className="p-4 md:p-8 max-w-5xl mx-auto pt-20 md:pt-8">
           <div className="animate-pulse space-y-6">

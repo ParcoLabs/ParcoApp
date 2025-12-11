@@ -2,9 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AreaChart, Area, Tooltip, ResponsiveContainer, XAxis } from 'recharts';
 import { useDemoMode } from '../context/DemoModeContext';
-import { useDemoPortfolio } from '../context/DemoPortfolioContext';
 import { useDemo } from '../hooks/useDemo';
 import parcoLogo from '/brand/logo-green.svg';
+
+const generateChartData = (currentTotal: number) => {
+  const months = ['Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
+  const startValue = currentTotal * 0.92;
+  return months.map((name, i) => ({
+    name,
+    v: Math.round(startValue + (currentTotal - startValue) * ((i + 1) / months.length) * (1 + (Math.random() - 0.5) * 0.02)),
+  }));
+};
 
 const CRYPTO_ICONS: Record<string, { icon: string; color: string }> = {
   usdc: { icon: 'https://cryptologos.cc/logos/usd-coin-usdc-logo.png', color: '#2775ca' },
@@ -16,27 +24,25 @@ export const Portfolio: React.FC = () => {
   const [timeframe, setTimeframe] = useState('1M');
   const [assetTab, setAssetTab] = useState<'properties' | 'crypto'>('properties');
   const { demoMode } = useDemoMode();
-  const { setupDemoUser } = useDemo();
-  const { 
-    summary, 
-    walletBalances, 
-    properties, 
-    recentActivity,
-    portfolioChartData,
-    loading,
-    refreshPortfolio 
-  } = useDemoPortfolio();
-  const [hasSetup, setHasSetup] = useState(false);
+  const { getPortfolioDetails, setupDemoUser } = useDemo();
+  
+  const [portfolioData, setPortfolioData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const setup = async () => {
-      if (demoMode && !hasSetup) {
-        setHasSetup(true);
+    const fetchPortfolio = async () => {
+      if (demoMode) {
+        setLoading(true);
         await setupDemoUser();
+        const data = await getPortfolioDetails();
+        if (data) {
+          setPortfolioData(data);
+        }
+        setLoading(false);
       }
     };
-    setup();
-  }, [demoMode, hasSetup, setupDemoUser]);
+    fetchPortfolio();
+  }, [demoMode]);
 
   if (!demoMode) {
     return (
@@ -62,14 +68,30 @@ export const Portfolio: React.FC = () => {
     );
   }
 
+  const summary = portfolioData?.summary || {
+    totalBalance: 25000,
+    totalPropertyValue: 12000,
+    totalCryptoValue: 13000,
+    totalInvested: 24000,
+    netGains: 1000,
+    netGainsPercent: 4.17,
+    totalRentEarned: 0,
+  };
+
+  const properties = portfolioData?.properties || [];
+  const walletBalances = portfolioData?.walletBalances || {
+    usdc: { name: 'USDC', symbol: 'USDC', balance: 10000 },
+    btc: { name: 'Bitcoin', symbol: 'BTC', balance: 2000 },
+    parco: { name: 'Parco Token', symbol: 'PARCO', balance: 1000 },
+  };
+  const recentActivity = portfolioData?.recentActivity || [];
+
   const totalPortfolioValue = summary.totalPropertyValue + 
     (walletBalances.usdc?.balance || 0) + 
     (walletBalances.btc?.balance || 0) + 
     (walletBalances.parco?.balance || 0);
   
-  const chartData = portfolioChartData.length > 0 ? portfolioChartData.map(p => ({ name: p.name, v: p.value })) : [
-    { name: 'Now', v: totalPortfolioValue }
-  ];
+  const chartData = generateChartData(totalPortfolioValue);
 
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8 pt-20 md:pt-8 pb-24">

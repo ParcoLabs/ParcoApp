@@ -9,7 +9,6 @@ import { PaymentMethodModal } from '../components/PaymentMethodModal';
 import ParcoStaysTab from '../components/ParcoStaysTab';
 import { useBuyFlow } from '../hooks/useBuyFlow';
 import { useDemoMode } from '../context/DemoModeContext';
-import { useDemoPortfolio } from '../context/DemoPortfolioContext';
 import { useDemo } from '../hooks/useDemo';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -94,7 +93,6 @@ export const TokenDetails: React.FC = () => {
   
   const { demoMode } = useDemoMode();
   const { demoBuy, loading: demoLoading } = useDemo();
-  const { refreshPortfolio } = useDemoPortfolio();
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
@@ -107,7 +105,6 @@ export const TokenDetails: React.FC = () => {
       const paymentMethod = selectedMethod.id || 'usdc';
       const result = await demoBuy(property.id, tokenAmount, paymentMethod);
       if (result) {
-        await refreshPortfolio();
         setPurchaseSuccess(true);
         closeModal();
         setTimeout(() => {

@@ -6,7 +6,6 @@ import { PaymentMethodModal } from '../components/PaymentMethodModal';
 import ParcoStaysTab from '../components/ParcoStaysTab';
 import { useBuyFlow, PaymentMethod } from '../hooks/useBuyFlow';
 import { useDemoMode } from '../context/DemoModeContext';
-import { useDemoPortfolio } from '../context/DemoPortfolioContext';
 import { useDemo } from '../hooks/useDemo';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
@@ -50,7 +49,6 @@ export const TokenDetailsMobile: React.FC<TokenDetailsMobileProps> = ({
 
   const { demoMode } = useDemoMode();
   const { demoBuy, loading: demoLoading } = useDemo();
-  const { refreshPortfolio } = useDemoPortfolio();
   const localBuyFlow = useBuyFlow();
   
   const effectiveBuyState = buyState || localBuyFlow.state;
@@ -81,7 +79,6 @@ export const TokenDetailsMobile: React.FC<TokenDetailsMobileProps> = ({
       const paymentMethod = effectiveSelectedMethod.id || 'usdc';
       const result = await demoBuy(property.id, selectedTokens, paymentMethod);
       if (result) {
-        await refreshPortfolio();
         setPurchaseSuccess(true);
         effectiveOnCloseModal();
         setTimeout(() => {
