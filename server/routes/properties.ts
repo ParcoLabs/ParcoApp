@@ -94,6 +94,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       yearBuilt: property.yearBuilt,
       monthlyRent: property.monthlyRent ? Number(property.monthlyRent) : null,
       contractAddress: property.token?.contractAddress || null,
+      hasParcoStays: property.hasParcoStays,
     };
 
     res.json({

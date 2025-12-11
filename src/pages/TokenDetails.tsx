@@ -41,6 +41,7 @@ interface ApiPropertyResponse {
   yearBuilt?: number;
   monthlyRent?: number;
   contractAddress?: string;
+  hasParcoStays?: boolean;
 }
 
 const mapApiToProperty = (data: ApiPropertyResponse): Property => {
@@ -65,6 +66,7 @@ const mapApiToProperty = (data: ApiPropertyResponse): Property => {
     bathrooms: data.bathrooms,
     yearBuilt: data.yearBuilt,
     monthlyRent: data.monthlyRent,
+    hasParcoStays: data.hasParcoStays,
   };
 };
 

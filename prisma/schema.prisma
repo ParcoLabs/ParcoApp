@@ -100,6 +100,7 @@ model Property {
   isPaused         Boolean        @default(false)
   mintTxHash       String?
   mintedAt         DateTime?
+  hasParcoStays    Boolean        @default(false)
   holdings         Holding[]
   rentPayments     RentPayment[]
   token            Token?
