@@ -193,22 +193,29 @@ export const DemoPortfolioProvider: React.FC<{ children: ReactNode }> = ({ child
           parco: wallets.parco || defaultWalletBalances.parco,
         });
         
-        const props: PropertyHolding[] = (pd.properties || []).map((p: any) => ({
-          id: p.id,
-          propertyId: p.propertyId || p.id,
-          propertyName: p.propertyName || p.name || 'Unknown Property',
-          quantity: p.quantity || 0,
-          averageCost: p.averageCost || p.tokenPrice || 0,
-          totalInvested: p.totalInvested || (p.quantity * (p.averageCost || p.tokenPrice || 0)),
-          currentValue: p.currentValue || (p.quantity * (p.tokenPrice || p.averageCost || 0)),
-          lockedQuantity: p.demoLockedQuantity || p.lockedQuantity || 0,
-          availableQuantity: (p.quantity || 0) - (p.demoLockedQuantity || p.lockedQuantity || 0),
-          rentalYield: p.rentalYield || p.apy || 0,
-          tokenPrice: p.tokenPrice || p.averageCost || 0,
-          image: p.image || '',
-          location: p.location || '',
-          isDemoHolding: p.isDemoHolding !== false,
-        }));
+        const props: PropertyHolding[] = (pd.properties || []).map((p: any) => {
+          const qty = p.tokensOwned || p.quantity || 0;
+          const locked = p.lockedTokens || p.demoLockedQuantity || p.lockedQuantity || 0;
+          const price = p.currentPrice || p.tokenPrice || p.averageCost || 0;
+          const avgCost = p.avgCost || p.averageCost || price;
+          
+          return {
+            id: p.id,
+            propertyId: p.propertyId || p.id,
+            propertyName: p.title || p.propertyName || p.name || 'Unknown Property',
+            quantity: qty,
+            averageCost: avgCost,
+            totalInvested: p.totalInvested || (qty * avgCost),
+            currentValue: p.totalValue || p.currentValue || (qty * price),
+            lockedQuantity: locked,
+            availableQuantity: qty - locked,
+            rentalYield: p.rentalYield || p.apy || 0,
+            tokenPrice: price,
+            image: p.image || '',
+            location: p.location || '',
+            isDemoHolding: p.isDemoHolding !== false,
+          };
+        });
         setProperties(props);
         
         setRecentActivity(pd.recentActivity || []);

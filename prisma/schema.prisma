@@ -594,15 +594,16 @@ enum VoteChoice {
 }
 
 model DemoHolding {
-  id            String   @id @default(cuid())
-  userId        String
-  propertyId    String
-  propertyName  String
-  quantity      Int      @default(0)
-  averageCost   Decimal  @default(0) @db.Decimal(18, 6)
-  totalInvested Decimal  @default(0) @db.Decimal(18, 2)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String   @id @default(cuid())
+  userId         String
+  propertyId     String
+  propertyName   String
+  quantity       Int      @default(0)
+  lockedQuantity Int      @default(0)
+  averageCost    Decimal  @default(0) @db.Decimal(18, 6)
+  totalInvested  Decimal  @default(0) @db.Decimal(18, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@unique([userId, propertyId])
   @@index([userId])
