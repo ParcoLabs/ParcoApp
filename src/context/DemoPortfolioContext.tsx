@@ -18,10 +18,13 @@ interface PropertyHolding {
   id: string;
   propertyId: string;
   propertyName: string;
+  title: string;
   quantity: number;
+  tokensOwned: number;
   averageCost: number;
   totalInvested: number;
   currentValue: number;
+  totalValue: number;
   lockedQuantity: number;
   availableQuantity: number;
   rentalYield: number;
@@ -29,6 +32,7 @@ interface PropertyHolding {
   image: string;
   location: string;
   isDemoHolding: boolean;
+  change: number;
 }
 
 interface LendingPosition {
@@ -198,15 +202,21 @@ export const DemoPortfolioProvider: React.FC<{ children: ReactNode }> = ({ child
           const locked = p.lockedTokens || p.demoLockedQuantity || p.lockedQuantity || 0;
           const price = p.currentPrice || p.tokenPrice || p.averageCost || 0;
           const avgCost = p.avgCost || p.averageCost || price;
+          const totalVal = p.totalValue || p.currentValue || (qty * price);
+          const propName = p.title || p.propertyName || p.name || 'Unknown Property';
+          const changePercent = p.change || 0;
           
           return {
             id: p.id,
             propertyId: p.propertyId || p.id,
-            propertyName: p.title || p.propertyName || p.name || 'Unknown Property',
+            propertyName: propName,
+            title: propName,
             quantity: qty,
+            tokensOwned: qty,
             averageCost: avgCost,
             totalInvested: p.totalInvested || (qty * avgCost),
-            currentValue: p.totalValue || p.currentValue || (qty * price),
+            currentValue: totalVal,
+            totalValue: totalVal,
             lockedQuantity: locked,
             availableQuantity: qty - locked,
             rentalYield: p.rentalYield || p.apy || 0,
@@ -214,6 +224,7 @@ export const DemoPortfolioProvider: React.FC<{ children: ReactNode }> = ({ child
             image: p.image || '',
             location: p.location || '',
             isDemoHolding: p.isDemoHolding !== false,
+            change: changePercent,
           };
         });
         setProperties(props);
