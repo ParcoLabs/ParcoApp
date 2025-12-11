@@ -30,28 +30,28 @@ export const BorrowStatsCard: React.FC<{ stats: any }> = ({ stats }) => (
 
 // --- PROPERTY LIST ---
 export const BorrowPropertyList: React.FC<{ properties: any[], onBorrow: (prop: any) => void }> = ({ properties, onBorrow }) => (
-  <div className="bg-white border border-brand-lightGray rounded-2xl overflow-hidden shadow-sm">
-    <div className="p-4 border-b border-brand-lightGray bg-brand-offWhite/50">
-        <h3 className="font-bold text-brand-dark text-sm uppercase tracking-wide">Your Collateral</h3>
+  <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-2xl overflow-hidden shadow-sm">
+    <div className="p-4 border-b border-brand-lightGray dark:border-[#3a3a3a] bg-brand-offWhite/50 dark:bg-[#2a2a2a]/50">
+        <h3 className="font-bold text-brand-dark dark:text-white text-sm uppercase tracking-wide">Your Collateral</h3>
     </div>
-    <div className="divide-y divide-brand-lightGray">
+    <div className="divide-y divide-brand-lightGray dark:divide-[#3a3a3a]">
       {properties.map((prop) => (
-        <div key={prop.id} className="p-4 flex items-center justify-between hover:bg-brand-offWhite/30 transition-colors">
+        <div key={prop.id} className="p-4 flex items-center justify-between hover:bg-brand-offWhite/30 dark:hover:bg-[#2a2a2a]/30 transition-colors">
           <div className="flex items-center gap-4">
-            <img src={prop.image} alt={prop.title} className="w-12 h-12 rounded-lg object-cover bg-brand-lightGray" />
+            <img src={prop.image} alt={prop.title} className="w-12 h-12 rounded-lg object-cover bg-brand-lightGray dark:bg-[#2a2a2a]" />
             <div>
-              <p className="font-bold text-brand-dark text-sm">{prop.title}</p>
-              <p className="text-xs text-brand-sage font-medium">{prop.tokenCount} Tokens</p>
+              <p className="font-bold text-brand-dark dark:text-white text-sm">{prop.title}</p>
+              <p className="text-xs text-brand-sage dark:text-gray-400 font-medium">{prop.tokenCount} Tokens</p>
             </div>
           </div>
           <div className="text-right flex items-center gap-4">
             <div className="hidden md:block">
-               <p className="text-[10px] text-brand-sage uppercase font-bold">Max Borrow</p>
-               <p className="font-bold text-brand-dark text-sm">${prop.maxBorrow.toLocaleString()}</p>
+               <p className="text-[10px] text-brand-sage dark:text-gray-400 uppercase font-bold">Max Borrow</p>
+               <p className="font-bold text-brand-dark dark:text-white text-sm">${prop.maxBorrow.toLocaleString()}</p>
             </div>
             <button 
               onClick={() => onBorrow(prop)}
-              className="bg-white border border-brand-deep text-brand-deep hover:bg-brand-offWhite px-4 py-2 rounded-lg text-xs font-bold transition-colors"
+              className="bg-white dark:bg-[#1a1a1a] border border-brand-deep dark:border-brand-mint text-brand-deep dark:text-brand-mint hover:bg-brand-offWhite dark:hover:bg-[#2a2a2a] px-4 py-2 rounded-lg text-xs font-bold transition-colors"
             >
               Borrow
             </button>
@@ -64,20 +64,20 @@ export const BorrowPropertyList: React.FC<{ properties: any[], onBorrow: (prop: 
 
 // --- LEND POOL CARD ---
 export const LendPoolCard: React.FC<{ pool: any, onAddLiquidity: (pool: any) => void }> = ({ pool, onAddLiquidity }) => (
-  <div className="bg-white border border-brand-lightGray rounded-2xl p-5 hover:shadow-md transition-all">
+  <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-2xl p-5 hover:shadow-md transition-all">
     <div className="flex justify-between items-start mb-4">
         <div>
-            <h3 className="font-bold text-brand-dark text-lg">{pool.name}</h3>
-            <p className="text-brand-sage text-xs font-medium mt-1">TVL: ${(pool.tvl / 1000000).toFixed(1)}M</p>
+            <h3 className="font-bold text-brand-dark dark:text-white text-lg">{pool.name}</h3>
+            <p className="text-brand-sage dark:text-brand-mint text-xs font-medium mt-1">TVL: ${(pool.tvl / 1000000).toFixed(1)}M</p>
         </div>
         <div className="text-right">
-            <p className="text-brand-deep font-bold text-xl">{pool.apy}%</p>
-            <p className="text-[10px] text-brand-sage uppercase font-bold">APY</p>
+            <p className="text-brand-deep dark:text-brand-mint font-bold text-xl">{pool.apy}%</p>
+            <p className="text-[10px] text-brand-sage dark:text-gray-400 uppercase font-bold">APY</p>
         </div>
     </div>
     
     {pool.userDeposit > 0 && (
-        <div className="mb-4 bg-brand-mint/30 p-2 rounded-lg flex justify-between items-center border border-brand-mint/50">
+        <div className="mb-4 bg-brand-mint/30 dark:bg-brand-mint/10 p-2 rounded-lg flex justify-between items-center border border-brand-mint/50 dark:border-brand-mint/30">
             <span className="text-xs font-bold text-brand-deep dark:text-brand-mint">Your Position</span>
             <span className="text-xs font-bold text-brand-deep dark:text-brand-mint">${pool.userDeposit.toLocaleString()}</span>
         </div>
@@ -94,15 +94,15 @@ export const LendPoolCard: React.FC<{ pool: any, onAddLiquidity: (pool: any) => 
 
 // --- STAKE PLACEHOLDER ---
 export const StakeComingSoonCard: React.FC = () => (
-  <div className="bg-brand-offWhite border border-brand-lightGray rounded-2xl p-8 text-center opacity-75">
-    <div className="w-16 h-16 bg-brand-lightGray rounded-full flex items-center justify-center mx-auto mb-4 text-brand-sage">
+  <div className="bg-brand-offWhite dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-2xl p-8 text-center opacity-75">
+    <div className="w-16 h-16 bg-brand-lightGray dark:bg-[#2a2a2a] rounded-full flex items-center justify-center mx-auto mb-4 text-brand-sage dark:text-brand-mint">
        <i className="fa-solid fa-layer-group text-2xl"></i>
     </div>
-    <h3 className="font-bold text-brand-dark text-lg mb-2">Staking Coming Soon</h3>
-    <p className="text-brand-sage text-sm max-w-xs mx-auto">
+    <h3 className="font-bold text-brand-dark dark:text-white text-lg mb-2">Staking Coming Soon</h3>
+    <p className="text-brand-sage dark:text-gray-400 text-sm max-w-xs mx-auto">
       Earn governance rights and additional yield by staking your property tokens in the Parco DAO.
     </p>
-    <button disabled className="mt-6 bg-brand-lightGray text-brand-sage cursor-not-allowed px-6 py-2 rounded-lg font-bold text-sm">
+    <button disabled className="mt-6 bg-brand-lightGray dark:bg-[#2a2a2a] text-brand-sage dark:text-gray-500 cursor-not-allowed px-6 py-2 rounded-lg font-bold text-sm">
         Notify Me
     </button>
   </div>

@@ -147,20 +147,20 @@ export const DefiPage: React.FC = () => {
 
       {/* Desktop View */}
       <div className="hidden md:block p-8 max-w-7xl mx-auto space-y-8">
-        <div className="flex justify-between items-end border-b border-brand-lightGray pb-4">
+        <div className="flex justify-between items-end border-b border-brand-lightGray dark:border-[#3a3a3a] pb-4">
             <div>
-                <h1 className="text-3xl font-bold text-brand-dark mb-2">DeFi</h1>
-                <p className="text-brand-sage">Borrow, Lend, and Earn using your property tokens</p>
+                <h1 className="text-3xl font-bold text-brand-dark dark:text-white mb-2">DeFi</h1>
+                <p className="text-brand-sage dark:text-gray-400">Borrow, Lend, and Earn using your property tokens</p>
             </div>
-            <div className="flex gap-2 bg-brand-offWhite p-1 rounded-lg">
+            <div className="flex gap-2 bg-brand-offWhite dark:bg-[#1a1a1a] p-1 rounded-lg">
                 {['Borrow', 'Lend', 'Stake'].map(tab => (
                     <button 
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`px-6 py-2 rounded-md font-bold text-sm transition-all ${
                             activeTab === tab 
-                            ? 'bg-white text-brand-deep shadow-sm' 
-                            : 'text-brand-sage hover:text-brand-dark'
+                            ? 'bg-white dark:bg-[#2a2a2a] text-brand-deep dark:text-brand-mint shadow-sm' 
+                            : 'text-brand-sage dark:text-gray-400 hover:text-brand-dark dark:hover:text-white'
                         }`}
                     >
                         {tab}
@@ -212,9 +212,9 @@ export const DefiPage: React.FC = () => {
                       <BorrowPropertyList properties={BORROW_PROPERTIES} onBorrow={handleBorrow} />
                     )}
                 </div>
-                <div className="bg-brand-mint/20 border border-brand-mint rounded-2xl p-6 h-fit">
-                    <h3 className="font-bold text-brand-dark mb-4"><i className="fa-solid fa-circle-info mr-2 text-brand-medium dark:text-brand-mint"></i>How it works</h3>
-                    <ul className="space-y-4 text-sm text-brand-dark dark:text-white">
+                <div className="bg-brand-mint/20 dark:bg-brand-mint/10 border border-brand-mint dark:border-brand-mint/30 rounded-2xl p-6 h-fit">
+                    <h3 className="font-bold text-brand-dark dark:text-white mb-4"><i className="fa-solid fa-circle-info mr-2 text-brand-medium dark:text-brand-mint"></i>How it works</h3>
+                    <ul className="space-y-4 text-sm text-brand-dark dark:text-gray-300">
                         <li className="flex gap-3">
                             <span className="font-bold text-brand-medium dark:text-brand-mint">1.</span>
                             Lock your property tokens as collateral in the smart contract.
@@ -235,9 +235,9 @@ export const DefiPage: React.FC = () => {
         {activeTab === 'Lend' && (
             <>
               {demoMode && (
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6 flex items-center gap-2">
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 rounded-lg p-3 mb-6 flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-                  <span className="text-sm text-amber-800">Demo Lending - Deposit USDC to earn yield</span>
+                  <span className="text-sm text-amber-800 dark:text-amber-300">Demo Lending - Deposit USDC to earn yield</span>
                 </div>
               )}
               {actionSuccess && (
