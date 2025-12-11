@@ -88,11 +88,11 @@ export const Governance: React.FC = () => {
 
   if (!demoMode) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center p-4 pt-20 md:pt-8 pb-24 md:pb-8">
+      <div className="min-h-screen bg-white dark:bg-[#101010] flex items-center justify-center p-4 pt-20 md:pt-8 pb-24 md:pb-8">
         <div className="text-center">
-          <i className="fa-solid fa-gavel text-4xl text-brand-sage dark:text-slate-400 mb-4"></i>
+          <i className="fa-solid fa-gavel text-4xl text-brand-sage dark:text-gray-400 mb-4"></i>
           <h2 className="text-xl font-bold text-brand-dark dark:text-white mb-2">Governance Unavailable</h2>
-          <p className="text-brand-sage dark:text-slate-400">Governance features are only available in demo mode.</p>
+          <p className="text-brand-sage dark:text-gray-400">Governance features are only available in demo mode.</p>
           <button
             onClick={() => navigate('/')}
             className="mt-4 bg-brand-deep hover:bg-brand-dark text-white px-6 py-2 rounded-lg font-bold text-sm transition-colors"
@@ -106,7 +106,7 @@ export const Governance: React.FC = () => {
 
   if (isLoadingStatus) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center p-4 pt-20 md:pt-8 pb-24 md:pb-8">
+      <div className="min-h-screen bg-white dark:bg-[#101010] flex items-center justify-center p-4 pt-20 md:pt-8 pb-24 md:pb-8">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep"></div>
       </div>
     );
@@ -114,11 +114,11 @@ export const Governance: React.FC = () => {
 
   if (!demoStatus?.vault?.balance) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-900 flex items-center justify-center p-4 pt-20 md:pt-8 pb-24 md:pb-8">
+      <div className="min-h-screen bg-white dark:bg-[#101010] flex items-center justify-center p-4 pt-20 md:pt-8 pb-24 md:pb-8">
         <div className="text-center max-w-md">
           <i className="fa-solid fa-gavel text-4xl text-amber-500 mb-4"></i>
           <h2 className="text-xl font-bold text-brand-dark dark:text-white mb-2">Setup Demo First</h2>
-          <p className="text-brand-sage dark:text-slate-400 mb-4">
+          <p className="text-brand-sage dark:text-gray-400 mb-4">
             You need to setup your demo account before you can participate in governance. 
             This will give you $25,000 USDC and auto-approve your KYC.
           </p>
@@ -135,12 +135,12 @@ export const Governance: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900 p-4 md:p-8 pt-20 md:pt-8 pb-24 md:pb-8">
+    <div className="min-h-screen bg-white dark:bg-[#101010] p-4 md:p-8 pt-20 md:pt-8 pb-24 md:pb-8">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-brand-dark dark:text-white">Governance</h1>
-          <p className="text-sm text-brand-sage dark:text-slate-400">Vote on property improvement proposals</p>
+          <p className="text-sm text-brand-sage dark:text-gray-400">Vote on property improvement proposals</p>
         </div>
 
         {/* Demo Mode Badge */}
@@ -159,16 +159,16 @@ export const Governance: React.FC = () => {
         {/* Proposals List */}
         <div className="space-y-4">
           {proposals.length === 0 ? (
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-brand-lightGray dark:border-slate-700 p-8 text-center">
-              <i className="fa-solid fa-inbox text-4xl text-brand-sage dark:text-slate-400 mb-4"></i>
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-8 text-center">
+              <i className="fa-solid fa-inbox text-4xl text-brand-sage dark:text-gray-400 mb-4"></i>
               <h3 className="text-lg font-bold text-brand-dark dark:text-white mb-2">Loading Proposals...</h3>
-              <p className="text-sm text-brand-sage dark:text-slate-400">Fetching governance proposals...</p>
+              <p className="text-sm text-brand-sage dark:text-gray-400">Fetching governance proposals...</p>
             </div>
           ) : (
             proposals.map((proposal) => (
               <div
                 key={proposal.id}
-                className="bg-white dark:bg-slate-800 rounded-xl border border-brand-lightGray dark:border-slate-700 p-5 hover:shadow-md transition-shadow"
+                className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-5 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
@@ -184,34 +184,34 @@ export const Governance: React.FC = () => {
                       }`}>
                         {proposal.status}
                       </span>
-                      <span className="text-xs text-brand-sage dark:text-slate-400">
+                      <span className="text-xs text-brand-sage dark:text-gray-400">
                         Created {formatDate(proposal.createdAt)}
                       </span>
                     </div>
                     <h3 className="text-lg font-bold text-brand-dark dark:text-white">{proposal.title}</h3>
-                    <p className="text-sm text-brand-sage dark:text-slate-400 mt-1">{proposal.description}</p>
+                    <p className="text-sm text-brand-sage dark:text-gray-400 mt-1">{proposal.description}</p>
                   </div>
                 </div>
 
                 {/* Proposal Details */}
-                <div className="grid grid-cols-3 gap-4 mb-4 bg-white dark:bg-slate-900 rounded-lg p-3">
+                <div className="grid grid-cols-3 gap-4 mb-4 bg-white dark:bg-[#101010] rounded-lg p-3">
                   <div className="text-center">
-                    <p className="text-xs text-brand-sage dark:text-slate-400">Est. Cost</p>
+                    <p className="text-xs text-brand-sage dark:text-gray-400">Est. Cost</p>
                     <p className="font-bold text-brand-dark dark:text-white">${proposal.estimatedCost?.toLocaleString() || '0'}</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-xs text-brand-sage dark:text-slate-400">Timeline</p>
+                    <p className="text-xs text-brand-sage dark:text-gray-400">Timeline</p>
                     <p className="font-bold text-brand-dark dark:text-white">{proposal.timelineWeeks || 0} weeks</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-xs text-brand-sage dark:text-slate-400">Exp. Appreciation</p>
-                    <p className="font-bold text-brand-medium">+{proposal.expectedAppreciation || 0}%</p>
+                    <p className="text-xs text-brand-sage dark:text-gray-400">Exp. Appreciation</p>
+                    <p className="font-bold text-brand-medium dark:text-brand-mint dark:text-brand-mint">+{proposal.expectedAppreciation || 0}%</p>
                   </div>
                 </div>
 
                 {/* Vote Progress */}
                 <div className="mb-4">
-                  <div className="flex justify-between text-xs text-brand-sage dark:text-slate-400 mb-1">
+                  <div className="flex justify-between text-xs text-brand-sage dark:text-gray-400 mb-1">
                     <span>For: {proposal.forVotes}</span>
                     <span>Against: {proposal.againstVotes}</span>
                   </div>
@@ -225,13 +225,13 @@ export const Governance: React.FC = () => {
                       style={{ width: `${getVotePercentage(proposal.againstVotes, proposal.totalVotes)}%` }}
                     ></div>
                   </div>
-                  <p className="text-xs text-brand-sage dark:text-slate-400 mt-1">{proposal.totalVotes} total votes</p>
+                  <p className="text-xs text-brand-sage dark:text-gray-400 mt-1">{proposal.totalVotes} total votes</p>
                 </div>
 
                 {/* Vote Button or Status */}
                 {proposal.userVote ? (
-                  <div className="w-full text-center py-2.5 rounded-lg bg-white dark:bg-slate-900">
-                    <span className="text-sm text-brand-sage dark:text-slate-400">
+                  <div className="w-full text-center py-2.5 rounded-lg bg-white dark:bg-[#101010]">
+                    <span className="text-sm text-brand-sage dark:text-gray-400">
                       You voted: <span className={`font-bold ${proposal.userVote === 'FOR' ? 'text-green-600' : 'text-red-600'}`}>{proposal.userVote}</span>
                     </span>
                   </div>
@@ -251,31 +251,31 @@ export const Governance: React.FC = () => {
         {/* Vote Modal */}
         {selectedProposal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-md w-full">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-6 max-w-md w-full">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-bold text-brand-dark dark:text-white">Cast Your Vote</h3>
-                <button onClick={() => setSelectedProposal(null)} className="text-brand-sage dark:text-slate-400 hover:text-brand-dark dark:text-white">
+                <button onClick={() => setSelectedProposal(null)} className="text-brand-sage dark:text-gray-400 hover:text-brand-dark dark:text-white">
                   <i className="fa-solid fa-times text-xl"></i>
                 </button>
               </div>
 
               <div className="mb-4">
                 <h4 className="font-bold text-brand-dark dark:text-white">{selectedProposal.title}</h4>
-                <p className="text-sm text-brand-sage dark:text-slate-400 mt-1 line-clamp-3">{selectedProposal.description}</p>
+                <p className="text-sm text-brand-sage dark:text-gray-400 mt-1 line-clamp-3">{selectedProposal.description}</p>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 mb-4 bg-white dark:bg-slate-900 rounded-lg p-3 text-sm">
+              <div className="grid grid-cols-3 gap-3 mb-4 bg-white dark:bg-[#101010] rounded-lg p-3 text-sm">
                 <div className="text-center">
-                  <p className="text-xs text-brand-sage dark:text-slate-400">Cost</p>
+                  <p className="text-xs text-brand-sage dark:text-gray-400">Cost</p>
                   <p className="font-bold text-brand-dark dark:text-white">${selectedProposal.estimatedCost?.toLocaleString()}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-brand-sage dark:text-slate-400">Timeline</p>
+                  <p className="text-xs text-brand-sage dark:text-gray-400">Timeline</p>
                   <p className="font-bold text-brand-dark dark:text-white">{selectedProposal.timelineWeeks} wks</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-brand-sage dark:text-slate-400">Appreciation</p>
-                  <p className="font-bold text-brand-medium">+{selectedProposal.expectedAppreciation}%</p>
+                  <p className="text-xs text-brand-sage dark:text-gray-400">Appreciation</p>
+                  <p className="font-bold text-brand-medium dark:text-brand-mint dark:text-brand-mint">+{selectedProposal.expectedAppreciation}%</p>
                 </div>
               </div>
 

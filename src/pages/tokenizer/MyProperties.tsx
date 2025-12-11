@@ -18,7 +18,7 @@ interface TokenizationSubmission {
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  DRAFT: { label: 'Draft', color: 'text-gray-700', bg: 'bg-gray-100' },
+  DRAFT: { label: 'Draft', color: 'text-gray-700 dark:text-gray-300', bg: 'bg-gray-100' },
   SUBMITTED: { label: 'Submitted', color: 'text-blue-700', bg: 'bg-blue-100' },
   IN_REVIEW: { label: 'In Review', color: 'text-amber-700', bg: 'bg-amber-100' },
   APPROVED: { label: 'Approved', color: 'text-green-700', bg: 'bg-green-100' },
@@ -145,7 +145,7 @@ export const MyProperties: React.FC = () => {
       )}
 
       {submissions.length === 0 ? (
-        <div className="bg-white border border-brand-sage/20 rounded-lg p-8 md:p-12 text-center">
+        <div className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 dark:border-[#2a2a2a] rounded-lg p-8 md:p-12 text-center">
           <div className="w-16 h-16 bg-brand-sage/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fa-solid fa-building text-2xl text-brand-sage"></i>
           </div>
@@ -166,7 +166,7 @@ export const MyProperties: React.FC = () => {
             {submissions.map((sub) => {
               const statusInfo = STATUS_LABELS[sub.status] || STATUS_LABELS.DRAFT;
               return (
-                <div key={sub.id} className="bg-white border border-brand-sage/20 rounded-xl p-4 shadow-sm">
+                <div key={sub.id} className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 dark:border-[#2a2a2a] rounded-xl p-4 shadow-sm">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1 min-w-0 pr-3">
                       <p className="font-semibold text-brand-black text-sm truncate">{getDisplayAddress(sub)}</p>
@@ -219,7 +219,7 @@ export const MyProperties: React.FC = () => {
           </div>
 
           {/* Desktop Table View */}
-          <div className="hidden md:block bg-white border border-brand-sage/20 rounded-lg overflow-hidden">
+          <div className="hidden md:block bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 dark:border-[#2a2a2a] rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-brand-offWhite border-b border-brand-sage/20">

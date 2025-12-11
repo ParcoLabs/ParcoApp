@@ -124,7 +124,7 @@ export const TokenizerPostDashboard: React.FC = () => {
       <h1 className="text-2xl font-bold text-brand-black">Overview</h1>
 
       {!activeSubmission ? (
-        <div className="bg-white border border-brand-sage/20 rounded-xl p-12 text-center">
+        <div className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 dark:border-[#2a2a2a] rounded-xl p-12 text-center">
           <div className="w-16 h-16 bg-brand-sage/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fa-solid fa-building text-2xl text-brand-sage"></i>
           </div>
@@ -142,7 +142,7 @@ export const TokenizerPostDashboard: React.FC = () => {
           {/* Top Stats Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Property Card */}
-            <div className="bg-white border border-brand-lightGray rounded-xl p-5">
+            <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
               <p className="text-lg font-bold text-brand-black mb-3">
                 {activeSubmission.propertyAddress || '23-45 Biscayne Bay Blvd'}
               </p>
@@ -153,13 +153,13 @@ export const TokenizerPostDashboard: React.FC = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <p className="text-sm text-brand-dark">
+              <p className="text-sm text-brand-dark dark:text-white">
                 Current Property Value: <span className="font-bold">${activeSubmission.totalValue?.toLocaleString() || '0'}</span>
               </p>
             </div>
 
             {/* Financial Stats */}
-            <div className="bg-white border border-brand-lightGray rounded-xl p-5">
+            <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
               {/* Occupancy Rate */}
               <div className="mb-5">
                 <p className="text-sm font-medium text-brand-dark text-center mb-2">Occupancy Rate</p>
@@ -176,27 +176,27 @@ export const TokenizerPostDashboard: React.FC = () => {
               {/* Financial Summary */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-brand-dark">Total Rental Income:</span>
-                  <span className="text-sm font-bold text-brand-dark">${stats.totalRentalIncome.toLocaleString()}.00</span>
+                  <span className="text-sm text-brand-dark dark:text-white">Total Rental Income:</span>
+                  <span className="text-sm font-bold text-brand-dark dark:text-white">${stats.totalRentalIncome.toLocaleString()}.00</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-brand-dark">Total Expenses:</span>
-                  <span className="text-sm font-bold text-brand-dark">${stats.totalExpenses.toLocaleString()}.00</span>
+                  <span className="text-sm text-brand-dark dark:text-white">Total Expenses:</span>
+                  <span className="text-sm font-bold text-brand-dark dark:text-white">${stats.totalExpenses.toLocaleString()}.00</span>
                 </div>
                 <div className="flex justify-between items-center pt-3 border-t border-brand-lightGray">
-                  <span className="text-sm font-medium text-brand-dark">Net Profit:</span>
-                  <span className="text-sm font-bold text-brand-dark">${stats.netProfit.toLocaleString()}.00</span>
+                  <span className="text-sm font-medium text-brand-dark dark:text-white">Net Profit:</span>
+                  <span className="text-sm font-bold text-brand-dark dark:text-white">${stats.netProfit.toLocaleString()}.00</span>
                 </div>
               </div>
             </div>
 
             {/* Token Holders & Notifications */}
-            <div className="bg-white border border-brand-lightGray rounded-xl p-5">
+            <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
               <div className="mb-6">
                 <p className="text-lg font-bold text-brand-dark mb-4">Total Token holders</p>
                 <div className="flex items-center gap-4">
                   <div className="w-14 h-14 rounded-full bg-brand-mint flex items-center justify-center">
-                    <i className="fa-solid fa-users text-brand-deep text-xl"></i>
+                    <i className="fa-solid fa-users text-brand-deep dark:text-brand-mint text-xl"></i>
                   </div>
                   <span className="text-4xl font-bold text-brand-black">{stats.totalTokenHolders.toLocaleString()}</span>
                 </div>
@@ -216,7 +216,7 @@ export const TokenizerPostDashboard: React.FC = () => {
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Appreciation Chart */}
-            <div className="bg-white border border-brand-lightGray rounded-xl p-5">
+            <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
               <h3 className="text-lg font-bold text-brand-black mb-4">Appreciation</h3>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
@@ -245,7 +245,7 @@ export const TokenizerPostDashboard: React.FC = () => {
             </div>
 
             {/* Earnings/Expenses Chart */}
-            <div className="bg-white border border-brand-lightGray rounded-xl p-5">
+            <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
               <h3 className="text-lg font-bold text-brand-black mb-4">Earnings Expenses Summary</h3>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
@@ -270,7 +270,7 @@ export const TokenizerPostDashboard: React.FC = () => {
           </div>
 
           {/* Token Holder Growth Chart */}
-          <div className="bg-white border border-brand-lightGray rounded-xl p-5">
+          <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
             <h3 className="text-lg font-bold text-brand-black mb-4">Token holder growth</h3>
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">

@@ -126,9 +126,9 @@ export const Dashboard: React.FC = () => {
       return (
         <div className="p-4 md:p-8 max-w-5xl mx-auto pt-20 md:pt-8">
           <div className="animate-pulse space-y-6">
-            <div className="h-12 bg-brand-lightGray dark:bg-slate-700 rounded w-1/3"></div>
-            <div className="h-48 bg-brand-lightGray dark:bg-slate-700 rounded"></div>
-            <div className="h-32 bg-brand-lightGray dark:bg-slate-700 rounded"></div>
+            <div className="h-12 bg-brand-lightGray dark:bg-[#2a2a2a] rounded w-1/3"></div>
+            <div className="h-48 bg-brand-lightGray dark:bg-[#2a2a2a] rounded"></div>
+            <div className="h-32 bg-brand-lightGray dark:bg-[#2a2a2a] rounded"></div>
           </div>
         </div>
       );
@@ -139,18 +139,18 @@ export const Dashboard: React.FC = () => {
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            <p className="text-xs text-brand-sage dark:text-slate-400 font-medium uppercase tracking-wide mb-1">Total Balance</p>
+            <p className="text-xs text-brand-sage dark:text-gray-400 font-medium uppercase tracking-wide mb-1">Total Balance</p>
             <div className="flex items-baseline gap-3 mb-1 flex-wrap">
               <h1 className="text-4xl font-bold text-brand-dark dark:text-white">
                 ${totalPortfolioValue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h1>
-              <span className={`text-sm font-bold ${summary.netGains >= 0 ? 'text-brand-medium' : 'text-red-500'}`}>
+              <span className={`text-sm font-bold ${summary.netGains >= 0 ? 'text-brand-medium dark:text-brand-mint' : 'text-red-500'}`}>
                 {summary.netGains >= 0 ? '+' : ''}${summary.netGains.toLocaleString('en-US', { minimumFractionDigits: 2 })} ({summary.netGainsPercent.toFixed(2)}%)
               </span>
-              <span className="text-brand-sage dark:text-slate-400 text-xs">Past Month</span>
+              <span className="text-brand-sage dark:text-gray-400 text-xs">Past Month</span>
             </div>
             
-            <div className="bg-white dark:bg-slate-800 rounded-xl border border-brand-lightGray dark:border-slate-700 p-4 mt-4 h-48 min-h-[192px]">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-4 mt-4 h-48 min-h-[192px]">
               <ResponsiveContainer width="100%" height="100%" minWidth={300} minHeight={150}>
                 <AreaChart data={chartData}>
                   <defs>
@@ -171,20 +171,20 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-brand-lightGray dark:border-slate-700 p-5">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-5">
             <h3 className="font-bold text-brand-dark dark:text-white mb-4">Your Performance</h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-brand-sage dark:text-slate-400">Net Invested</span>
+                <span className="text-sm text-brand-sage dark:text-gray-400">Net Invested</span>
                 <span className="font-bold text-brand-dark dark:text-white">${summary.totalInvested.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-brand-sage dark:text-slate-400">Earned to Date</span>
-                <span className="font-bold text-brand-medium">+${summary.netGains.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                <span className="text-sm text-brand-sage dark:text-gray-400">Earned to Date</span>
+                <span className="font-bold text-brand-medium dark:text-brand-mint">+${summary.netGains.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-brand-sage dark:text-slate-400">Rent Payouts</span>
-                <span className="font-bold text-brand-medium">+${summary.totalRentEarned.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                <span className="text-sm text-brand-sage dark:text-gray-400">Rent Payouts</span>
+                <span className="font-bold text-brand-medium dark:text-brand-mint">+${summary.totalRentEarned.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
             <button 
@@ -202,7 +202,7 @@ export const Dashboard: React.FC = () => {
             <button 
               onClick={() => setActiveTab('properties')}
               className={`pb-2 text-sm font-bold transition-colors ${
-                activeTab === 'properties' ? 'text-brand-deep border-b-2 border-brand-deep' : 'text-brand-sage dark:text-slate-400'
+                activeTab === 'properties' ? 'text-brand-deep dark:text-brand-mint border-b-2 border-brand-deep dark:border-brand-mint' : 'text-brand-sage dark:text-gray-400'
               }`}
             >
               Properties
@@ -210,7 +210,7 @@ export const Dashboard: React.FC = () => {
             <button 
               onClick={() => setActiveTab('crypto')}
               className={`pb-2 text-sm font-bold transition-colors ${
-                activeTab === 'crypto' ? 'text-brand-deep border-b-2 border-brand-deep' : 'text-brand-sage dark:text-slate-400'
+                activeTab === 'crypto' ? 'text-brand-deep dark:text-brand-mint border-b-2 border-brand-deep dark:border-brand-mint' : 'text-brand-sage dark:text-gray-400'
               }`}
             >
               Crypto
@@ -223,32 +223,32 @@ export const Dashboard: React.FC = () => {
                 properties.map((prop: any) => (
                   <div 
                     key={prop.id}
-                    className="bg-white dark:bg-slate-800 border border-brand-lightGray dark:border-slate-700 rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group"
+                    className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group"
                     onClick={() => navigate(`/holdings/${prop.propertyId || prop.id}`)}
                   >
                     <div className="flex items-center gap-4">
-                      <img src={prop.image} alt={prop.title} className="w-12 h-12 object-cover rounded-lg bg-brand-lightGray dark:bg-slate-700" />
+                      <img src={prop.image} alt={prop.title} className="w-12 h-12 object-cover rounded-lg bg-brand-lightGray dark:bg-[#2a2a2a]" />
                       <div>
-                        <h3 className="text-sm font-bold text-brand-dark dark:text-white group-hover:text-brand-deep transition-colors">{prop.title}</h3>
-                        <p className="text-xs text-brand-sage dark:text-slate-400">{prop.location}</p>
+                        <h3 className="text-sm font-bold text-brand-dark dark:text-white group-hover:text-brand-deep dark:group-hover:text-brand-mint transition-colors">{prop.title}</h3>
+                        <p className="text-xs text-brand-sage dark:text-gray-400">{prop.location}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <div className="text-right">
                         <p className="font-bold text-brand-dark dark:text-white">${prop.totalValue.toLocaleString()}</p>
-                        <p className={`text-xs font-bold ${prop.change >= 0 ? 'text-brand-medium' : 'text-red-500'}`}>
+                        <p className={`text-xs font-bold ${prop.change >= 0 ? 'text-brand-medium dark:text-brand-mint' : 'text-red-500'}`}>
                           {prop.change > 0 ? '+' : ''}{prop.change.toFixed(1)}%
                         </p>
                       </div>
-                      <i className="fa-solid fa-chevron-right text-brand-lightGray group-hover:text-brand-sage dark:text-slate-400 transition-colors"></i>
+                      <i className="fa-solid fa-chevron-right text-brand-lightGray group-hover:text-brand-sage dark:text-gray-400 transition-colors"></i>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="bg-white dark:bg-slate-800 border border-brand-lightGray dark:border-slate-700 rounded-lg p-8 text-center">
+                <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg p-8 text-center">
                   <i className="fa-solid fa-building text-4xl text-brand-lightGray mb-3"></i>
-                  <p className="text-brand-sage dark:text-slate-400">No property tokens owned yet.</p>
-                  <p className="text-brand-sage dark:text-slate-400 text-sm">Visit the Marketplace to buy property tokens.</p>
+                  <p className="text-brand-sage dark:text-gray-400">No property tokens owned yet.</p>
+                  <p className="text-brand-sage dark:text-gray-400 text-sm">Visit the Marketplace to buy property tokens.</p>
                 </div>
               )}
             </div>
@@ -257,7 +257,7 @@ export const Dashboard: React.FC = () => {
               {Object.entries(walletBalances).map(([key, crypto]: [string, any]) => (
                 <div 
                   key={key}
-                  className="bg-white dark:bg-slate-800 border border-brand-lightGray dark:border-slate-700 rounded-lg p-3 flex items-center justify-between"
+                  className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg p-3 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-4">
                     <div 
@@ -275,7 +275,7 @@ export const Dashboard: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="text-sm font-bold text-brand-dark dark:text-white">{crypto.name}</h3>
-                      <p className="text-xs text-brand-sage dark:text-slate-400">{crypto.symbol}</p>
+                      <p className="text-xs text-brand-sage dark:text-gray-400">{crypto.symbol}</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -293,14 +293,14 @@ export const Dashboard: React.FC = () => {
             {PREVIEW_PROPERTIES.map((prop) => (
               <div 
                 key={prop.id} 
-                className="bg-white dark:bg-slate-800 border border-brand-lightGray dark:border-slate-700 rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
+                className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => navigate('/marketplace')}
               >
                 <div className="flex items-center gap-4">
-                  <img src={prop.image} alt={prop.title} className="w-12 h-12 object-cover rounded-lg bg-brand-lightGray dark:bg-slate-700" />
+                  <img src={prop.image} alt={prop.title} className="w-12 h-12 object-cover rounded-lg bg-brand-lightGray dark:bg-[#2a2a2a]" />
                   <div>
                     <h3 className="text-sm font-bold text-brand-dark dark:text-white">{prop.title}</h3>
-                    <p className="text-xs text-brand-sage dark:text-slate-400">{prop.location}</p>
+                    <p className="text-xs text-brand-sage dark:text-gray-400">{prop.location}</p>
                   </div>
                 </div>
                 <div className="text-right">
@@ -324,10 +324,10 @@ export const Dashboard: React.FC = () => {
             <h2 className="text-xl font-bold text-brand-dark dark:text-white mb-4">Recent Activity</h2>
             <div className="space-y-3">
               {recentActivity.slice(0, 5).map((activity: any) => (
-                <div key={activity.id} className="bg-white dark:bg-slate-800 border border-brand-lightGray dark:border-slate-700 rounded-lg p-3 flex items-center justify-between">
+                <div key={activity.id} className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg p-3 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      activity.positive ? 'bg-green-100 text-green-600' : 'bg-brand-lightGray dark:bg-slate-700 text-brand-dark dark:text-white'
+                      activity.positive ? 'bg-green-100 text-green-600' : 'bg-brand-lightGray dark:bg-[#2a2a2a] text-brand-dark dark:text-white'
                     }`}>
                       <i className={`fa-solid ${
                         activity.type === 'RENT_DISTRIBUTION' ? 'fa-coins' :
@@ -341,12 +341,12 @@ export const Dashboard: React.FC = () => {
                          activity.type === 'BUY' ? 'Buy' : 
                          activity.type === 'DEPOSIT' ? 'Deposit' : activity.type}
                       </p>
-                      <p className="text-xs text-brand-sage dark:text-slate-400">
+                      <p className="text-xs text-brand-sage dark:text-gray-400">
                         {new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {activity.asset}
                       </p>
                     </div>
                   </div>
-                  <span className={`font-bold ${activity.positive ? 'text-brand-medium' : 'text-brand-dark dark:text-white'}`}>
+                  <span className={`font-bold ${activity.positive ? 'text-brand-medium dark:text-brand-mint' : 'text-brand-dark dark:text-white'}`}>
                     {activity.amount}
                   </span>
                 </div>
@@ -390,8 +390,8 @@ export const Dashboard: React.FC = () => {
           onClick={() => setActiveTab('properties')}
           className={`pb-3 text-sm font-bold transition-colors relative ${
             activeTab === 'properties' 
-              ? 'text-brand-deep border-b-2 border-brand-deep' 
-              : 'text-brand-sage dark:text-slate-400 hover:text-brand-dark dark:text-white'
+              ? 'text-brand-deep dark:text-brand-mint border-b-2 border-brand-deep dark:border-brand-mint' 
+              : 'text-brand-sage dark:text-gray-400 hover:text-brand-dark dark:text-white'
           }`}
         >
           Properties
@@ -400,15 +400,15 @@ export const Dashboard: React.FC = () => {
           onClick={() => setActiveTab('crypto')}
           className={`pb-3 text-sm font-bold transition-colors relative ${
             activeTab === 'crypto' 
-              ? 'text-brand-deep border-b-2 border-brand-deep' 
-              : 'text-brand-sage dark:text-slate-400 hover:text-brand-dark dark:text-white'
+              ? 'text-brand-deep dark:text-brand-mint border-b-2 border-brand-deep dark:border-brand-mint' 
+              : 'text-brand-sage dark:text-gray-400 hover:text-brand-dark dark:text-white'
           }`}
         >
           Crypto
         </button>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-lg border border-brand-sage/20 shadow-sm h-48 flex items-center justify-center">
+      <div className="bg-white dark:bg-[#1a1a1a] rounded-lg border border-brand-sage/20 shadow-sm h-48 flex items-center justify-center">
         <p className="text-brand-dark dark:text-white text-lg font-medium">No Properties to show</p>
       </div>
 
@@ -419,14 +419,14 @@ export const Dashboard: React.FC = () => {
           {PREVIEW_PROPERTIES.map((prop) => (
             <div 
               key={prop.id} 
-              className="bg-white dark:bg-slate-800 border border-brand-sage/20 rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
+              className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => navigate('/marketplace')}
             >
               <div className="flex items-center gap-4">
                 <img 
                   src={prop.image} 
                   alt={prop.title} 
-                  className="w-16 h-12 object-cover rounded-md bg-brand-lightGray dark:bg-slate-700"
+                  className="w-16 h-12 object-cover rounded-md bg-brand-lightGray dark:bg-[#2a2a2a]"
                 />
                 <div>
                   <h3 className="text-sm font-bold text-brand-dark dark:text-white">{prop.title}</h3>

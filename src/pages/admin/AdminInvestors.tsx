@@ -249,12 +249,12 @@ export const AdminInvestors: React.FC = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
           </div>
         ) : users.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+          <div className="text-center py-12 bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a]">
             <i className="fa-solid fa-users text-4xl text-gray-300 mb-4"></i>
             <p className="text-gray-600">No users found</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
@@ -338,7 +338,7 @@ export const AdminInvestors: React.FC = () => {
       </div>
 
       {selectedInvestor && (
-        <div className="w-1/2 bg-white rounded-xl border border-gray-200 p-6 overflow-y-auto max-h-[calc(100vh-200px)]">
+        <div className="w-1/2 bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-6 overflow-y-auto max-h-[calc(100vh-200px)]">
           <div className="sticky top-0 bg-white pb-4 mb-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <div>
@@ -386,7 +386,7 @@ export const AdminInvestors: React.FC = () => {
               </div>
 
               {selectedInvestor.vaultBalance && (
-                <div className="bg-gray-50 rounded-lg p-4">
+                <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-lg p-4">
                   <h4 className="font-medium text-gray-900 mb-3">Vault Balance</h4>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div className="text-gray-500">USDC Balance:</div>
@@ -443,7 +443,7 @@ export const AdminInvestors: React.FC = () => {
                             </p>
                           </div>
                           <span className={`px-2 py-1 text-xs rounded-full ${
-                            pos.status === 'ACTIVE' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                            pos.status === 'ACTIVE' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300'
                           }`}>
                             {pos.status}
                           </span>

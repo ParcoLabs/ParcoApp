@@ -130,7 +130,7 @@ export const AdminProperties: React.FC = () => {
     }
     
     const statusColors: Record<string, string> = {
-      DRAFT: 'bg-gray-100 text-gray-700',
+      DRAFT: 'bg-gray-100 dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300',
       PENDING_APPROVAL: 'bg-yellow-100 text-yellow-700',
       FUNDING: 'bg-blue-100 text-blue-700',
       FUNDED: 'bg-green-100 text-green-700',
@@ -140,7 +140,7 @@ export const AdminProperties: React.FC = () => {
     };
     
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[status] || 'bg-gray-100 text-gray-700'}`}>
+      <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[status] || 'bg-gray-100 dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300'}`}>
         {status.replace('_', ' ')}
       </span>
     );
@@ -187,13 +187,13 @@ export const AdminProperties: React.FC = () => {
       )}
 
       {properties.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-12 text-center">
           <i className="fa-solid fa-building text-4xl text-gray-300 mb-4"></i>
           <p className="text-gray-600 mb-2">No properties found</p>
           <p className="text-sm text-gray-400">Properties will appear here once created</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] overflow-hidden">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
@@ -279,7 +279,7 @@ export const AdminProperties: React.FC = () => {
             <p className="text-gray-600 mb-4">
               Are you sure you want to mint and list <strong>{selectedProperty.name}</strong>?
             </p>
-            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+            <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-lg p-4 mb-4">
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="text-gray-500">Total Tokens:</div>
                 <div className="font-medium">{selectedProperty.totalTokens.toLocaleString()}</div>

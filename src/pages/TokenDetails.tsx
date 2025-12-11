@@ -210,11 +210,11 @@ export const TokenDetails: React.FC = () => {
                         <span className="text-brand-sage text-sm"><i className="fa-solid fa-location-dot mr-1"></i>{property.location}</span>
                     </div>
                     <div className="w-72 min-w-[288px]">
-                        <div className="bg-white border border-brand-lightGray rounded-xl p-4 shadow-sm">
+                        <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-4 shadow-sm">
                             <div className="flex justify-between items-center mb-2">
                                 <div>
                                     <p className="text-xs text-brand-sage font-medium">Current Value</p>
-                                    <p className="text-xl font-bold text-brand-dark">${property.totalValue.toLocaleString()}</p>
+                                    <p className="text-xl font-bold text-brand-dark dark:text-white">${property.totalValue.toLocaleString()}</p>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-xs text-brand-sage font-medium">Returns</p>
@@ -264,21 +264,21 @@ export const TokenDetails: React.FC = () => {
                                    <div className="grid grid-cols-3 gap-6">
                                        <div className="border-r border-brand-mint/50 pr-4">
                                            <div className="flex items-center gap-1 mb-1">
-                                               <span className="text-sm font-bold text-brand-dark">Property Value</span>
+                                               <span className="text-sm font-bold text-brand-dark dark:text-white">Property Value</span>
                                                <i className="fa-regular fa-circle-info text-brand-sage text-xs"></i>
                                            </div>
                                            <p className="text-2xl font-bold text-brand-deep">${property.totalValue.toLocaleString()}</p>
                                        </div>
                                        <div className="border-r border-brand-mint/50 px-4">
                                            <div className="flex items-center gap-1 mb-1">
-                                               <span className="text-sm font-bold text-brand-dark">Projected Annual Return</span>
+                                               <span className="text-sm font-bold text-brand-dark dark:text-white">Projected Annual Return</span>
                                                <i className="fa-regular fa-circle-info text-brand-sage text-xs"></i>
                                            </div>
                                            <p className="text-2xl font-bold text-brand-medium">{(property.rentalYield + 2.5).toFixed(2)}%</p>
                                        </div>
                                        <div className="pl-4">
                                            <div className="flex items-center gap-1 mb-1">
-                                               <span className="text-sm font-bold text-brand-dark">Rental Yield</span>
+                                               <span className="text-sm font-bold text-brand-dark dark:text-white">Rental Yield</span>
                                                <i className="fa-regular fa-circle-info text-brand-sage text-xs"></i>
                                            </div>
                                            <p className="text-2xl font-bold text-brand-medium">{property.rentalYield}%</p>
@@ -300,7 +300,7 @@ export const TokenDetails: React.FC = () => {
                                     </ul>
                                 </div>
 
-                                <div className="bg-white border border-brand-lightGray rounded-xl p-6">
+                                <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-6">
                                     <h4 className="font-bold text-brand-dark text-lg mb-3">Why {property.location.split(',')[0]}?</h4>
                                     <p className="text-brand-sage mb-6">
                                         This city offers a unique combination of economic growth, strong rental demand, and favorable market conditions for real estate investors. The local market has shown consistent appreciation over the past decade with continued growth expected.
@@ -422,7 +422,7 @@ export const TokenDetails: React.FC = () => {
 
                                  <div>
                                      <h3 className="font-bold text-brand-dark mb-4 border-b border-brand-lightGray pb-2">Acquisition Breakdown</h3>
-                                     <div className="bg-white border border-brand-lightGray rounded-xl p-6 space-y-4">
+                                     <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-6 space-y-4">
                                          {[
                                              { label: "Underlying Asset Price", value: "$350,000" },
                                              { label: "Closing Costs", value: "$22,200" },
@@ -447,17 +447,17 @@ export const TokenDetails: React.FC = () => {
             </div>
 
             <div className="col-span-1">
-                <div className="bg-white border border-brand-lightGray rounded-xl p-6 shadow-sm sticky top-6">
+                <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-6 shadow-sm sticky top-6">
                     <h3 className="font-bold text-xl text-brand-dark mb-4">Invest</h3>
                     
                     <div className="space-y-4 mb-6">
                         <div className="flex justify-between items-center text-sm">
                             <span className="text-brand-sage">Token Price</span>
-                            <span className="font-bold text-brand-dark">${property.tokenPrice}</span>
+                            <span className="font-bold text-brand-dark dark:text-white">${property.tokenPrice}</span>
                         </div>
                          <div className="flex justify-between items-center text-sm">
                             <span className="text-brand-sage">Available</span>
-                            <span className="font-bold text-brand-dark">{property.tokensAvailable} Tokens</span>
+                            <span className="font-bold text-brand-dark dark:text-white">{property.tokensAvailable} Tokens</span>
                         </div>
                          <div className="flex justify-between items-center text-sm">
                             <span className="text-brand-sage">Rental Yield</span>

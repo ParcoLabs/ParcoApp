@@ -59,13 +59,13 @@ export const Navigation: React.FC = () => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex flex-col w-64 bg-white dark:bg-slate-900 border-r border-brand-lightGray dark:border-slate-700 h-screen fixed left-0 top-0 z-50 transition-colors">
-        <div className="p-6 border-b border-brand-lightGray dark:border-slate-700">
+      <div className="hidden md:flex flex-col w-64 bg-white dark:bg-[#101010] border-r border-brand-lightGray dark:border-[#2a2a2a] h-screen fixed left-0 top-0 z-50 transition-colors">
+        <div className="p-6 border-b border-brand-lightGray dark:border-[#2a2a2a]">
           <div className="flex items-center gap-3">
             <img 
-              src={isDark ? "/brand/ParcoLogoDark.jpg" : "/brand/ParcoLogoGreen.png"} 
+              src="/brand/ParcoLogoGreen.png" 
               alt="Parco Logo" 
-              className="w-10 h-10 object-contain rounded-lg" 
+              className={`w-10 h-10 object-contain ${isDark ? 'brightness-0 invert' : ''}`}
             />
             <span className="text-2xl font-logo text-brand-deep dark:text-white tracking-wider uppercase">Parco</span>
           </div>
@@ -84,8 +84,8 @@ export const Navigation: React.FC = () => {
               onClick={() => navigate(item.path)}
               className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                 isActive(item.path)
-                  ? 'bg-brand-mint dark:bg-slate-700 text-brand-deep dark:text-white'
-                  : 'text-brand-sage dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-brand-dark dark:hover:text-white'
+                  ? 'bg-brand-mint dark:bg-[#1a1a1a] text-brand-deep dark:text-white'
+                  : 'text-brand-sage dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] hover:text-brand-dark dark:hover:text-white'
               }`}
             >
               <i className={`fa-solid ${item.icon} w-5 text-center`}></i>
@@ -109,61 +109,61 @@ export const Navigation: React.FC = () => {
         </div>
 
         {/* Theme Toggle */}
-        <div className="px-4 py-3 border-t border-brand-lightGray dark:border-slate-700">
+        <div className="px-4 py-3 border-t border-brand-lightGray dark:border-[#2a2a2a]">
           <button
             onClick={toggleTheme}
-            className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium text-brand-sage dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium text-brand-sage dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors"
           >
             <span className="flex items-center gap-3">
               <i className={`fa-solid ${isDark ? 'fa-sun' : 'fa-moon'} w-5 text-center`}></i>
               {isDark ? 'Light Mode' : 'Dark Mode'}
             </span>
-            <div className={`w-9 h-5 rounded-full transition-colors ${isDark ? 'bg-brand-deep' : 'bg-gray-300'} relative`}>
-              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${isDark ? 'translate-x-4' : 'translate-x-0.5'}`}></div>
+            <div className={`w-9 h-5 rounded-full transition-colors ${isDark ? 'bg-brand-mint' : 'bg-gray-300'} relative`}>
+              <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white dark:bg-brand-deep shadow transition-transform ${isDark ? 'translate-x-4' : 'translate-x-0.5'}`}></div>
             </div>
           </button>
         </div>
 
-        <div className="p-4 border-t border-brand-lightGray dark:border-slate-700">
+        <div className="p-4 border-t border-brand-lightGray dark:border-[#2a2a2a]">
            {user ? (
              <div 
                 onClick={() => navigate('/settings')}
-                className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 cursor-pointer group transition-colors"
+                className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#1a1a1a] cursor-pointer group transition-colors"
              >
-                <div className="w-8 h-8 rounded-full bg-brand-lightGray dark:bg-slate-700 flex items-center justify-center text-brand-dark dark:text-white font-bold">
+                <div className="w-8 h-8 rounded-full bg-brand-lightGray dark:bg-[#2a2a2a] flex items-center justify-center text-brand-dark dark:text-white font-bold">
                    {user.firstName ? user.firstName[0] : 'U'}
                 </div>
                 <div className="flex-1 overflow-hidden">
                    <p className="text-xs font-semibold text-brand-dark dark:text-white truncate">{user.firstName} {user.lastName}</p>
-                   <p className="text-[10px] text-brand-sage dark:text-slate-400 truncate">{user.email}</p>
+                   <p className="text-[10px] text-brand-sage dark:text-gray-400 truncate">{user.email}</p>
                 </div>
-                <i className="fa-solid fa-gear text-brand-sage dark:text-slate-400 group-hover:text-brand-deep dark:group-hover:text-white text-sm"></i>
+                <i className="fa-solid fa-gear text-brand-sage dark:text-gray-400 group-hover:text-brand-deep dark:group-hover:text-white text-sm"></i>
              </div>
            ) : (
-             <button onClick={() => navigate('/login')} className="w-full text-center text-sm font-semibold text-brand-deep dark:text-brand-medium">Sign In</button>
+             <button onClick={() => navigate('/login')} className="w-full text-center text-sm font-semibold text-brand-deep dark:text-brand-mint">Sign In</button>
            )}
         </div>
       </div>
 
       {/* Mobile Top Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-slate-900 border-b border-brand-lightGray dark:border-slate-700 px-4 py-3 flex items-center justify-between z-50 transition-colors">
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-[#101010] border-b border-brand-lightGray dark:border-[#2a2a2a] px-4 py-3 flex items-center justify-between z-50 transition-colors">
         <button onClick={() => navigate('/')} className="flex items-center">
           <img 
-            src={isDark ? "/brand/ParcoLogoDark.jpg" : "/brand/ParcoLogoGreen.png"} 
+            src="/brand/ParcoLogoGreen.png" 
             alt="Parco Logo" 
-            className="w-8 h-8 object-contain rounded-lg" 
+            className={`w-8 h-8 object-contain ${isDark ? 'brightness-0 invert' : ''}`}
           />
         </button>
         <div className="flex items-center gap-2">
           <button 
             onClick={toggleTheme}
-            className="p-2 text-brand-dark dark:text-white hover:text-brand-deep dark:hover:text-brand-medium transition-colors"
+            className="p-2 text-brand-dark dark:text-white hover:text-brand-deep dark:hover:text-brand-mint transition-colors"
           >
             <i className={`fa-solid ${isDark ? 'fa-sun' : 'fa-moon'} text-lg`}></i>
           </button>
           <button 
             onClick={() => navigate('/settings')} 
-            className="p-2 text-brand-dark dark:text-white hover:text-brand-deep dark:hover:text-brand-medium transition-colors"
+            className="p-2 text-brand-dark dark:text-white hover:text-brand-deep dark:hover:text-brand-mint transition-colors"
           >
             <i className="fa-solid fa-bars text-xl"></i>
           </button>
@@ -171,13 +171,13 @@ export const Navigation: React.FC = () => {
       </div>
 
       {/* Mobile Bottom Tab Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-900 border-t border-brand-lightGray dark:border-slate-700 px-4 py-3 flex justify-around items-center z-50 pb-safe safe-area-bottom transition-colors">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#101010] border-t border-brand-lightGray dark:border-[#2a2a2a] px-4 py-3 flex justify-around items-center z-50 pb-safe safe-area-bottom transition-colors">
         {navItems.map((item) => (
           <button
             key={item.path}
             onClick={() => navigate(item.path)}
             className={`flex flex-col items-center gap-1 ${
-              isActive(item.path) ? 'text-brand-deep dark:text-brand-medium' : 'text-brand-sage dark:text-slate-500'
+              isActive(item.path) ? 'text-brand-deep dark:text-brand-mint' : 'text-brand-sage dark:text-gray-500'
             }`}
           >
             <i className={`fa-solid ${item.icon} text-lg mb-1`}></i>

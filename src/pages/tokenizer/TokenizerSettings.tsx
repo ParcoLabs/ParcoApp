@@ -103,7 +103,7 @@ export const TokenizerSettings: React.FC = () => {
         onClick={onClick}
         className="flex items-center justify-between py-4 cursor-pointer hover:bg-black/5 transition-colors group"
     >
-      <span className="text-sm font-medium text-brand-dark group-hover:text-brand-deep transition-colors">{label}</span>
+      <span className="text-sm font-medium text-brand-dark group-hover:text-brand-deep dark:text-brand-mint transition-colors">{label}</span>
       <div className="flex items-center gap-3">
         {value && <span className="text-sm text-brand-sage font-medium">{value}</span>}
         <i className="fa-solid fa-chevron-right text-brand-sage/50 text-xs"></i>
@@ -132,8 +132,8 @@ export const TokenizerSettings: React.FC = () => {
                       className="flex items-center justify-between py-4 cursor-pointer hover:bg-black/5 transition-colors group"
                     >
                       <div className="flex items-center gap-3">
-                        <i className="fa-solid fa-arrow-right-arrow-left text-brand-deep"></i>
-                        <span className="text-sm font-medium text-brand-dark group-hover:text-brand-deep transition-colors">
+                        <i className="fa-solid fa-arrow-right-arrow-left text-brand-deep dark:text-brand-mint dark:text-brand-mint"></i>
+                        <span className="text-sm font-medium text-brand-dark group-hover:text-brand-deep dark:text-brand-mint transition-colors">
                           Switch to Investor Account
                         </span>
                       </div>
@@ -145,7 +145,7 @@ export const TokenizerSettings: React.FC = () => {
 
         {/* Tokenizer View Mode Toggle */}
         <div className="mb-8">
-            <h2 className="font-bold text-brand-deep mb-2 text-lg px-2">Dashboard View</h2>
+            <h2 className="font-bold text-brand-deep dark:text-brand-mint mb-2 text-lg px-2">Dashboard View</h2>
             <div className="bg-brand-mint/30 border border-brand-deep/20 rounded-2xl px-4 py-4">
               <div className="flex items-center justify-between">
                 <div>

@@ -38,7 +38,7 @@ interface TokenizationSubmission {
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }> = {
-  DRAFT: { label: 'Draft', color: 'text-gray-700', bg: 'bg-gray-100' },
+  DRAFT: { label: 'Draft', color: 'text-gray-700 dark:text-gray-300', bg: 'bg-gray-100' },
   SUBMITTED: { label: 'Submitted', color: 'text-blue-700', bg: 'bg-blue-100' },
   IN_REVIEW: { label: 'In Review', color: 'text-amber-700', bg: 'bg-amber-100' },
   APPROVED: { label: 'Approved', color: 'text-green-700', bg: 'bg-green-100' },
@@ -151,7 +151,7 @@ export const TokenizerDashboard: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white border border-brand-sage/20 rounded-lg p-6">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 dark:border-[#2a2a2a] rounded-lg p-6">
         <h2 className="text-lg font-bold text-brand-black mb-4">Property Details</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -197,7 +197,7 @@ export const TokenizerDashboard: React.FC = () => {
         )}
       </div>
 
-      <div className="bg-white border border-brand-sage/20 rounded-lg p-6">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 dark:border-[#2a2a2a] rounded-lg p-6">
         <h2 className="text-lg font-bold text-brand-black mb-4">Property Specifications</h2>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -222,7 +222,7 @@ export const TokenizerDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white border border-brand-sage/20 rounded-lg p-6">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 dark:border-[#2a2a2a] rounded-lg p-6">
         <h2 className="text-lg font-bold text-brand-black mb-4">Documents & Media</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -255,7 +255,7 @@ export const TokenizerDashboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white border border-brand-sage/20 rounded-lg p-6">
+      <div className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 dark:border-[#2a2a2a] rounded-lg p-6">
         <h2 className="text-lg font-bold text-brand-black mb-4">Timeline</h2>
         
         <div className="space-y-3">

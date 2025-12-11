@@ -130,10 +130,10 @@ export const AdminOverview: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-500 text-sm mt-1">Manage your platform and monitor activity</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Manage your platform and monitor activity</p>
         </div>
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
           Last updated: {new Date().toLocaleString()}
         </div>
       </div>
@@ -143,12 +143,12 @@ export const AdminOverview: React.FC = () => {
           <div 
             key={index}
             onClick={() => navigate(stat.path)}
-            className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 cursor-pointer hover:shadow-md transition-shadow"
+            className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-4 sm:p-5 cursor-pointer hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs sm:text-sm font-medium text-gray-500">{stat.label}</p>
-                <p className="text-2xl sm:text-3xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">{stat.label}</p>
+                <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
               </div>
               <div className={`${stat.color} w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center`}>
                 <i className={`fa-solid ${stat.icon} text-white text-lg sm:text-xl`}></i>
@@ -159,8 +159,8 @@ export const AdminOverview: React.FC = () => {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-5">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {quickActions.map((action, index) => (
               <button
@@ -175,27 +175,27 @@ export const AdminOverview: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Activity</h2>
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-5">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Recent Activity</h2>
           {recentActivity.length > 0 ? (
             <div className="space-y-3">
               {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-[#2a2a2a] rounded-lg">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                     activity.type === 'tokenization' ? 'bg-brand-mint text-brand-deep' : 'bg-blue-100 text-blue-600'
                   }`}>
                     <i className={`fa-solid ${activity.type === 'tokenization' ? 'fa-file-contract' : 'fa-user'} text-sm`}></i>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{activity.title}</p>
-                    <p className="text-xs text-gray-500">{activity.time}</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{activity.title}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</p>
                   </div>
                   <span className={`text-xs font-medium px-2 py-1 rounded-full ${
                     activity.status === 'APPROVED' || activity.status === 'VERIFIED' 
                       ? 'bg-green-100 text-green-700'
                       : activity.status === 'PENDING' || activity.status === 'SUBMITTED'
                       ? 'bg-amber-100 text-amber-700'
-                      : 'bg-gray-100 text-gray-700'
+                      : 'bg-gray-100 text-gray-700 dark:text-gray-300'
                   }`}>
                     {activity.status}
                   </span>
@@ -203,7 +203,7 @@ export const AdminOverview: React.FC = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
               <i className="fa-solid fa-inbox text-3xl mb-2"></i>
               <p className="text-sm">No recent activity</p>
             </div>

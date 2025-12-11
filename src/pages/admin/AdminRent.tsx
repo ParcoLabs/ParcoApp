@@ -137,7 +137,7 @@ export const AdminRent: React.FC = () => {
       FAILED: 'bg-red-100 text-red-700',
     };
     return (
-      <span className={`px-2 py-1 text-xs font-medium rounded-full ${colors[status] || 'bg-gray-100 text-gray-700'}`}>
+      <span className={`px-2 py-1 text-xs font-medium rounded-full ${colors[status] || 'bg-gray-100 dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300'}`}>
         {status}
       </span>
     );
@@ -185,7 +185,7 @@ export const AdminRent: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Pending Payments</p>
@@ -196,7 +196,7 @@ export const AdminRent: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Pending Amount</p>
@@ -207,7 +207,7 @@ export const AdminRent: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Total Runs</p>
@@ -260,7 +260,7 @@ export const AdminRent: React.FC = () => {
       {pendingPayments.length > 0 && (
         <div className="mb-6">
           <h3 className="text-lg font-medium text-gray-900 mb-3">Pending Rent Payments</h3>
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -300,12 +300,12 @@ export const AdminRent: React.FC = () => {
       <div>
         <h3 className="text-lg font-medium text-gray-900 mb-3">Distribution History</h3>
         {runs.length === 0 ? (
-          <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-12 text-center">
             <i className="fa-solid fa-history text-4xl text-gray-300 mb-4"></i>
             <p className="text-gray-600">No distribution runs yet</p>
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -356,7 +356,7 @@ export const AdminRent: React.FC = () => {
             <p className="text-gray-600 mb-4">
               This will distribute rent to all token holders with pending rent payments.
             </p>
-            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+            <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-lg p-4 mb-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600">Pending Payments:</span>
                 <span className="font-medium">{pendingPayments.length}</span>

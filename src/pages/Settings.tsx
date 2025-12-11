@@ -52,16 +52,16 @@ export const Settings: React.FC = () => {
         onClick={onClick}
         className="flex items-center justify-between py-4 cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
     >
-      <span className="text-sm font-medium text-brand-dark dark:text-white group-hover:text-brand-deep dark:group-hover:text-brand-medium transition-colors">{label}</span>
+      <span className="text-sm font-medium text-brand-dark dark:text-white group-hover:text-brand-deep dark:group-hover:text-brand-medium dark:text-brand-mint transition-colors">{label}</span>
       <div className="flex items-center gap-3">
-        {value && <span className="text-sm text-brand-sage dark:text-slate-400 font-medium">{value}</span>}
-        <i className="fa-solid fa-chevron-right text-brand-sage/50 dark:text-slate-500 text-xs"></i>
+        {value && <span className="text-sm text-brand-sage dark:text-gray-400 font-medium">{value}</span>}
+        <i className="fa-solid fa-chevron-right text-brand-sage/50 dark:text-gray-500 text-xs"></i>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900 p-4 md:p-8 pt-20 md:pt-8 pb-24 md:pb-8 transition-colors">
+    <div className="min-h-screen bg-white dark:bg-[#101010] p-4 md:p-8 pt-20 md:pt-8 pb-24 md:pb-8 transition-colors">
       <div className="max-w-2xl mx-auto">
         
         {/* Header */}
@@ -75,7 +75,7 @@ export const Settings: React.FC = () => {
         {/* General Section */}
         <div className="mb-8">
             <h2 className="font-bold text-brand-dark dark:text-white mb-2 text-lg px-2">General</h2>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-brand-lightGray dark:border-slate-700 px-4 shadow-sm">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#2a2a2a] px-4 shadow-sm">
                 <div className="divide-y divide-brand-lightGray dark:divide-slate-700">
                     <SettingRow label="Set primary profile" value="2" />
                     <SettingRow label="Manage notifications" />
@@ -86,7 +86,7 @@ export const Settings: React.FC = () => {
         {/* Payment Methods */}
         <div className="mb-8">
             <h2 className="font-bold text-brand-dark dark:text-white mb-2 text-lg px-2">Payments</h2>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-brand-lightGray dark:border-slate-700 px-4 shadow-sm">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#2a2a2a] px-4 shadow-sm">
                 <div className="divide-y divide-brand-lightGray dark:divide-slate-700">
                     <SettingRow label="Payment methods" onClick={() => navigate('/payment-methods')} />
                     <SettingRow label="Transaction history" onClick={() => navigate('/portfolio')} />
@@ -96,7 +96,7 @@ export const Settings: React.FC = () => {
 
         {/* Account Link */}
         <div className="mb-8">
-             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-brand-lightGray dark:border-slate-700 px-4 shadow-sm">
+             <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#2a2a2a] px-4 shadow-sm">
                  <div className="divide-y divide-brand-lightGray dark:divide-slate-700">
                     <SettingRow label="Coinbase account" value="Connected" />
                  </div>
@@ -105,7 +105,7 @@ export const Settings: React.FC = () => {
         
         {/* Invite */}
         <div className="mb-8">
-             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-brand-lightGray dark:border-slate-700 px-4 shadow-sm">
+             <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#2a2a2a] px-4 shadow-sm">
                  <div className="divide-y divide-brand-lightGray dark:divide-slate-700">
                     <SettingRow label="Invite your friends" />
                  </div>
@@ -115,17 +115,17 @@ export const Settings: React.FC = () => {
         {/* Display Section with Theme Toggle */}
         <div className="mb-8">
             <h2 className="font-bold text-brand-dark dark:text-white mb-2 text-lg px-2">Display</h2>
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-brand-lightGray dark:border-slate-700 px-4 shadow-sm">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#2a2a2a] px-4 shadow-sm">
                 <div className="divide-y divide-brand-lightGray dark:divide-slate-700">
                     {/* Theme Toggle Row */}
                     <div className="flex items-center justify-between py-4">
                       <div className="flex items-center gap-3">
-                        <i className={`fa-solid ${isDark ? 'fa-moon' : 'fa-sun'} text-brand-sage dark:text-slate-400`}></i>
+                        <i className={`fa-solid ${isDark ? 'fa-moon' : 'fa-sun'} text-brand-sage dark:text-gray-400`}></i>
                         <span className="text-sm font-medium text-brand-dark dark:text-white">Appearance</span>
                       </div>
                       <button
                         onClick={toggleTheme}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-[#2a2a2a] hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                       >
                         <span className="text-sm font-medium text-brand-dark dark:text-white">
                           {isDark ? 'Dark' : 'Light'}
@@ -198,15 +198,15 @@ export const Settings: React.FC = () => {
         {/* Reset Confirmation Modal */}
         {showResetConfirm && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 max-w-sm w-full">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-6 max-w-sm w-full">
               <h3 className="text-lg font-bold text-brand-dark dark:text-white mb-2">Reset Demo?</h3>
-              <p className="text-sm text-brand-sage dark:text-slate-400 mb-4">
+              <p className="text-sm text-brand-sage dark:text-gray-400 mb-4">
                 This will reset your vault balance to $25,000 USDC and clear all holdings, transactions, and borrow positions.
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowResetConfirm(false)}
-                  className="flex-1 bg-gray-100 dark:bg-slate-700 text-brand-dark dark:text-white font-bold py-2.5 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                  className="flex-1 bg-gray-100 dark:bg-[#2a2a2a] text-brand-dark dark:text-white font-bold py-2.5 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
                 >
                   Cancel
                 </button>
@@ -232,12 +232,12 @@ export const Settings: React.FC = () => {
         {/* Sign Out */}
         <button 
             onClick={handleLogout}
-            className="w-full bg-white dark:bg-slate-800 border border-red-200 dark:border-red-800 text-red-500 font-bold py-4 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shadow-sm mb-8"
+            className="w-full bg-white dark:bg-[#1a1a1a] border border-red-200 dark:border-red-800 text-red-500 font-bold py-4 rounded-full hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shadow-sm mb-8"
         >
             Sign out
         </button>
         
-        <div className="text-center text-xs text-brand-sage dark:text-slate-500 pb-20">
+        <div className="text-center text-xs text-brand-sage dark:text-gray-500 pb-20">
             <p>Version 4.35.2</p>
             <p className="mt-1">{demoMode ? 'Demo Mode' : 'Production'} | {isDark ? 'Dark' : 'Light'} Theme</p>
         </div>

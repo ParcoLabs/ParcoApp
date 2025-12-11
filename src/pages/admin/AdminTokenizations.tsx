@@ -255,12 +255,12 @@ export const AdminTokenizations: React.FC = () => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-deep"></div>
         </div>
       ) : submissions.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+        <div className="text-center py-12 bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a]">
           <i className="fa-solid fa-file-contract text-4xl text-gray-300 mb-4"></i>
           <p className="text-gray-600">No tokenization submissions found</p>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -305,7 +305,7 @@ export const AdminTokenizations: React.FC = () => {
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => handleViewDetails(submission)}
-                        className="text-brand-deep hover:underline text-sm font-medium"
+                        className="text-brand-deep dark:text-brand-mint hover:underline text-sm font-medium"
                       >
                         View Details
                       </button>
@@ -392,7 +392,7 @@ export const AdminTokenizations: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-4">
+              <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-xl p-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Property Information</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
@@ -418,7 +418,7 @@ export const AdminTokenizations: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-4">
+              <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-xl p-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Financials</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
@@ -446,7 +446,7 @@ export const AdminTokenizations: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-4">
+              <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-xl p-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Property Details</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   {selectedSubmission.squareFeet && (
@@ -476,13 +476,13 @@ export const AdminTokenizations: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-4">
+              <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-xl p-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Documents & Compliance</h4>
                 <div className="space-y-3 text-sm">
                   <div>
                     <p className="text-gray-500 mb-1">Ownership Proof</p>
                     {selectedSubmission.ownershipProof ? (
-                      <a href={selectedSubmission.ownershipProof} target="_blank" rel="noopener noreferrer" className="text-brand-deep hover:underline">
+                      <a href={selectedSubmission.ownershipProof} target="_blank" rel="noopener noreferrer" className="text-brand-deep dark:text-brand-mint hover:underline">
                         View Document
                       </a>
                     ) : (
@@ -494,7 +494,7 @@ export const AdminTokenizations: React.FC = () => {
                     {selectedSubmission.legalDocuments.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
                         {selectedSubmission.legalDocuments.map((doc, i) => (
-                          <a key={i} href={doc} target="_blank" rel="noopener noreferrer" className="text-brand-deep hover:underline text-xs bg-white px-2 py-1 rounded border">
+                          <a key={i} href={doc} target="_blank" rel="noopener noreferrer" className="text-brand-deep dark:text-brand-mint hover:underline text-xs bg-white px-2 py-1 rounded border">
                             Document {i + 1}
                           </a>
                         ))}
@@ -508,7 +508,7 @@ export const AdminTokenizations: React.FC = () => {
                     {selectedSubmission.financialStatements.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
                         {selectedSubmission.financialStatements.map((doc, i) => (
-                          <a key={i} href={doc} target="_blank" rel="noopener noreferrer" className="text-brand-deep hover:underline text-xs bg-white px-2 py-1 rounded border">
+                          <a key={i} href={doc} target="_blank" rel="noopener noreferrer" className="text-brand-deep dark:text-brand-mint hover:underline text-xs bg-white px-2 py-1 rounded border">
                             Statement {i + 1}
                           </a>
                         ))}
@@ -520,7 +520,7 @@ export const AdminTokenizations: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-4">
+              <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-xl p-4">
                 <h4 className="font-semibold text-gray-900 mb-3">Tokenizer Information</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>

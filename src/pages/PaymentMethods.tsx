@@ -123,7 +123,7 @@ const PaymentMethodCard: React.FC<{
           {method.type === 'CARD' ? (
             <i className={`${getCardIcon(method.cardBrand)} text-3xl text-brand-dark`}></i>
           ) : (
-            <i className="fa-solid fa-building-columns text-3xl text-brand-dark"></i>
+            <i className="fa-solid fa-building-columns text-3xl text-brand-dark dark:text-white"></i>
           )}
           <div>
             {method.type === 'CARD' ? (
@@ -137,7 +137,7 @@ const PaymentMethodCard: React.FC<{
               </>
             ) : (
               <>
-                <p className="font-semibold text-brand-dark">
+                <p className="font-semibold text-brand-dark dark:text-white">
                   {method.bankName || 'Bank Account'} •••• {method.bankLast4}
                 </p>
                 <p className="text-sm text-brand-sage capitalize">
@@ -286,10 +286,10 @@ const PaymentMethodsContent: React.FC = () => {
     <div className="min-h-screen bg-brand-offWhite p-4 md:p-8">
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-center relative mb-8">
-          <button onClick={() => navigate(-1)} className="absolute left-0 text-brand-dark">
+          <button onClick={() => navigate(-1)} className="absolute left-0 text-brand-dark dark:text-white">
             <i className="fa-solid fa-arrow-left text-xl"></i>
           </button>
-          <h1 className="text-lg font-bold text-brand-dark">Payment Methods</h1>
+          <h1 className="text-lg font-bold text-brand-dark dark:text-white">Payment Methods</h1>
         </div>
 
         {loading ? (

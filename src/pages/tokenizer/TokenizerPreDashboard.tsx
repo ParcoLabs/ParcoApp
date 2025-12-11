@@ -145,7 +145,7 @@ export const TokenizerPreDashboard: React.FC = () => {
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-4 md:space-y-6 w-full box-border">
       {!activeSubmission ? (
-        <div className="bg-white border border-brand-sage/20 rounded-xl p-8 md:p-12 text-center">
+        <div className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 dark:border-[#2a2a2a] rounded-xl p-8 md:p-12 text-center">
           <div className="w-16 h-16 bg-brand-sage/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fa-solid fa-building text-2xl text-brand-sage"></i>
           </div>
@@ -163,7 +163,7 @@ export const TokenizerPreDashboard: React.FC = () => {
           {/* Top Section - Stacked on mobile, 3 Column Grid on desktop */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             {/* Left Column - Property In Progress */}
-            <div className="bg-white rounded-xl border border-brand-lightGray p-4 md:p-6">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-4 md:p-6">
               <h2 className="text-base md:text-lg font-bold text-brand-dark mb-3 md:mb-4">Property In Progress</h2>
               
               <div className="bg-brand-offWhite rounded-lg p-3 md:p-4 mb-3 md:mb-4">
@@ -204,35 +204,35 @@ export const TokenizerPreDashboard: React.FC = () => {
               {/* Two Column Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                 {/* Funds Raising Goal */}
-                <div className="bg-white rounded-xl border border-brand-lightGray p-4 md:p-5">
+                <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-4 md:p-5">
                   <h3 className="text-sm font-bold text-brand-dark mb-3 md:mb-4">Funds Raising Goal</h3>
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 md:w-16 md:h-16 rounded-full border-4 border-brand-deep flex items-center justify-center flex-shrink-0">
-                      <i className="fa-solid fa-house text-brand-deep text-lg md:text-xl"></i>
+                      <i className="fa-solid fa-house text-brand-deep dark:text-brand-mint text-lg md:text-xl"></i>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] md:text-xs text-brand-sage">Property Valuation</p>
-                      <p className="text-base md:text-lg font-bold text-brand-dark">${(estimatedValue).toLocaleString()}</p>
+                      <p className="text-base md:text-lg font-bold text-brand-dark dark:text-white">${(estimatedValue).toLocaleString()}</p>
                     </div>
                   </div>
-                  <button className="text-xs text-brand-sage hover:text-brand-deep mt-3 md:mt-4 transition-colors">
+                  <button className="text-xs text-brand-sage hover:text-brand-deep dark:text-brand-mint mt-3 md:mt-4 transition-colors">
                     Review Terms
                   </button>
                 </div>
 
                 {/* Token Terms */}
-                <div className="bg-white rounded-xl border border-brand-lightGray p-4 md:p-5">
+                <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-4 md:p-5">
                   <h3 className="text-sm font-bold text-brand-dark mb-3 md:mb-4">Token Terms</h3>
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 md:w-16 md:h-16 rounded-full border-4 border-brand-deep flex items-center justify-center flex-shrink-0">
-                      <i className="fa-solid fa-coins text-brand-deep text-lg md:text-xl"></i>
+                      <i className="fa-solid fa-coins text-brand-deep dark:text-brand-mint text-lg md:text-xl"></i>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] md:text-xs text-brand-sage">Total Tokens Issued</p>
-                      <p className="text-base md:text-lg font-bold text-brand-dark">{tokensToIssue.toLocaleString()}</p>
+                      <p className="text-base md:text-lg font-bold text-brand-dark dark:text-white">{tokensToIssue.toLocaleString()}</p>
                     </div>
                   </div>
-                  <button className="text-xs text-brand-sage hover:text-brand-deep mt-3 md:mt-4 transition-colors">
+                  <button className="text-xs text-brand-sage hover:text-brand-deep dark:text-brand-mint mt-3 md:mt-4 transition-colors">
                     Set Token Terms
                   </button>
                 </div>
@@ -241,7 +241,7 @@ export const TokenizerPreDashboard: React.FC = () => {
           </div>
 
           {/* Document Checklist */}
-          <div className="bg-white rounded-xl border border-brand-lightGray p-4 md:p-6">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-4 md:p-6">
             <h2 className="text-lg font-bold text-brand-dark mb-4 md:mb-6">Document Checklist</h2>
             
             {/* Mobile Card View */}
@@ -252,7 +252,7 @@ export const TokenizerPreDashboard: React.FC = () => {
                 return (
                   <div key={doc.key} className="bg-brand-offWhite rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-medium text-brand-dark">{doc.label}</span>
+                      <span className="text-sm font-medium text-brand-dark dark:text-white">{doc.label}</span>
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5">
                           <div className={`w-2.5 h-2.5 rounded-full ${status.received || files.length > 0 ? 'bg-brand-deep' : 'bg-brand-lightGray'}`}></div>
@@ -307,9 +307,9 @@ export const TokenizerPreDashboard: React.FC = () => {
                 <thead>
                   <tr className="border-b border-brand-lightGray">
                     <th className="text-left py-3 pr-4 text-sm font-medium text-brand-dark w-1/3"></th>
-                    <th className="text-center py-3 px-4 text-sm font-medium text-brand-dark">Received</th>
-                    <th className="text-center py-3 px-4 text-sm font-medium text-brand-dark">Approved</th>
-                    <th className="text-right py-3 pl-4 text-sm font-medium text-brand-dark">Upload</th>
+                    <th className="text-center py-3 px-4 text-sm font-medium text-brand-dark dark:text-white">Received</th>
+                    <th className="text-center py-3 px-4 text-sm font-medium text-brand-dark dark:text-white">Approved</th>
+                    <th className="text-right py-3 pl-4 text-sm font-medium text-brand-dark dark:text-white">Upload</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -320,12 +320,12 @@ export const TokenizerPreDashboard: React.FC = () => {
                       <tr key={doc.key} className="border-b border-brand-lightGray/50 last:border-0">
                         <td className="py-3 pr-4">
                           <div>
-                            <span className="text-sm text-brand-dark">{doc.label}</span>
+                            <span className="text-sm text-brand-dark dark:text-white">{doc.label}</span>
                             {files.length > 0 && (
                               <div className="mt-1 space-y-1">
                                 {files.map((file, idx) => (
                                   <div key={idx} className="flex items-center gap-2 text-xs text-brand-sage">
-                                    <i className="fa-solid fa-file text-brand-deep"></i>
+                                    <i className="fa-solid fa-file text-brand-deep dark:text-brand-mint dark:text-brand-mint"></i>
                                     <span className="truncate max-w-[150px]">{file.name}</span>
                                     <button
                                       onClick={() => removeFile(doc.key, idx)}
@@ -381,7 +381,7 @@ export const TokenizerPreDashboard: React.FC = () => {
           </div>
 
           {/* Notifications */}
-          <div className="bg-white rounded-xl border border-brand-lightGray p-4 md:p-6">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-4 md:p-6">
             <h2 className="text-base md:text-lg font-bold text-brand-dark mb-3 md:mb-4">Notifications</h2>
             
             <div className="flex items-center gap-2 mb-4 md:mb-6">
@@ -422,9 +422,9 @@ export const TokenizerPreDashboard: React.FC = () => {
                 </thead>
                 <tbody>
                   <tr>
-                    <td className="py-4 pr-4 text-sm text-brand-dark">{getDisplayAddress(activeSubmission)}</td>
-                    <td className="py-4 px-4 text-sm text-brand-dark">Documents Needed</td>
-                    <td className="py-4 px-4 text-sm text-brand-dark">Re-upload Property Deed</td>
+                    <td className="py-4 pr-4 text-sm text-brand-dark dark:text-white">{getDisplayAddress(activeSubmission)}</td>
+                    <td className="py-4 px-4 text-sm text-brand-dark dark:text-white">Documents Needed</td>
+                    <td className="py-4 px-4 text-sm text-brand-dark dark:text-white">Re-upload Property Deed</td>
                     <td className="py-4 pl-4 text-right">
                       <span className="px-4 py-1.5 rounded-full text-xs font-bold bg-brand-deep text-white">
                         High

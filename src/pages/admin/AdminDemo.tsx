@@ -42,59 +42,59 @@ export const AdminDemo: React.FC = () => {
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900 mb-6">Demo Tools & Stats</h2>
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Demo Tools & Stats</h2>
       
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                 <i className="fa-solid fa-users text-blue-600"></i>
               </div>
-              <span className="text-sm text-gray-500">Total Users</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Total Users</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.totalUsers}</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalUsers}</p>
           </div>
           
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                 <i className="fa-solid fa-building text-green-600"></i>
               </div>
-              <span className="text-sm text-gray-500">Properties</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Properties</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.totalProperties}</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalProperties}</p>
           </div>
           
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                 <i className="fa-solid fa-file-contract text-purple-600"></i>
               </div>
-              <span className="text-sm text-gray-500">Tokenizations</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Tokenizations</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.totalTokenizations}</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalTokenizations}</p>
           </div>
           
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-6">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <i className="fa-solid fa-clock text-yellow-600"></i>
               </div>
-              <span className="text-sm text-gray-500">Pending Review</span>
+              <span className="text-sm text-gray-500 dark:text-gray-400">Pending Review</span>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{stats.pendingTokenizations}</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.pendingTokenizations}</p>
           </div>
         </div>
       )}
 
       {stats && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
-          <h3 className="font-semibold text-gray-900 mb-4">Users by Role</h3>
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-6 mb-8">
+          <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Users by Role</h3>
           <div className="grid grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-2xl font-bold text-gray-900">{stats.usersByRole.USER || 0}</p>
-              <p className="text-sm text-gray-500">Users</p>
+            <div className="text-center p-4 bg-gray-50 dark:bg-[#2a2a2a] rounded-lg">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.usersByRole.USER || 0}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Users</p>
             </div>
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <p className="text-2xl font-bold text-blue-700">{stats.usersByRole.TOKENIZER || 0}</p>
@@ -108,26 +108,26 @@ export const AdminDemo: React.FC = () => {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="font-semibold text-gray-900 mb-4">Demo Tools</h3>
+      <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-6">
+        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Demo Tools</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="border border-gray-200 rounded-lg p-4">
             <div className="flex items-center gap-3 mb-2">
               <i className="fa-solid fa-database text-gray-400"></i>
-              <span className="font-medium text-gray-900">Seed Demo Data</span>
+              <span className="font-medium text-gray-900 dark:text-white">Seed Demo Data</span>
             </div>
-            <p className="text-sm text-gray-500 mb-3">Populate the database with sample properties and users</p>
-            <button className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Populate the database with sample properties and users</p>
+            <button className="w-full px-4 py-2 bg-gray-100 dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors">
               Coming Soon
             </button>
           </div>
           <div className="border border-gray-200 rounded-lg p-4">
             <div className="flex items-center gap-3 mb-2">
               <i className="fa-solid fa-trash text-gray-400"></i>
-              <span className="font-medium text-gray-900">Reset Demo Environment</span>
+              <span className="font-medium text-gray-900 dark:text-white">Reset Demo Environment</span>
             </div>
-            <p className="text-sm text-gray-500 mb-3">Clear all demo data and reset to initial state</p>
-            <button className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Clear all demo data and reset to initial state</p>
+            <button className="w-full px-4 py-2 bg-gray-100 dark:bg-[#2a2a2a] text-gray-700 dark:text-gray-300 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 transition-colors">
               Coming Soon
             </button>
           </div>

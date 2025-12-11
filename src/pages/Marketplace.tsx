@@ -108,11 +108,11 @@ export const Marketplace: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-brand-dark dark:text-white">Marketplace</h1>
-          <p className="text-brand-sage dark:text-slate-400 text-sm">Invest in fractionalized real estate starting at $50</p>
+          <p className="text-brand-sage dark:text-gray-400 text-sm">Invest in fractionalized real estate starting at $50</p>
         </div>
       </div>
 
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0 sticky top-14 md:top-0 md:static z-10 bg-white dark:bg-slate-900 py-2 md:py-0">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 md:pb-0 sticky top-14 md:top-0 md:static z-10 bg-white dark:bg-[#101010] py-2 md:py-0">
         {filters.map(f => (
           <button 
             key={f}
@@ -120,7 +120,7 @@ export const Marketplace: React.FC = () => {
             className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               activeFilter === f 
                 ? 'bg-brand-deep text-white' 
-                : 'bg-white dark:bg-slate-800 border border-brand-lightGray dark:border-slate-700 text-brand-sage dark:text-slate-400 hover:bg-brand-lightGray dark:bg-slate-700/50'
+                : 'bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] text-brand-sage dark:text-gray-400 hover:bg-brand-lightGray dark:bg-[#2a2a2a]/50'
             }`}
           >
             {f}
@@ -151,10 +151,10 @@ export const Marketplace: React.FC = () => {
           <div className="md:hidden">
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-4 animate-pulse">
-                  <div className="h-48 bg-brand-lightGray dark:bg-slate-700 rounded-lg mb-3" />
-                  <div className="h-5 bg-brand-lightGray dark:bg-slate-700 rounded w-2/3 mb-2" />
-                  <div className="h-4 bg-brand-lightGray dark:bg-slate-700 rounded w-1/3" />
+                <div key={i} className="bg-white dark:bg-[#1a1a1a] rounded-xl p-4 animate-pulse">
+                  <div className="h-48 bg-brand-lightGray dark:bg-[#2a2a2a] rounded-lg mb-3" />
+                  <div className="h-5 bg-brand-lightGray dark:bg-[#2a2a2a] rounded w-2/3 mb-2" />
+                  <div className="h-4 bg-brand-lightGray dark:bg-[#2a2a2a] rounded w-1/3" />
                 </div>
               ))}
             </div>
@@ -170,7 +170,7 @@ export const Marketplace: React.FC = () => {
           </div>
 
           {filteredProperties.length === 0 && !isLoading && (
-            <div className="text-center py-12 text-brand-sage dark:text-slate-400">
+            <div className="text-center py-12 text-brand-sage dark:text-gray-400">
               <i className="fa-solid fa-house-chimney-crack text-4xl mb-3"></i>
               <p>No properties found matching your criteria.</p>
             </div>

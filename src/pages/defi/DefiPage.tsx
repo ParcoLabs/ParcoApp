@@ -174,9 +174,9 @@ export const DefiPage: React.FC = () => {
                 <div className="lg:col-span-2 space-y-8">
                     <BorrowStatsCard stats={DEFI_STATS} />
                     {demoMode && borrowableHoldings.length > 0 ? (
-                      <div className="bg-white border border-brand-lightGray rounded-2xl overflow-hidden shadow-sm">
+                      <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-2xl overflow-hidden shadow-sm">
                         <div className="p-4 border-b border-brand-lightGray">
-                          <h3 className="font-bold text-brand-dark">Your Property Tokens</h3>
+                          <h3 className="font-bold text-brand-dark dark:text-white">Your Property Tokens</h3>
                           <p className="text-sm text-brand-sage">Select a property to borrow against</p>
                         </div>
                         <div className="divide-y divide-brand-lightGray">
@@ -185,7 +185,7 @@ export const DefiPage: React.FC = () => {
                               <div className="flex items-center gap-4">
                                 <img src={holding.image} alt={holding.title} className="w-12 h-12 rounded-lg object-cover bg-brand-lightGray" />
                                 <div>
-                                  <p className="font-bold text-brand-dark">{holding.title}</p>
+                                  <p className="font-bold text-brand-dark dark:text-white">{holding.title}</p>
                                   <p className="text-sm text-brand-sage">{holding.location}</p>
                                   <p className="text-xs text-brand-medium">
                                     {holding.availableTokens} tokens available (${(holding.availableTokens * holding.tokenPrice).toLocaleString()} value)
@@ -203,7 +203,7 @@ export const DefiPage: React.FC = () => {
                         </div>
                       </div>
                     ) : demoMode ? (
-                      <div className="bg-white border border-brand-lightGray rounded-2xl p-8 text-center">
+                      <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-2xl p-8 text-center">
                         <i className="fa-solid fa-building text-4xl text-brand-lightGray mb-3"></i>
                         <p className="text-brand-sage font-bold">No property tokens to borrow against</p>
                         <p className="text-sm text-brand-sage">Purchase property tokens from the Marketplace first</p>
@@ -214,7 +214,7 @@ export const DefiPage: React.FC = () => {
                 </div>
                 <div className="bg-brand-mint/20 border border-brand-mint rounded-2xl p-6 h-fit">
                     <h3 className="font-bold text-brand-dark mb-4"><i className="fa-solid fa-circle-info mr-2 text-brand-medium"></i>How it works</h3>
-                    <ul className="space-y-4 text-sm text-brand-dark">
+                    <ul className="space-y-4 text-sm text-brand-dark dark:text-white">
                         <li className="flex gap-3">
                             <span className="font-bold text-brand-medium">1.</span>
                             Lock your property tokens as collateral in the smart contract.
@@ -278,7 +278,7 @@ export const DefiPage: React.FC = () => {
                 <h3 className="font-bold text-brand-dark text-xl">
                   {selectedPool.userDeposit > 0 ? 'Manage Position' : 'Add Liquidity'}
                 </h3>
-                <button onClick={closeModals} className="text-brand-sage hover:text-brand-dark">
+                <button onClick={closeModals} className="text-brand-sage hover:text-brand-dark dark:text-white">
                   <i className="fa-solid fa-xmark text-xl"></i>
                 </button>
               </div>
@@ -296,7 +296,7 @@ export const DefiPage: React.FC = () => {
               {selectedPool.userDeposit > 0 && (
                 <div className="bg-brand-mint/20 border border-brand-mint rounded-xl p-4 mb-4">
                   <p className="text-sm text-brand-dark font-medium">Your Position</p>
-                  <p className="text-xl font-bold text-brand-dark">${selectedPool.userDeposit.toLocaleString()}</p>
+                  <p className="text-xl font-bold text-brand-dark dark:text-white">${selectedPool.userDeposit.toLocaleString()}</p>
                   {selectedPool.accruedYield > 0 && (
                     <p className="text-sm text-brand-medium">+${selectedPool.accruedYield.toFixed(2)} accrued</p>
                   )}
@@ -309,7 +309,7 @@ export const DefiPage: React.FC = () => {
                   type="number" 
                   value={depositAmount}
                   onChange={(e) => setDepositAmount(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-brand-lightGray focus:border-brand-deep focus:ring-1 focus:ring-brand-deep outline-none font-bold text-lg text-brand-dark"
+                  className="w-full px-4 py-3 rounded-xl border border-brand-lightGray focus:border-brand-deep focus:ring-1 focus:ring-brand-deep outline-none font-bold text-lg text-brand-dark dark:text-white"
                   placeholder="0.00"
                 />
               </div>
@@ -330,7 +330,7 @@ export const DefiPage: React.FC = () => {
                       type="number" 
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-brand-lightGray focus:border-brand-deep focus:ring-1 focus:ring-brand-deep outline-none font-bold text-lg text-brand-dark"
+                      className="w-full px-4 py-3 rounded-xl border border-brand-lightGray focus:border-brand-deep focus:ring-1 focus:ring-brand-deep outline-none font-bold text-lg text-brand-dark dark:text-white"
                       placeholder="0.00"
                     />
                     <p className="text-right text-xs text-brand-sage mt-2 font-bold cursor-pointer" onClick={() => setWithdrawAmount(selectedPool.userDeposit.toString())}>

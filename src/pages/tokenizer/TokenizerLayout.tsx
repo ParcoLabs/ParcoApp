@@ -33,7 +33,7 @@ const TokenizerHeader: React.FC<TokenizerHeaderProps> = ({ viewMode }) => {
       <div className="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-brand-lightGray z-40 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img src="/brand/ParcoLogoGreen.png" alt="Parco Logo" className="w-8 h-8 object-contain" />
-          <span className="text-lg font-logo text-brand-deep tracking-wider uppercase">Parco</span>
+          <span className="text-lg font-logo text-brand-deep dark:text-brand-mint tracking-wider uppercase">Parco</span>
         </div>
         <div className="flex items-center gap-3">
           <button className="p-2 text-brand-sage hover:text-brand-dark">

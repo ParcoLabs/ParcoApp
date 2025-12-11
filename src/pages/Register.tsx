@@ -135,7 +135,7 @@ export const Register: React.FC = () => {
 
   if (pendingVerification) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-900 flex flex-col justify-center items-center p-6">
+      <div className="min-h-screen bg-white dark:bg-[#101010] flex flex-col justify-center items-center p-6">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center md:text-left">
             <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
@@ -143,7 +143,7 @@ export const Register: React.FC = () => {
               <h1 className="text-3xl font-logo text-brand-deep uppercase">Parco Labs</h1>
             </div>
             <h2 className="text-2xl font-bold text-brand-dark dark:text-white">Verify your email</h2>
-            <p className="text-brand-sage dark:text-slate-400 mt-2">We sent a verification code to {email}</p>
+            <p className="text-brand-sage dark:text-gray-400 mt-2">We sent a verification code to {email}</p>
           </div>
 
           {error && (
@@ -160,7 +160,7 @@ export const Register: React.FC = () => {
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value)}
                 placeholder="Enter 6-digit code"
-                className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800 text-center text-2xl tracking-widest"
+                className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-[#1a1a1a] text-center text-2xl tracking-widest"
                 required
               />
             </div>
@@ -176,7 +176,7 @@ export const Register: React.FC = () => {
 
           <button 
             onClick={() => setPendingVerification(false)}
-            className="mt-4 text-sm text-brand-sage dark:text-slate-400 hover:text-brand-dark dark:text-white"
+            className="mt-4 text-sm text-brand-sage dark:text-gray-400 hover:text-brand-dark dark:text-white"
           >
             Back to registration
           </button>
@@ -186,7 +186,7 @@ export const Register: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900 flex flex-col justify-center items-center p-6">
+    <div className="min-h-screen bg-white dark:bg-[#101010] flex flex-col justify-center items-center p-6">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center md:text-left">
            <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
@@ -211,7 +211,7 @@ export const Register: React.FC = () => {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 placeholder="John"
-                className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800"
+                className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-[#1a1a1a]"
               />
             </div>
             <div>
@@ -221,7 +221,7 @@ export const Register: React.FC = () => {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 placeholder="Doe"
-                className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800"
+                className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-[#1a1a1a]"
               />
             </div>
           </div>
@@ -233,7 +233,7 @@ export const Register: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800"
+              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-[#1a1a1a]"
               required
             />
           </div>
@@ -245,7 +245,7 @@ export const Register: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Min 8 characters"
-              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800"
+              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-[#1a1a1a]"
               required
             />
           </div>
@@ -257,7 +257,7 @@ export const Register: React.FC = () => {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm password"
-              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-slate-800"
+              className="w-full px-4 py-3 rounded-lg border border-brand-sage focus:outline-none focus:border-brand-deep focus:ring-1 focus:ring-brand-deep transition-all bg-white dark:bg-[#1a1a1a]"
               required
             />
           </div>
@@ -272,7 +272,7 @@ export const Register: React.FC = () => {
         </form>
         
         <div className="mt-4 text-center">
-            <span className="text-sm text-brand-sage dark:text-slate-400">Already have an account? </span>
+            <span className="text-sm text-brand-sage dark:text-gray-400">Already have an account? </span>
             <Link to="/login" className="text-sm font-bold text-brand-deep hover:underline">Sign In</Link>
         </div>
 
@@ -281,7 +281,7 @@ export const Register: React.FC = () => {
                 <div className="w-full border-t border-brand-sage/30"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-slate-900 text-brand-sage dark:text-slate-400">Or sign up with</span>
+                <span className="px-2 bg-white dark:bg-[#101010] text-brand-sage dark:text-gray-400">Or sign up with</span>
             </div>
         </div>
 
@@ -289,7 +289,7 @@ export const Register: React.FC = () => {
           <button
             onClick={handleGoogleSignUp}
             type="button"
-            className="w-full bg-white dark:bg-slate-800 border border-brand-dark text-brand-dark dark:text-white font-semibold py-3.5 rounded-lg hover:bg-brand-lightGray dark:bg-slate-700 transition-colors flex items-center justify-center gap-3"
+            className="w-full bg-white dark:bg-[#1a1a1a] border border-brand-dark text-brand-dark dark:text-white font-semibold py-3.5 rounded-lg hover:bg-brand-lightGray dark:bg-[#2a2a2a] transition-colors flex items-center justify-center gap-3"
           >
             <i className="fa-brands fa-google text-lg"></i>
             Sign up with Google
