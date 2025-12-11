@@ -44,7 +44,10 @@ export const MOCK_PROPERTIES: Property[] = [
     image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
     description: 'Luxury short-term rental property near Miami Beach with ocean views.',
     chain: 'polygon',
-    contractAddress: '0x789...ghi'
+    contractAddress: '0x789...ghi',
+    hasParcoStays: true,
+    bedrooms: 3,
+    bathrooms: 2,
   },
   {
     id: '4',

@@ -6,6 +6,7 @@ import { TokenDetailsMobile } from '../mobile/TokenDetailsMobile';
 import { ChainIndicator } from '../components/ChainIndicator';
 import { PropertyDetailsSkeletonDesktop, PropertyDetailsSkeletonMobile } from '../components/PropertyDetailsSkeleton';
 import { PaymentMethodModal } from '../components/PaymentMethodModal';
+import ParcoStaysTab from '../components/ParcoStaysTab';
 import { useBuyFlow } from '../hooks/useBuyFlow';
 import { useDemoMode } from '../context/DemoModeContext';
 import { useDemo } from '../hooks/useDemo';
@@ -75,6 +76,7 @@ export const TokenDetails: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('Overview');
   const [tokenAmount, setTokenAmount] = useState<number>(1);
+  const [tokensOwned, setTokensOwned] = useState<number>(0);
   
   const {
     state: buyState,
@@ -153,6 +155,31 @@ export const TokenDetails: React.FC = () => {
     fetchProperty();
   }, [id]);
 
+  useEffect(() => {
+    const fetchUserHoldings = async () => {
+      if (!id || !demoMode) return;
+      
+      try {
+        const response = await fetch('/api/demo/portfolio', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data?.holdings) {
+            const holding = result.data.holdings.find((h: any) => h.propertyId === id);
+            if (holding) {
+              setTokensOwned(holding.quantity);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch user holdings:', err);
+      }
+    };
+
+    fetchUserHoldings();
+  }, [id, demoMode, purchaseSuccess]);
+
   if (loading) {
     return (
       <>
@@ -187,7 +214,7 @@ export const TokenDetails: React.FC = () => {
   return (
     <>
       <div className="md:hidden">
-          <TokenDetailsMobile property={property} />
+          <TokenDetailsMobile property={property} tokensOwned={tokensOwned} />
       </div>
 
       <div className="hidden md:block max-w-6xl mx-auto p-8 bg-brand-offWhite dark:bg-[#101010] min-h-screen">
@@ -242,7 +269,7 @@ export const TokenDetails: React.FC = () => {
 
                 <div>
                     <div className="flex border-b border-brand-lightGray dark:border-[#3a3a3a] mb-6">
-                        {['Overview', 'Insights', 'Financials'].map(tab => (
+                        {[...['Overview', 'Insights', 'Financials'], ...(property.hasParcoStays ? ['Parco Stays'] : [])].map(tab => (
                             <button 
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
@@ -441,6 +468,14 @@ export const TokenDetails: React.FC = () => {
                                      </div>
                                  </div>
                              </div>
+                        )}
+
+                        {activeTab === 'Parco Stays' && property.hasParcoStays && (
+                            <ParcoStaysTab 
+                                property={property}
+                                isHolder={tokensOwned > 0}
+                                tokensOwned={tokensOwned}
+                            />
                         )}
                     </div>
                 </div>

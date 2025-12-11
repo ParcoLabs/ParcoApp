@@ -48,6 +48,7 @@ export interface Property {
   bathrooms?: number;
   yearBuilt?: number;
   monthlyRent?: number;
+  hasParcoStays?: boolean;
 }
 
 export interface Holding {

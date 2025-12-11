@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Property } from '../types';
 import { ChainIndicator } from '../components/ChainIndicator';
 import { PaymentMethodModal } from '../components/PaymentMethodModal';
+import ParcoStaysTab from '../components/ParcoStaysTab';
 import { useBuyFlow, PaymentMethod } from '../hooks/useBuyFlow';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
 interface TokenDetailsMobileProps {
   property: Property;
+  tokensOwned?: number;
   buyState?: string;
   isModalOpen?: boolean;
   paymentMethods?: PaymentMethod[];
@@ -24,6 +26,7 @@ const DATA = [
 
 export const TokenDetailsMobile: React.FC<TokenDetailsMobileProps> = ({ 
   property,
+  tokensOwned = 0,
   buyState,
   isModalOpen,
   paymentMethods,
@@ -164,12 +167,12 @@ export const TokenDetailsMobile: React.FC<TokenDetailsMobileProps> = ({
 
       {/* Tabs */}
       <div className="px-6 mb-4">
-         <div className="flex gap-8 border-b border-brand-lightGray dark:border-[#3a3a3a] relative">
-            {['Overview', 'Insights', 'Financials'].map(tab => (
+         <div className="flex gap-4 border-b border-brand-lightGray dark:border-[#3a3a3a] relative overflow-x-auto no-scrollbar">
+            {[...['Overview', 'Insights', 'Financials'], ...(property.hasParcoStays ? ['Parco Stays'] : [])].map(tab => (
                <button
                  key={tab}
                  onClick={() => setActiveTab(tab)}
-                 className={`pb-3 text-sm font-bold transition-colors relative z-10 ${
+                 className={`pb-3 text-sm font-bold transition-colors relative z-10 whitespace-nowrap ${
                     activeTab === tab 
                     ? 'text-brand-deep dark:text-brand-mint border-b-2 border-brand-deep dark:border-brand-mint -mb-[2px]' 
                     : 'text-brand-sage dark:text-gray-400'
@@ -403,6 +406,16 @@ export const TokenDetailsMobile: React.FC<TokenDetailsMobileProps> = ({
                     </div>
                  </div>
 
+             </div>
+         )}
+
+         {activeTab === 'Parco Stays' && property.hasParcoStays && (
+             <div className="px-6 pb-8">
+                <ParcoStaysTab 
+                    property={property}
+                    isHolder={tokensOwned > 0}
+                    tokensOwned={tokensOwned}
+                />
              </div>
          )}
       </div>
