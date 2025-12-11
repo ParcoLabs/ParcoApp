@@ -143,7 +143,7 @@ export const AdminOverview: React.FC = () => {
           <div 
             key={index}
             onClick={() => navigate(stat.path)}
-            className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-4 sm:p-5 cursor-pointer hover:shadow-md transition-shadow"
+            className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#3a3a3a] p-4 sm:p-5 cursor-pointer hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between">
               <div>
@@ -159,7 +159,7 @@ export const AdminOverview: React.FC = () => {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-5">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#3a3a3a] p-5">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {quickActions.map((action, index) => (
@@ -175,7 +175,7 @@ export const AdminOverview: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-5">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#3a3a3a] p-5">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Recent Activity</h2>
           {recentActivity.length > 0 ? (
             <div className="space-y-3">

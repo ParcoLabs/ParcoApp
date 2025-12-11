@@ -59,8 +59,8 @@ export const Navigation: React.FC = () => {
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex flex-col w-64 bg-white dark:bg-[#101010] border-r border-brand-lightGray dark:border-[#2a2a2a] h-screen fixed left-0 top-0 z-50 transition-colors">
-        <div className="p-6 border-b border-brand-lightGray dark:border-[#2a2a2a]">
+      <div className="hidden md:flex flex-col w-64 bg-white dark:bg-[#101010] border-r border-brand-lightGray dark:border-[#3a3a3a] h-screen fixed left-0 top-0 z-50 transition-colors">
+        <div className="p-6 border-b border-brand-lightGray dark:border-[#3a3a3a]">
           <div className="flex items-center gap-3">
             <img 
               src="/brand/ParcoLogoGreen.png" 
@@ -109,7 +109,7 @@ export const Navigation: React.FC = () => {
         </div>
 
         {/* Theme Toggle */}
-        <div className="px-4 py-3 border-t border-brand-lightGray dark:border-[#2a2a2a]">
+        <div className="px-4 py-3 border-t border-brand-lightGray dark:border-[#3a3a3a]">
           <button
             onClick={toggleTheme}
             className="w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium text-brand-sage dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors"
@@ -124,7 +124,7 @@ export const Navigation: React.FC = () => {
           </button>
         </div>
 
-        <div className="p-4 border-t border-brand-lightGray dark:border-[#2a2a2a]">
+        <div className="p-4 border-t border-brand-lightGray dark:border-[#3a3a3a]">
            {user ? (
              <div 
                 onClick={() => navigate('/settings')}
@@ -146,7 +146,7 @@ export const Navigation: React.FC = () => {
       </div>
 
       {/* Mobile Top Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-[#101010] border-b border-brand-lightGray dark:border-[#2a2a2a] px-4 py-3 flex items-center justify-between z-50 transition-colors">
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-[#101010] border-b border-brand-lightGray dark:border-[#3a3a3a] px-4 py-3 flex items-center justify-between z-50 transition-colors">
         <button onClick={() => navigate('/')} className="flex items-center">
           <img 
             src="/brand/ParcoLogoGreen.png" 
@@ -171,7 +171,7 @@ export const Navigation: React.FC = () => {
       </div>
 
       {/* Mobile Bottom Tab Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#101010] border-t border-brand-lightGray dark:border-[#2a2a2a] px-4 py-3 flex justify-around items-center z-50 pb-safe safe-area-bottom transition-colors">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#101010] border-t border-brand-lightGray dark:border-[#3a3a3a] px-4 py-3 flex justify-around items-center z-50 pb-safe safe-area-bottom transition-colors">
         {navItems.map((item) => (
           <button
             key={item.path}

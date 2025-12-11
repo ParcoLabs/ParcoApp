@@ -21,10 +21,10 @@ import { DemoModeProvider } from './context/DemoModeContext';
 
 const SSOCallbackPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-brand-offWhite flex items-center justify-center">
+    <div className="min-h-screen bg-brand-offWhite dark:bg-[#101010] flex items-center justify-center">
       <div className="text-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep mx-auto mb-4"></div>
-        <p className="text-brand-sage">Completing sign in...</p>
+        <p className="text-brand-sage dark:text-gray-400">Completing sign in...</p>
         <AuthenticateWithRedirectCallback />
       </div>
     </div>
@@ -37,7 +37,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center">
+      <div className="min-h-screen bg-brand-offWhite dark:bg-[#101010] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep"></div>
       </div>
     );
@@ -48,9 +48,9 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
   }
 
   return (
-    <div className="flex min-h-screen bg-brand-offWhite">
+    <div className="flex min-h-screen bg-brand-offWhite dark:bg-[#101010]">
       <Navigation />
-      <main className="flex-1 md:ml-64 pb-20 md:pb-0 overflow-y-auto h-screen">
+      <main className="flex-1 md:ml-64 pb-20 md:pb-0 overflow-y-auto h-screen bg-brand-offWhite dark:bg-[#101010]">
         {children}
       </main>
     </div>
@@ -62,7 +62,7 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center">
+      <div className="min-h-screen bg-brand-offWhite dark:bg-[#101010] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep"></div>
       </div>
     );
@@ -80,16 +80,16 @@ const ViewableRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =>
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center">
+      <div className="min-h-screen bg-brand-offWhite dark:bg-[#101010] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-brand-offWhite">
+    <div className="flex min-h-screen bg-brand-offWhite dark:bg-[#101010]">
       <Navigation />
-      <main className="flex-1 md:ml-64 pb-20 md:pb-0 overflow-y-auto h-screen">
+      <main className="flex-1 md:ml-64 pb-20 md:pb-0 overflow-y-auto h-screen bg-brand-offWhite dark:bg-[#101010]">
         {children}
       </main>
     </div>
@@ -102,7 +102,7 @@ const TokenizerRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen bg-brand-offWhite flex items-center justify-center">
+      <div className="min-h-screen bg-brand-offWhite dark:bg-[#101010] flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-deep"></div>
       </div>
     );

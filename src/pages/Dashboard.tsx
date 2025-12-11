@@ -150,7 +150,7 @@ export const Dashboard: React.FC = () => {
               <span className="text-brand-sage dark:text-gray-400 text-xs">Past Month</span>
             </div>
             
-            <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-4 mt-4 h-48 min-h-[192px]">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#3a3a3a] p-4 mt-4 h-48 min-h-[192px]">
               <ResponsiveContainer width="100%" height="100%" minWidth={300} minHeight={150}>
                 <AreaChart data={chartData}>
                   <defs>
@@ -171,7 +171,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-5">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#3a3a3a] p-5">
             <h3 className="font-bold text-brand-dark dark:text-white mb-4">Your Performance</h3>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
@@ -223,7 +223,7 @@ export const Dashboard: React.FC = () => {
                 properties.map((prop: any) => (
                   <div 
                     key={prop.id}
-                    className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group"
+                    className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer group"
                     onClick={() => navigate(`/holdings/${prop.propertyId || prop.id}`)}
                   >
                     <div className="flex items-center gap-4">
@@ -245,7 +245,7 @@ export const Dashboard: React.FC = () => {
                   </div>
                 ))
               ) : (
-                <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg p-8 text-center">
+                <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-lg p-8 text-center">
                   <i className="fa-solid fa-building text-4xl text-brand-lightGray mb-3"></i>
                   <p className="text-brand-sage dark:text-gray-400">No property tokens owned yet.</p>
                   <p className="text-brand-sage dark:text-gray-400 text-sm">Visit the Marketplace to buy property tokens.</p>
@@ -257,7 +257,7 @@ export const Dashboard: React.FC = () => {
               {Object.entries(walletBalances).map(([key, crypto]: [string, any]) => (
                 <div 
                   key={key}
-                  className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg p-3 flex items-center justify-between"
+                  className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-lg p-3 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-4">
                     <div 
@@ -293,7 +293,7 @@ export const Dashboard: React.FC = () => {
             {PREVIEW_PROPERTIES.map((prop) => (
               <div 
                 key={prop.id} 
-                className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
+                className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => navigate('/marketplace')}
               >
                 <div className="flex items-center gap-4">
@@ -324,7 +324,7 @@ export const Dashboard: React.FC = () => {
             <h2 className="text-xl font-bold text-brand-dark dark:text-white mb-4">Recent Activity</h2>
             <div className="space-y-3">
               {recentActivity.slice(0, 5).map((activity: any) => (
-                <div key={activity.id} className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg p-3 flex items-center justify-between">
+                <div key={activity.id} className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-lg p-3 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                       activity.positive ? 'bg-green-100 text-green-600' : 'bg-brand-lightGray dark:bg-[#2a2a2a] text-brand-dark dark:text-white'
@@ -419,7 +419,7 @@ export const Dashboard: React.FC = () => {
           {PREVIEW_PROPERTIES.map((prop) => (
             <div 
               key={prop.id} 
-              className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
+              className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 dark:border-[#3a3a3a] rounded-lg p-3 flex items-center justify-between hover:shadow-md transition-shadow cursor-pointer"
               onClick={() => navigate('/marketplace')}
             >
               <div className="flex items-center gap-4">

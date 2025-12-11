@@ -159,7 +159,7 @@ export const Governance: React.FC = () => {
         {/* Proposals List */}
         <div className="space-y-4">
           {proposals.length === 0 ? (
-            <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-8 text-center">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#3a3a3a] p-8 text-center">
               <i className="fa-solid fa-inbox text-4xl text-brand-sage dark:text-gray-400 mb-4"></i>
               <h3 className="text-lg font-bold text-brand-dark dark:text-white mb-2">Loading Proposals...</h3>
               <p className="text-sm text-brand-sage dark:text-gray-400">Fetching governance proposals...</p>
@@ -168,7 +168,7 @@ export const Governance: React.FC = () => {
             proposals.map((proposal) => (
               <div
                 key={proposal.id}
-                className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-5 hover:shadow-md transition-shadow"
+                className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#3a3a3a] p-5 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">

@@ -29,7 +29,7 @@ export const PropertyCard: React.FC<PropertyCardProps> = ({ property }) => {
   return (
     <div 
       onClick={() => navigate(`/marketplace/${property.id}`)}
-      className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-2xl overflow-hidden hover:shadow-lg transition-all cursor-pointer group w-full"
+      className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-2xl overflow-hidden hover:shadow-lg transition-all cursor-pointer group w-full"
     >
       <div className="flex flex-col sm:flex-row">
         {/* Image Section */}

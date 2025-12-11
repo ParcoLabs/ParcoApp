@@ -75,7 +75,7 @@ export const Settings: React.FC = () => {
         {/* General Section */}
         <div className="mb-8">
             <h2 className="font-bold text-brand-dark dark:text-white mb-2 text-lg px-2">General</h2>
-            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#2a2a2a] px-4 shadow-sm">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#3a3a3a] px-4 shadow-sm">
                 <div className="divide-y divide-brand-lightGray dark:divide-slate-700">
                     <SettingRow label="Set primary profile" value="2" />
                     <SettingRow label="Manage notifications" />
@@ -86,7 +86,7 @@ export const Settings: React.FC = () => {
         {/* Payment Methods */}
         <div className="mb-8">
             <h2 className="font-bold text-brand-dark dark:text-white mb-2 text-lg px-2">Payments</h2>
-            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#2a2a2a] px-4 shadow-sm">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#3a3a3a] px-4 shadow-sm">
                 <div className="divide-y divide-brand-lightGray dark:divide-slate-700">
                     <SettingRow label="Payment methods" onClick={() => navigate('/payment-methods')} />
                     <SettingRow label="Transaction history" onClick={() => navigate('/portfolio')} />
@@ -96,7 +96,7 @@ export const Settings: React.FC = () => {
 
         {/* Account Link */}
         <div className="mb-8">
-             <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#2a2a2a] px-4 shadow-sm">
+             <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#3a3a3a] px-4 shadow-sm">
                  <div className="divide-y divide-brand-lightGray dark:divide-slate-700">
                     <SettingRow label="Coinbase account" value="Connected" />
                  </div>
@@ -105,7 +105,7 @@ export const Settings: React.FC = () => {
         
         {/* Invite */}
         <div className="mb-8">
-             <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#2a2a2a] px-4 shadow-sm">
+             <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#3a3a3a] px-4 shadow-sm">
                  <div className="divide-y divide-brand-lightGray dark:divide-slate-700">
                     <SettingRow label="Invite your friends" />
                  </div>
@@ -115,7 +115,7 @@ export const Settings: React.FC = () => {
         {/* Display Section with Theme Toggle */}
         <div className="mb-8">
             <h2 className="font-bold text-brand-dark dark:text-white mb-2 text-lg px-2">Display</h2>
-            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#2a2a2a] px-4 shadow-sm">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#3a3a3a] px-4 shadow-sm">
                 <div className="divide-y divide-brand-lightGray dark:divide-slate-700">
                     {/* Theme Toggle Row */}
                     <div className="flex items-center justify-between py-4">

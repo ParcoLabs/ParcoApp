@@ -132,7 +132,7 @@ export const Portfolio: React.FC = () => {
              </ResponsiveContainer>
            </div>
 
-           <div className="flex gap-2 border-b border-brand-lightGray dark:border-[#2a2a2a] pb-4">
+           <div className="flex gap-2 border-b border-brand-lightGray dark:border-[#3a3a3a] pb-4">
               {['1H', '1D', '1W', '1M', '1Y', 'All'].map(tf => (
                  <button 
                    key={tf}
@@ -150,14 +150,14 @@ export const Portfolio: React.FC = () => {
         </div>
 
         <div className="hidden lg:block space-y-6">
-           <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-2xl p-6 shadow-sm">
+           <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-2xl p-6 shadow-sm">
               <h3 className="font-bold text-brand-dark dark:text-white mb-4">Your Performance</h3>
               <div className="space-y-4">
-                 <div className="flex justify-between items-center pb-3 border-b border-brand-lightGray dark:border-[#2a2a2a]">
+                 <div className="flex justify-between items-center pb-3 border-b border-brand-lightGray dark:border-[#3a3a3a]">
                     <span className="text-brand-sage dark:text-gray-400 text-sm font-medium">Net Invested</span>
                     <span className="text-brand-dark dark:text-white font-bold">${summary.totalInvested.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                  </div>
-                 <div className="flex justify-between items-center pb-3 border-b border-brand-lightGray dark:border-[#2a2a2a]">
+                 <div className="flex justify-between items-center pb-3 border-b border-brand-lightGray dark:border-[#3a3a3a]">
                     <span className="text-brand-sage dark:text-gray-400 text-sm font-medium">Realized Gains</span>
                     <span className="text-brand-medium dark:text-brand-mint font-bold">+ ${summary.netGains.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
                  </div>
@@ -176,7 +176,7 @@ export const Portfolio: React.FC = () => {
       <div>
          <h2 className="text-2xl font-bold text-brand-dark dark:text-white mb-4">Assets</h2>
          
-         <div className="flex gap-8 border-b border-brand-lightGray dark:border-[#2a2a2a] mb-2">
+         <div className="flex gap-8 border-b border-brand-lightGray dark:border-[#3a3a3a] mb-2">
             <button 
                 onClick={() => setAssetTab('properties')}
                 className={`pb-3 text-sm font-bold transition-colors relative ${
@@ -199,7 +199,7 @@ export const Portfolio: React.FC = () => {
             </button>
          </div>
 
-         <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-2xl overflow-hidden shadow-sm mt-4">
+         <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-2xl overflow-hidden shadow-sm mt-4">
             
             <div className="divide-y divide-brand-lightGray">
                
@@ -273,9 +273,9 @@ export const Portfolio: React.FC = () => {
       {recentActivity.length > 0 && (
         <div>
            <h2 className="text-xl font-bold text-brand-dark dark:text-white mb-4">Recent Activity</h2>
-           <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-2xl overflow-hidden shadow-sm">
+           <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-2xl overflow-hidden shadow-sm">
                {recentActivity.map((tx: any) => (
-                  <div key={tx.id} className="p-4 flex items-center justify-between border-b border-brand-lightGray dark:border-[#2a2a2a] last:border-0 hover:bg-white dark:bg-[#101010]/30 transition-colors">
+                  <div key={tx.id} className="p-4 flex items-center justify-between border-b border-brand-lightGray dark:border-[#3a3a3a] last:border-0 hover:bg-white dark:bg-[#101010]/30 transition-colors">
                      <div className="flex items-center gap-4">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                             tx.positive ? 'bg-brand-mint dark:bg-[#2a2a2a] text-brand-deep' : 'bg-brand-lightGray dark:bg-[#2a2a2a] text-brand-dark dark:text-white'
