@@ -11,7 +11,7 @@ export const MOCK_PROPERTIES: Property[] = [
     tokensTotal: 1000,
     rentalYield: 9.8,
     type: PropertyType.RESIDENTIAL,
-    image: 'https://images.unsplash.com/photo-1577495508048-b635879837f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
+    image: '/properties/560StateSt.png',
     description: 'Historic brownstone in the heart of Albany with excellent rental income potential.',
     chain: 'polygon',
     contractAddress: '0x123...abc'
@@ -26,7 +26,7 @@ export const MOCK_PROPERTIES: Property[] = [
     tokensTotal: 500,
     rentalYield: 13.8,
     type: PropertyType.RESIDENTIAL,
-    image: 'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
+    image: '/properties/88Oakly.jpg',
     description: 'Charming duplex in the Garden District with high rental demand.',
     chain: 'polygon',
     contractAddress: '0x456...def'
@@ -56,7 +56,7 @@ export const MOCK_PROPERTIES: Property[] = [
     tokensTotal: 500,
     rentalYield: 9.8,
     type: PropertyType.RESIDENTIAL,
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
+    image: '/properties/1492E84th.png',
     description: 'Fully funded multi-family property in Brooklyn with stable tenants.',
     chain: 'polygon',
     contractAddress: '0xabc...123'

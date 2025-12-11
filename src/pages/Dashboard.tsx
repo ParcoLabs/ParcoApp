@@ -13,7 +13,7 @@ const PREVIEW_PROPERTIES = [
     location: 'New York',
     value: '870',
     apy: '10.8',
-    image: 'https://picsum.photos/200/200?random=1'
+    image: '/properties/560StateSt.png'
   },
   {
     id: '2',
@@ -21,7 +21,7 @@ const PREVIEW_PROPERTIES = [
     location: 'New Orleans',
     value: '870',
     apy: '10.8',
-    image: 'https://picsum.photos/200/200?random=2'
+    image: '/properties/88Oakly.jpg'
   },
   {
     id: '3',
@@ -29,7 +29,7 @@ const PREVIEW_PROPERTIES = [
     location: 'Miami',
     value: '870',
     apy: '10.8',
-    image: 'https://picsum.photos/200/200?random=3'
+    image: 'https://images.unsplash.com/photo-1613490493576-7fde63acd811?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80'
   }
 ];
 

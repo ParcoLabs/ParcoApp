@@ -12,7 +12,7 @@ export const BORROW_PROPERTIES = [
   {
     id: '1',
     title: '560 State St',
-    image: 'https://images.unsplash.com/photo-1577495508048-b635879837f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
+    image: '/properties/560StateSt.png',
     tokenCount: 50,
     maxBorrow: 1250.00,
     ltv: 60
@@ -20,7 +20,7 @@ export const BORROW_PROPERTIES = [
   {
     id: '2',
     title: '88 Oakely Lane',
-    image: 'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80',
+    image: '/properties/88Oakly.jpg',
     tokenCount: 20,
     maxBorrow: 450.00,
     ltv: 50
