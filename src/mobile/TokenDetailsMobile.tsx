@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Property } from '../types';
 import { ChainIndicator } from '../components/ChainIndicator';
 import { PaymentMethodModal } from '../components/PaymentMethodModal';
 import ParcoStaysTab from '../components/ParcoStaysTab';
 import { useBuyFlow, PaymentMethod } from '../hooks/useBuyFlow';
+import { useDemoMode } from '../context/DemoModeContext';
+import { useDemo } from '../hooks/useDemo';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 
 interface TokenDetailsMobileProps {
@@ -36,11 +39,16 @@ export const TokenDetailsMobile: React.FC<TokenDetailsMobileProps> = ({
   onCloseModal,
   onSelectMethod,
 }) => {
+  const navigate = useNavigate();
   const [timeframe, setTimeframe] = useState('1M');
   const [activeTab, setActiveTab] = useState('Overview');
   const [selectedTokens, setSelectedTokens] = useState(1);
   const [inputMode, setInputMode] = useState<'tokens' | 'dollars'>('tokens');
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
+  const { demoMode } = useDemoMode();
+  const { demoBuy, loading: demoLoading } = useDemo();
   const localBuyFlow = useBuyFlow();
   
   const effectiveBuyState = buyState || localBuyFlow.state;
@@ -61,6 +69,30 @@ export const TokenDetailsMobile: React.FC<TokenDetailsMobileProps> = ({
   };
 
   const selectedDollars = selectedTokens * property.tokenPrice;
+
+  const handlePurchaseConfirm = async () => {
+    if (!effectiveSelectedMethod) return;
+    
+    setPurchaseError(null);
+    
+    if (demoMode && (effectiveSelectedMethod.type === 'vault' || effectiveSelectedMethod.type === 'crypto')) {
+      const paymentMethod = effectiveSelectedMethod.id || 'usdc';
+      const result = await demoBuy(property.id, selectedTokens, paymentMethod);
+      if (result) {
+        setPurchaseSuccess(true);
+        effectiveOnCloseModal();
+        setTimeout(() => {
+          setPurchaseSuccess(false);
+          navigate('/portfolio');
+        }, 2000);
+      } else {
+        setPurchaseError('Purchase failed. Please try again.');
+      }
+    } else {
+      console.log('Purchase confirmed with method:', effectiveSelectedMethod);
+      effectiveOnCloseModal();
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-[#101010] pb-24 fixed inset-0 z-[100] overflow-y-auto no-scrollbar">
@@ -447,14 +479,27 @@ export const TokenDetailsMobile: React.FC<TokenDetailsMobileProps> = ({
         vaultBalance={effectiveVaultBalance}
         selectedMethod={effectiveSelectedMethod}
         onSelectMethod={effectiveOnSelectMethod}
-        onConfirm={() => {
-          console.log('Purchase confirmed with method:', effectiveSelectedMethod);
-          effectiveOnCloseModal();
-        }}
+        onConfirm={handlePurchaseConfirm}
         propertyName={property.title}
         tokenAmount={selectedTokens}
         tokenPrice={property.tokenPrice}
       />
+
+      {purchaseSuccess && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-6 text-center">
+            <i className="fa-solid fa-check-circle text-5xl text-green-500 mb-4"></i>
+            <h3 className="text-xl font-bold text-brand-dark dark:text-white">Purchase Successful!</h3>
+            <p className="text-brand-sage dark:text-gray-400 mt-2">Redirecting to portfolio...</p>
+          </div>
+        </div>
+      )}
+
+      {purchaseError && (
+        <div className="fixed top-20 left-4 right-4 z-[200] bg-red-100 border border-red-300 rounded-lg p-4 text-center">
+          <p className="text-red-700 font-medium">{purchaseError}</p>
+        </div>
+      )}
     </div>
   );
 };

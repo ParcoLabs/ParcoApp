@@ -5,6 +5,7 @@ import { useDemoMode } from '../context/DemoModeContext';
 import { useDemo } from '../hooks/useDemo';
 import { getPropertyById } from '../api/mockData';
 import { Property } from '../types';
+import ParcoStaysTab from '../components/ParcoStaysTab';
 
 interface HoldingData {
   propertyId: string;
@@ -334,7 +335,7 @@ export const HoldingDetails: React.FC = () => {
 
           {/* Tabs */}
           <div className="flex border-b border-brand-lightGray dark:border-[#3a3a3a] mb-4">
-            {['Balance', 'Insights', 'Governance'].map(tab => (
+            {[...['Balance', 'Insights', 'Governance'], ...(property?.hasParcoStays ? ['Parco Stays'] : [])].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -500,6 +501,14 @@ export const HoldingDetails: React.FC = () => {
               </div>
             </div>
           )}
+
+          {activeTab === 'Parco Stays' && property?.hasParcoStays && (
+            <ParcoStaysTab 
+              property={property}
+              isHolder={displayData.quantity > 0}
+              tokensOwned={displayData.quantity}
+            />
+          )}
         </div>
 
         {/* Fixed Bottom Buttons */}
@@ -615,7 +624,7 @@ export const HoldingDetails: React.FC = () => {
             {/* Tabs */}
             <div>
               <div className="flex border-b border-brand-lightGray dark:border-[#3a3a3a] mb-6">
-                {['Balance', 'Insights', 'Governance'].map(tab => (
+                {[...['Balance', 'Insights', 'Governance'], ...(property?.hasParcoStays ? ['Parco Stays'] : [])].map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -810,6 +819,14 @@ export const HoldingDetails: React.FC = () => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {activeTab === 'Parco Stays' && property?.hasParcoStays && (
+                <ParcoStaysTab 
+                  property={property}
+                  isHolder={displayData.quantity > 0}
+                  tokensOwned={displayData.quantity}
+                />
               )}
             </div>
           </div>
