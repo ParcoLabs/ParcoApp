@@ -2231,4 +2231,100 @@ router.post('/governance-proposals/vote', requireDemoMode, apiAuth, async (req, 
   }
 });
 
+router.post('/stay-booking', requireDemoMode, apiAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const { propertyId, checkIn, checkOut, guests, nightlyRate, cleaningFee, serviceFee, tokenHolderCredit, totalAmount, tokensOwned } = req.body;
+
+    if (!propertyId || !checkIn || !checkOut) {
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
+    }
+
+    const booking = await prisma.demoStayBooking.create({
+      data: {
+        userId: user.id,
+        propertyId,
+        checkIn: new Date(checkIn),
+        checkOut: new Date(checkOut),
+        guests: guests || 2,
+        nightlyRate: nightlyRate || 285,
+        cleaningFee: cleaningFee || 95,
+        serviceFee: serviceFee || 0,
+        tokenHolderCredit: tokenHolderCredit || 0,
+        totalAmount: totalAmount || 0,
+        tokensOwned: tokensOwned || 0,
+        status: 'CONFIRMED',
+      },
+    });
+
+    res.json({
+      success: true,
+      demoMode: true,
+      data: {
+        booking: {
+          id: booking.id,
+          propertyId: booking.propertyId,
+          checkIn: booking.checkIn,
+          checkOut: booking.checkOut,
+          guests: booking.guests,
+          totalAmount: booking.totalAmount,
+          status: booking.status,
+        },
+      },
+    });
+  } catch (error: any) {
+    console.error('Error creating demo stay booking:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to create booking',
+    });
+  }
+});
+
+router.get('/stay-bookings', requireDemoMode, apiAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const bookings = await prisma.demoStayBooking.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json({
+      success: true,
+      demoMode: true,
+      data: { bookings },
+    });
+  } catch (error: any) {
+    console.error('Error fetching demo stay bookings:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch bookings',
+    });
+  }
+});
+
 export default router;

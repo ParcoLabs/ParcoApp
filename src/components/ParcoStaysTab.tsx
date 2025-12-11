@@ -7,12 +7,6 @@ interface ParcoStaysTabProps {
   tokensOwned: number;
 }
 
-interface BookingDetails {
-  checkIn: Date;
-  checkOut: Date;
-  guests: number;
-}
-
 const NIGHTLY_RATE = 285;
 const CLEANING_FEE = 95;
 const SERVICE_FEE_PERCENT = 0.12;
@@ -25,6 +19,8 @@ const ParcoStaysTab: React.FC<ParcoStaysTabProps> = ({ property, isHolder, token
   });
   const [guests, setGuests] = useState(2);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [bookingStatus, setBookingStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   const annualYieldPerToken = (property.tokenPrice * property.rentalYield) / 100;
   const tokenHolderCredit = tokensOwned * annualYieldPerToken;
@@ -96,6 +92,47 @@ const ParcoStaysTab: React.FC<ParcoStaysTabProps> = ({ property, isHolder, token
     const total = subtotal + CLEANING_FEE + serviceFee;
     const discountedTotal = Math.max(0, total - tokenHolderCredit);
     return { subtotal, serviceFee, total, discountedTotal, nights };
+  };
+
+  const handleConfirmBooking = async () => {
+    if (!selectedDates.checkIn || !selectedDates.checkOut) return;
+
+    setBookingStatus('loading');
+    setBookingError(null);
+
+    const { serviceFee, discountedTotal } = calculateTotal();
+
+    try {
+      const response = await fetch('/api/demo/stay-booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          propertyId: property.id,
+          checkIn: selectedDates.checkIn.toISOString(),
+          checkOut: selectedDates.checkOut.toISOString(),
+          guests,
+          nightlyRate: NIGHTLY_RATE,
+          cleaningFee: CLEANING_FEE,
+          serviceFee,
+          tokenHolderCredit: Math.min(tokenHolderCredit, calculateTotal().total),
+          totalAmount: discountedTotal,
+          tokensOwned,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setBookingStatus('success');
+      } else {
+        setBookingStatus('error');
+        setBookingError(result.error || 'Failed to create booking');
+      }
+    } catch (error: any) {
+      setBookingStatus('error');
+      setBookingError(error.message || 'Failed to create booking');
+    }
   };
 
   const prevMonth = () => {
@@ -272,17 +309,52 @@ const ParcoStaysTab: React.FC<ParcoStaysTabProps> = ({ property, isHolder, token
           </div>
 
           <div className="p-4 border-t border-brand-lightGray dark:border-[#3a3a3a]">
-            <button className="w-full bg-brand-deep text-white font-bold py-3.5 rounded-xl hover:bg-brand-dark transition-colors">
-              Confirm Booking
-            </button>
-            <p className="text-center text-xs text-brand-sage dark:text-gray-400 mt-2">You won't be charged yet</p>
+            {bookingStatus === 'success' ? (
+              <div className="text-center py-4">
+                <div className="w-16 h-16 bg-brand-mint/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <i className="fa-solid fa-check text-brand-deep dark:text-brand-mint text-2xl"></i>
+                </div>
+                <h4 className="font-bold text-brand-dark dark:text-white mb-1">Booking Confirmed!</h4>
+                <p className="text-sm text-brand-sage dark:text-gray-400">Your stay has been booked successfully.</p>
+                <button 
+                  onClick={() => {
+                    setShowConfirmation(false);
+                    setSelectedDates({ checkIn: null, checkOut: null });
+                    setBookingStatus('idle');
+                  }}
+                  className="mt-4 text-brand-deep dark:text-brand-mint font-medium hover:underline"
+                >
+                  Book another stay
+                </button>
+              </div>
+            ) : (
+              <>
+                <button 
+                  onClick={handleConfirmBooking}
+                  disabled={bookingStatus === 'loading'}
+                  className="w-full bg-brand-deep text-white font-bold py-3.5 rounded-xl hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {bookingStatus === 'loading' ? (
+                    <><i className="fa-solid fa-spinner fa-spin mr-2"></i>Confirming...</>
+                  ) : (
+                    'Confirm Booking'
+                  )}
+                </button>
+                <p className="text-center text-xs text-brand-sage dark:text-gray-400 mt-2">You won't be charged yet</p>
+                {bookingError && (
+                  <p className="text-center text-xs text-red-500 mt-2">{bookingError}</p>
+                )}
+              </>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-brand-sage dark:text-gray-400">
-          <i className="fa-solid fa-gem text-brand-deep dark:text-brand-mint"></i>
-          <span>You're saving <strong className="text-brand-dark dark:text-white">${Math.min(tokenHolderCredit, total).toFixed(2)}</strong> as a token holder</span>
-        </div>
+        {bookingStatus !== 'success' && (
+          <div className="flex items-center gap-2 text-sm text-brand-sage dark:text-gray-400">
+            <i className="fa-solid fa-gem text-brand-deep dark:text-brand-mint"></i>
+            <span>You're saving <strong className="text-brand-dark dark:text-white">${Math.min(tokenHolderCredit, total).toFixed(2)}</strong> as a token holder</span>
+          </div>
+        )}
       </div>
     );
   }
