@@ -505,8 +505,8 @@ export const HoldingDetails: React.FC = () => {
           {activeTab === 'Parco Stays' && property?.hasParcoStays && (
             <ParcoStaysTab 
               property={property}
-              isHolder={displayData.quantity > 0}
-              tokensOwned={displayData.quantity}
+              isHolder={true}
+              tokensOwned={displayData.quantity || 1}
             />
           )}
         </div>
@@ -824,8 +824,8 @@ export const HoldingDetails: React.FC = () => {
               {activeTab === 'Parco Stays' && property?.hasParcoStays && (
                 <ParcoStaysTab 
                   property={property}
-                  isHolder={displayData.quantity > 0}
-                  tokensOwned={displayData.quantity}
+                  isHolder={true}
+                  tokensOwned={displayData.quantity || 1}
                 />
               )}
             </div>
