@@ -18,6 +18,7 @@ import { AdminLayout, AdminTokenizations, AdminProperties, AdminInvestors, Admin
 import { MyProperties, TokenizerDashboard, TokenizerHome, TokenizerSettings, TokenizerLayout } from './pages/tokenizer';
 import { AuthProvider } from './context/AuthContext';
 import { DemoModeProvider } from './context/DemoModeContext';
+import { DemoPortfolioProvider } from './context/DemoPortfolioContext';
 
 const SSOCallbackPage: React.FC = () => {
   return (
@@ -123,6 +124,7 @@ const App: React.FC = () => {
   return (
     <DemoModeProvider>
       <AuthProvider>
+        <DemoPortfolioProvider>
         <Router>
           <Routes>
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
@@ -164,6 +166,7 @@ const App: React.FC = () => {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
+        </DemoPortfolioProvider>
       </AuthProvider>
     </DemoModeProvider>
   );
