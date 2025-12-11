@@ -168,10 +168,10 @@ export const TokenDetails: React.FC = () => {
 
   if (error || !property) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8">
+      <div className="min-h-screen bg-brand-offWhite dark:bg-[#101010] flex flex-col items-center justify-center p-8">
         <div className="text-center">
-          <i className="fa-solid fa-building text-6xl text-brand-lightGray mb-4"></i>
-          <h2 className="text-2xl font-bold text-brand-dark mb-2">Property Not Found</h2>
+          <i className="fa-solid fa-building text-6xl text-brand-lightGray dark:text-gray-600 mb-4"></i>
+          <h2 className="text-2xl font-bold text-brand-dark dark:text-white mb-2">Property Not Found</h2>
           <p className="text-brand-sage mb-6">{error || "We couldn't find the property you're looking for."}</p>
           <button 
             onClick={() => navigate('/marketplace')}
@@ -190,9 +190,9 @@ export const TokenDetails: React.FC = () => {
           <TokenDetailsMobile property={property} />
       </div>
 
-      <div className="hidden md:block max-w-6xl mx-auto p-8">
+      <div className="hidden md:block max-w-6xl mx-auto p-8 bg-brand-offWhite dark:bg-[#101010] min-h-screen">
         
-        <button onClick={() => navigate('/marketplace')} className="text-brand-sage hover:text-brand-dark mb-6 flex items-center gap-2 font-medium">
+        <button onClick={() => navigate('/marketplace')} className="text-brand-sage dark:text-gray-400 hover:text-brand-dark dark:hover:text-white mb-6 flex items-center gap-2 font-medium">
              <i className="fa-solid fa-arrow-left"></i> Back to Marketplace
         </button>
 
@@ -202,12 +202,12 @@ export const TokenDetails: React.FC = () => {
                 <div className="flex gap-6">
                     <img src={property.image} alt={property.title} className="w-32 h-32 object-cover rounded-xl bg-brand-lightGray shadow-sm" />
                     <div className="flex-1">
-                        <h1 className="text-3xl font-bold text-brand-dark mb-2">{property.title}</h1>
+                        <h1 className="text-3xl font-bold text-brand-dark dark:text-white mb-2">{property.title}</h1>
                         <div className="flex items-center gap-3 mb-1">
-                             <span className="bg-brand-mint text-brand-deep px-2 py-1 rounded text-xs font-bold uppercase tracking-wide">{property.type}</span>
+                             <span className="bg-brand-mint dark:bg-brand-mint/20 text-brand-deep dark:text-brand-mint px-2 py-1 rounded text-xs font-bold uppercase tracking-wide">{property.type}</span>
                              <ChainIndicator chain={property.chain} size="sm" />
                         </div>
-                        <span className="text-brand-sage text-sm"><i className="fa-solid fa-location-dot mr-1"></i>{property.location}</span>
+                        <span className="text-brand-sage dark:text-gray-400 text-sm"><i className="fa-solid fa-location-dot mr-1"></i>{property.location}</span>
                     </div>
                     <div className="w-72 min-w-[288px]">
                         <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-4 shadow-sm">
@@ -218,7 +218,7 @@ export const TokenDetails: React.FC = () => {
                                 </div>
                                 <div className="text-right">
                                     <p className="text-xs text-brand-sage font-medium">Returns</p>
-                                    <p className="text-lg font-bold text-brand-medium">+2.1%</p>
+                                    <p className="text-lg font-bold text-brand-medium dark:text-brand-mint">+2.1%</p>
                                 </div>
                             </div>
                             <div className="h-20 min-h-[80px]">
@@ -241,15 +241,15 @@ export const TokenDetails: React.FC = () => {
                 </div>
 
                 <div>
-                    <div className="flex border-b border-brand-lightGray mb-6">
+                    <div className="flex border-b border-brand-lightGray dark:border-[#3a3a3a] mb-6">
                         {['Overview', 'Insights', 'Financials'].map(tab => (
                             <button 
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
                                 className={`px-6 py-3 font-semibold text-sm transition-colors ${
                                     activeTab === tab 
-                                    ? 'border-b-2 border-brand-deep text-brand-deep' 
-                                    : 'text-brand-sage hover:text-brand-dark'
+                                    ? 'border-b-2 border-brand-deep dark:border-brand-mint text-brand-deep dark:text-brand-mint' 
+                                    : 'text-brand-sage dark:text-gray-400 hover:text-brand-dark dark:hover:text-white'
                                 }`}
                             >
                                 {tab}
@@ -267,32 +267,32 @@ export const TokenDetails: React.FC = () => {
                                                <span className="text-sm font-bold text-brand-dark dark:text-white">Property Value</span>
                                                <i className="fa-regular fa-circle-info text-brand-sage text-xs"></i>
                                            </div>
-                                           <p className="text-2xl font-bold text-brand-deep">${property.totalValue.toLocaleString()}</p>
+                                           <p className="text-2xl font-bold text-brand-deep dark:text-brand-mint">${property.totalValue.toLocaleString()}</p>
                                        </div>
                                        <div className="border-r border-brand-mint/50 px-4">
                                            <div className="flex items-center gap-1 mb-1">
                                                <span className="text-sm font-bold text-brand-dark dark:text-white">Projected Annual Return</span>
                                                <i className="fa-regular fa-circle-info text-brand-sage text-xs"></i>
                                            </div>
-                                           <p className="text-2xl font-bold text-brand-medium">{(property.rentalYield + 2.5).toFixed(2)}%</p>
+                                           <p className="text-2xl font-bold text-brand-medium dark:text-brand-mint">{(property.rentalYield + 2.5).toFixed(2)}%</p>
                                        </div>
                                        <div className="pl-4">
                                            <div className="flex items-center gap-1 mb-1">
                                                <span className="text-sm font-bold text-brand-dark dark:text-white">Rental Yield</span>
                                                <i className="fa-regular fa-circle-info text-brand-sage text-xs"></i>
                                            </div>
-                                           <p className="text-2xl font-bold text-brand-medium">{property.rentalYield}%</p>
+                                           <p className="text-2xl font-bold text-brand-medium dark:text-brand-mint">{property.rentalYield}%</p>
                                        </div>
                                    </div>
                                 </div>
 
-                                <div className="prose text-brand-dark max-w-none">
-                                    <p>
+                                <div className="prose text-brand-dark dark:text-white max-w-none">
+                                    <p className="dark:text-gray-300">
                                         {property.description || `This premium ${property.type.toLowerCase()} asset in ${property.location} offers a unique opportunity for fractional ownership.
                                         With a projected rental yield of ${property.rentalYield}%, investors can expect steady cash flow distributed directly to their USDC balance.`}
                                     </p>
-                                    <h4 className="font-bold mt-4 mb-2 text-lg">Why Invest?</h4>
-                                    <ul className="list-disc pl-5 space-y-2 text-brand-sage">
+                                    <h4 className="font-bold mt-4 mb-2 text-lg dark:text-white">Why Invest?</h4>
+                                    <ul className="list-disc pl-5 space-y-2 text-brand-sage dark:text-gray-400">
                                         <li>Located in high-growth metropolitan area with strong demand.</li>
                                         <li>Fully managed property maintenance by top-tier partners.</li>
                                         <li>Quarterly valuation updates ensured by independent appraisers.</li>
@@ -300,9 +300,9 @@ export const TokenDetails: React.FC = () => {
                                     </ul>
                                 </div>
 
-                                <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-6">
-                                    <h4 className="font-bold text-brand-dark text-lg mb-3">Why {property.location.split(',')[0]}?</h4>
-                                    <p className="text-brand-sage mb-6">
+                                <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-xl p-6">
+                                    <h4 className="font-bold text-brand-dark dark:text-white text-lg mb-3">Why {property.location.split(',')[0]}?</h4>
+                                    <p className="text-brand-sage dark:text-gray-400 mb-6">
                                         This city offers a unique combination of economic growth, strong rental demand, and favorable market conditions for real estate investors. The local market has shown consistent appreciation over the past decade with continued growth expected.
                                     </p>
                                     <div className="h-48 min-h-[192px]">
@@ -366,7 +366,7 @@ export const TokenDetails: React.FC = () => {
                                                         <p className="text-xs text-brand-sage">{doc.date} • {doc.size}</p>
                                                     </div>
                                                 </div>
-                                                <i className="fa-solid fa-download text-brand-sage group-hover:text-brand-deep"></i>
+                                                <i className="fa-solid fa-download text-brand-sage group-hover:text-brand-deep dark:text-brand-mint"></i>
                                             </div>
                                         ))}
                                     </div>
@@ -461,11 +461,11 @@ export const TokenDetails: React.FC = () => {
                         </div>
                          <div className="flex justify-between items-center text-sm">
                             <span className="text-brand-sage">Rental Yield</span>
-                            <span className="font-bold text-brand-medium">{property.rentalYield}%</span>
+                            <span className="font-bold text-brand-medium dark:text-brand-mint">{property.rentalYield}%</span>
                         </div>
                          <div className="flex justify-between items-center text-sm">
                             <span className="text-brand-sage">Projected Annual Return</span>
-                            <span className="font-bold text-brand-medium">{(property.rentalYield + 2.5).toFixed(2)}%</span>
+                            <span className="font-bold text-brand-medium dark:text-brand-mint">{(property.rentalYield + 2.5).toFixed(2)}%</span>
                         </div>
                     </div>
 

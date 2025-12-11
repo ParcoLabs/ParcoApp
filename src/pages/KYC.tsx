@@ -165,9 +165,9 @@ export const KYC: React.FC = () => {
                     <h3 className="text-2xl font-bold text-brand-dark mb-2">Level 1</h3>
                     <p className="text-brand-sage text-sm mb-3">Send and receive digital currency</p>
                     <ul className="space-y-2 text-sm font-medium text-brand-dark">
-                        <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-medium"></i> Name</li>
-                        <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-medium"></i> Verify email address</li>
-                        <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-medium"></i> Accept terms of service</li>
+                        <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-medium dark:text-brand-mint"></i> Name</li>
+                        <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-medium dark:text-brand-mint"></i> Verify email address</li>
+                        <li className="flex items-center gap-2"><i className="fa-solid fa-check text-brand-medium dark:text-brand-mint"></i> Accept terms of service</li>
                     </ul>
                 </div>
             </div>

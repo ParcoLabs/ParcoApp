@@ -126,7 +126,7 @@ export const TokenizerNavigation: React.FC<TokenizerNavigationProps> = ({
             <i className="fa-solid fa-gear text-brand-sage group-hover:text-brand-deep text-sm"></i>
           </div>
         ) : (
-          <button onClick={() => navigate('/login')} className="w-full text-center text-sm font-semibold text-brand-deep">Sign In</button>
+          <button onClick={() => navigate('/login')} className="w-full text-center text-sm font-semibold text-brand-deep dark:text-brand-mint">Sign In</button>
         )}
       </div>
     </>
@@ -280,7 +280,7 @@ export const TokenizerNavigation: React.FC<TokenizerNavigationProps> = ({
               <i className="fa-solid fa-gear text-brand-sage group-hover:text-brand-deep text-sm"></i>
            </div>
          ) : (
-           <button onClick={() => navigate('/login')} className="w-full text-center text-sm font-semibold text-brand-deep">Sign In</button>
+           <button onClick={() => navigate('/login')} className="w-full text-center text-sm font-semibold text-brand-deep dark:text-brand-mint">Sign In</button>
          )}
       </div>
     </>

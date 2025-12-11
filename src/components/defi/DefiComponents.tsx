@@ -78,8 +78,8 @@ export const LendPoolCard: React.FC<{ pool: any, onAddLiquidity: (pool: any) => 
     
     {pool.userDeposit > 0 && (
         <div className="mb-4 bg-brand-mint/30 p-2 rounded-lg flex justify-between items-center border border-brand-mint/50">
-            <span className="text-xs font-bold text-brand-deep">Your Position</span>
-            <span className="text-xs font-bold text-brand-deep">${pool.userDeposit.toLocaleString()}</span>
+            <span className="text-xs font-bold text-brand-deep dark:text-brand-mint">Your Position</span>
+            <span className="text-xs font-bold text-brand-deep dark:text-brand-mint">${pool.userDeposit.toLocaleString()}</span>
         </div>
     )}
 
@@ -180,7 +180,7 @@ export const BorrowModal: React.FC<{
         <div className="mb-6">
             <div className="flex justify-between mb-2">
                 <span className="text-sm font-bold text-brand-sage">Tokens to Lock</span>
-                <span className="text-sm font-bold text-brand-deep">Max: {availableTokens}</span>
+                <span className="text-sm font-bold text-brand-deep dark:text-brand-mint">Max: {availableTokens}</span>
             </div>
             <input 
                 type="number" 
@@ -203,7 +203,7 @@ export const BorrowModal: React.FC<{
         <div className="mb-6">
             <div className="flex justify-between mb-2">
                 <span className="text-sm font-bold text-brand-sage">Borrow Amount</span>
-                <span className="text-sm font-bold text-brand-deep">Max: ${maxBorrow.toFixed(2)}</span>
+                <span className="text-sm font-bold text-brand-deep dark:text-brand-mint">Max: ${maxBorrow.toFixed(2)}</span>
             </div>
             <div className="relative">
                 <span className="absolute left-4 top-3.5 text-brand-dark font-bold text-lg">$</span>
@@ -219,7 +219,7 @@ export const BorrowModal: React.FC<{
                 <span className={`${ltvPercent > 50 ? 'text-red-500' : 'text-brand-sage'}`}>
                   LTV: {ltvPercent.toFixed(1)}%
                 </span>
-                <span className="text-brand-medium">Safe Limit: 50%</span>
+                <span className="text-brand-medium dark:text-brand-mint">Safe Limit: 50%</span>
             </div>
         </div>
 
@@ -234,7 +234,7 @@ export const BorrowModal: React.FC<{
             </div>
             <div className="flex justify-between text-sm border-t border-brand-lightGray pt-2">
                 <span className="text-brand-sage">You'll Receive</span>
-                <span className="font-bold text-brand-medium">${(borrowAmount * 0.99).toFixed(2)}</span>
+                <span className="font-bold text-brand-medium dark:text-brand-mint">${(borrowAmount * 0.99).toFixed(2)}</span>
             </div>
         </div>
 

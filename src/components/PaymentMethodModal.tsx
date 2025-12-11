@@ -46,24 +46,24 @@ export const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
       disabled={disabled}
       className={`w-full p-4 rounded-xl border-2 transition-all text-left flex items-center gap-4 ${
         selectedMethod?.id === method.id
-          ? 'border-brand-deep bg-brand-mint/20'
+          ? 'border-brand-deep dark:border-brand-mint bg-brand-mint/20 dark:bg-brand-mint/10'
           : disabled
-            ? 'border-brand-lightGray bg-gray-50 opacity-50 cursor-not-allowed'
-            : 'border-brand-lightGray hover:border-brand-medium hover:bg-brand-offWhite'
+            ? 'border-brand-lightGray dark:border-[#3a3a3a] bg-gray-50 dark:bg-[#1a1a1a] opacity-50 cursor-not-allowed'
+            : 'border-brand-lightGray dark:border-[#3a3a3a] hover:border-brand-medium dark:hover:border-brand-mint hover:bg-brand-offWhite dark:hover:bg-[#2a2a2a]'
       }`}
     >
-      <div className="w-10 h-10 rounded-full bg-brand-offWhite flex items-center justify-center flex-shrink-0">
-        {method.type === 'vault' && <i className="fa-solid fa-wallet text-brand-deep"></i>}
-        {method.type === 'card' && <i className="fa-solid fa-credit-card text-brand-deep"></i>}
-        {method.type === 'bank' && <i className="fa-solid fa-building-columns text-brand-deep"></i>}
-        {method.type === 'crypto' && <i className="fa-brands fa-bitcoin text-brand-deep"></i>}
+      <div className="w-10 h-10 rounded-full bg-brand-offWhite dark:bg-[#2a2a2a] flex items-center justify-center flex-shrink-0">
+        {method.type === 'vault' && <i className="fa-solid fa-wallet text-brand-deep dark:text-brand-mint"></i>}
+        {method.type === 'card' && <i className="fa-solid fa-credit-card text-brand-deep dark:text-brand-mint"></i>}
+        {method.type === 'bank' && <i className="fa-solid fa-building-columns text-brand-deep dark:text-brand-mint"></i>}
+        {method.type === 'crypto' && <i className="fa-brands fa-bitcoin text-brand-deep dark:text-brand-mint"></i>}
       </div>
       <div className="flex-1">
-        <p className="font-bold text-brand-dark text-sm">{label}</p>
-        {sublabel && <p className="text-xs text-brand-sage">{sublabel}</p>}
+        <p className="font-bold text-brand-dark dark:text-white text-sm">{label}</p>
+        {sublabel && <p className="text-xs text-brand-sage dark:text-gray-400">{sublabel}</p>}
       </div>
       {selectedMethod?.id === method.id && (
-        <i className="fa-solid fa-circle-check text-brand-deep text-xl"></i>
+        <i className="fa-solid fa-circle-check text-brand-deep dark:text-brand-mint text-xl"></i>
       )}
     </button>
   );
@@ -76,16 +76,16 @@ export const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
       />
 
       <div className="hidden md:block fixed inset-0 z-[201] flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-          <div className="p-6 border-b border-brand-lightGray">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-xl max-w-md w-full max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="p-6 border-b border-brand-lightGray dark:border-[#3a3a3a]">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-brand-dark">Select Payment Method</h2>
-              <button onClick={onClose} className="text-brand-sage hover:text-brand-dark p-2">
+              <h2 className="text-xl font-bold text-brand-dark dark:text-white">Select Payment Method</h2>
+              <button onClick={onClose} className="text-brand-sage dark:text-gray-400 hover:text-brand-dark dark:hover:text-white p-2">
                 <i className="fa-solid fa-xmark text-xl"></i>
               </button>
             </div>
             {propertyName && (
-              <p className="text-sm text-brand-sage mt-1">
+              <p className="text-sm text-brand-sage dark:text-gray-400 mt-1">
                 Purchasing {tokenAmount} token{tokenAmount > 1 ? 's' : ''} of {propertyName}
               </p>
             )}
@@ -101,7 +101,7 @@ export const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
 
             {cardMethods.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-bold text-brand-sage uppercase tracking-wide">Cards</p>
+                <p className="text-xs font-bold text-brand-sage dark:text-gray-400 uppercase tracking-wide">Cards</p>
                 {cardMethods.map(card => renderPaymentOption(
                   card,
                   `${card.brand} •••• ${card.last4}`,
@@ -112,7 +112,7 @@ export const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
 
             {bankMethods.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-bold text-brand-sage uppercase tracking-wide">Bank Accounts</p>
+                <p className="text-xs font-bold text-brand-sage dark:text-gray-400 uppercase tracking-wide">Bank Accounts</p>
                 {bankMethods.map(bank => renderPaymentOption(
                   bank,
                   bank.bankName || 'Bank Account',
@@ -123,7 +123,7 @@ export const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
 
             {cryptoMethods.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-bold text-brand-sage uppercase tracking-wide">Crypto Wallets</p>
+                <p className="text-xs font-bold text-brand-sage dark:text-gray-400 uppercase tracking-wide">Crypto Wallets</p>
                 {cryptoMethods.map(crypto => {
                   const hasInsufficientBalance = (crypto.balance || 0) < totalAmount;
                   return renderPaymentOption(
@@ -141,17 +141,17 @@ export const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
                 onClose();
                 navigate('/settings/payment-methods');
               }}
-              className="w-full p-4 rounded-xl border-2 border-dashed border-brand-lightGray hover:border-brand-medium hover:bg-brand-offWhite transition-all text-center"
+              className="w-full p-4 rounded-xl border-2 border-dashed border-brand-lightGray dark:border-[#3a3a3a] hover:border-brand-medium dark:hover:border-brand-mint hover:bg-brand-offWhite dark:hover:bg-[#2a2a2a] transition-all text-center"
             >
-              <i className="fa-solid fa-plus text-brand-sage mr-2"></i>
-              <span className="text-brand-sage font-medium">Add Payment Method</span>
+              <i className="fa-solid fa-plus text-brand-sage dark:text-gray-400 mr-2"></i>
+              <span className="text-brand-sage dark:text-gray-400 font-medium">Add Payment Method</span>
             </button>
           </div>
 
-          <div className="p-6 border-t border-brand-lightGray bg-brand-offWhite">
+          <div className="p-6 border-t border-brand-lightGray dark:border-[#3a3a3a] bg-brand-offWhite dark:bg-[#101010]">
             <div className="flex justify-between items-center mb-4">
-              <span className="text-brand-sage font-medium">Total</span>
-              <span className="text-xl font-bold text-brand-dark">${totalAmount.toFixed(2)}</span>
+              <span className="text-brand-sage dark:text-gray-400 font-medium">Total</span>
+              <span className="text-xl font-bold text-brand-dark dark:text-white">${totalAmount.toFixed(2)}</span>
             </div>
             <button
               onClick={onConfirm}
@@ -168,18 +168,18 @@ export const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
         </div>
       </div>
 
-      <div className="md:hidden fixed inset-x-0 bottom-0 z-[201] bg-white rounded-t-3xl shadow-xl max-h-[85vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="w-12 h-1.5 bg-brand-lightGray rounded-full mx-auto mt-3"></div>
+      <div className="md:hidden fixed inset-x-0 bottom-0 z-[201] bg-white dark:bg-[#1a1a1a] rounded-t-3xl shadow-xl max-h-[85vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="w-12 h-1.5 bg-brand-lightGray dark:bg-[#3a3a3a] rounded-full mx-auto mt-3"></div>
         
-        <div className="p-6 border-b border-brand-lightGray">
+        <div className="p-6 border-b border-brand-lightGray dark:border-[#3a3a3a]">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-brand-dark">Select Payment Method</h2>
-            <button onClick={onClose} className="text-brand-sage hover:text-brand-dark p-2">
+            <h2 className="text-lg font-bold text-brand-dark dark:text-white">Select Payment Method</h2>
+            <button onClick={onClose} className="text-brand-sage dark:text-gray-400 hover:text-brand-dark dark:hover:text-white p-2">
               <i className="fa-solid fa-xmark text-xl"></i>
             </button>
           </div>
           {propertyName && (
-            <p className="text-sm text-brand-sage mt-1">
+            <p className="text-sm text-brand-sage dark:text-gray-400 mt-1">
               {tokenAmount} token{tokenAmount > 1 ? 's' : ''} • ${totalAmount.toFixed(2)}
             </p>
           )}
@@ -220,14 +220,14 @@ export const PaymentMethodModal: React.FC<PaymentMethodModalProps> = ({
               onClose();
               navigate('/settings/payment-methods');
             }}
-            className="w-full p-3 rounded-xl border-2 border-dashed border-brand-lightGray text-center"
+            className="w-full p-3 rounded-xl border-2 border-dashed border-brand-lightGray dark:border-[#3a3a3a] text-center"
           >
-            <i className="fa-solid fa-plus text-brand-sage mr-2"></i>
-            <span className="text-brand-sage font-medium text-sm">Add Payment Method</span>
+            <i className="fa-solid fa-plus text-brand-sage dark:text-gray-400 mr-2"></i>
+            <span className="text-brand-sage dark:text-gray-400 font-medium text-sm">Add Payment Method</span>
           </button>
         </div>
 
-        <div className="p-4 pb-8 border-t border-brand-lightGray bg-white">
+        <div className="p-4 pb-8 border-t border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#101010]">
           <button
             onClick={onConfirm}
             disabled={!selectedMethod}

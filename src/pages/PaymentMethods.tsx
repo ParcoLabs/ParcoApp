@@ -304,7 +304,7 @@ const PaymentMethodsContent: React.FC = () => {
                 {!showAddCard && (
                   <button
                     onClick={() => setShowAddCard(true)}
-                    className="text-brand-green font-semibold text-sm hover:text-brand-deep"
+                    className="text-brand-green font-semibold text-sm hover:text-brand-deep dark:text-brand-mint"
                   >
                     <i className="fa-solid fa-plus mr-1"></i> Add Card
                   </button>

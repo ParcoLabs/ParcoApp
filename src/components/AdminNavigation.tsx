@@ -158,7 +158,7 @@ export const AdminNavigation: React.FC = () => {
               </span>
             </div>
           ) : (
-            <button onClick={() => navigate('/login')} className="w-full text-center text-sm font-semibold text-brand-deep">
+            <button onClick={() => navigate('/login')} className="w-full text-center text-sm font-semibold text-brand-deep dark:text-brand-mint">
               Sign In
             </button>
           )}

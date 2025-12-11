@@ -187,7 +187,7 @@ export const DefiPage: React.FC = () => {
                                 <div>
                                   <p className="font-bold text-brand-dark dark:text-white">{holding.title}</p>
                                   <p className="text-sm text-brand-sage">{holding.location}</p>
-                                  <p className="text-xs text-brand-medium">
+                                  <p className="text-xs text-brand-medium dark:text-brand-mint">
                                     {holding.availableTokens} tokens available (${(holding.availableTokens * holding.tokenPrice).toLocaleString()} value)
                                   </p>
                                 </div>
@@ -213,18 +213,18 @@ export const DefiPage: React.FC = () => {
                     )}
                 </div>
                 <div className="bg-brand-mint/20 border border-brand-mint rounded-2xl p-6 h-fit">
-                    <h3 className="font-bold text-brand-dark mb-4"><i className="fa-solid fa-circle-info mr-2 text-brand-medium"></i>How it works</h3>
+                    <h3 className="font-bold text-brand-dark mb-4"><i className="fa-solid fa-circle-info mr-2 text-brand-medium dark:text-brand-mint"></i>How it works</h3>
                     <ul className="space-y-4 text-sm text-brand-dark dark:text-white">
                         <li className="flex gap-3">
-                            <span className="font-bold text-brand-medium">1.</span>
+                            <span className="font-bold text-brand-medium dark:text-brand-mint">1.</span>
                             Lock your property tokens as collateral in the smart contract.
                         </li>
                         <li className="flex gap-3">
-                            <span className="font-bold text-brand-medium">2.</span>
+                            <span className="font-bold text-brand-medium dark:text-brand-mint">2.</span>
                             Receive USDC instantly up to 60% of your collateral value (LTV).
                         </li>
                         <li className="flex gap-3">
-                            <span className="font-bold text-brand-medium">3.</span>
+                            <span className="font-bold text-brand-medium dark:text-brand-mint">3.</span>
                             Repay at any time. Interest is calculated dynamically.
                         </li>
                     </ul>
@@ -298,7 +298,7 @@ export const DefiPage: React.FC = () => {
                   <p className="text-sm text-brand-dark font-medium">Your Position</p>
                   <p className="text-xl font-bold text-brand-dark dark:text-white">${selectedPool.userDeposit.toLocaleString()}</p>
                   {selectedPool.accruedYield > 0 && (
-                    <p className="text-sm text-brand-medium">+${selectedPool.accruedYield.toFixed(2)} accrued</p>
+                    <p className="text-sm text-brand-medium dark:text-brand-mint">+${selectedPool.accruedYield.toFixed(2)} accrued</p>
                   )}
                 </div>
               )}
