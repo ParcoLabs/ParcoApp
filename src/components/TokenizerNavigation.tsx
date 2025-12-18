@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useDemoMode } from '../context/DemoModeContext';
@@ -14,32 +14,10 @@ export const TokenizerNavigation: React.FC<TokenizerNavigationProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const { demoMode } = useDemoMode();
-  const [isAdmin, setIsAdmin] = useState(false);
 
-  useEffect(() => {
-    const checkAdminStatus = async () => {
-      if (!isAuthenticated) {
-        setIsAdmin(false);
-        return;
-      }
-      
-      try {
-        const response = await fetch('/api/admin/user/role', {
-          credentials: 'include',
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setIsAdmin(data.isAdmin === true);
-        }
-      } catch (error) {
-        setIsAdmin(false);
-      }
-    };
-
-    checkAdminStatus();
-  }, [isAuthenticated]);
+  const isAdmin = user?.role === 'ADMIN';
 
   const isActive = (path: string) => {
     if (path === '/tokenizer') {

@@ -1,6 +1,22 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-brand-dark: #173726;
+  --color-brand-medium: #41b39a;
+  --color-brand-deep: #056052;
+  --color-brand-offWhite: #ffffff;
+  --color-brand-sage: #7ebea6;
+  --color-brand-lightGray: #d1d5db;
+  --color-brand-mint: #e5f9f4;
+  --color-brand-black: #101010;
+  --color-brand-lime: #9eefbc;
+  --color-brand-tan: #d5b48c;
+  
+  --font-family-sans: 'Inter', sans-serif;
+  --font-family-logo: 'Bungee', cursive;
+}
+
+@variant dark (&:where(.dark, .dark *));
 
 :root {
   --bg-primary: #ffffff;
