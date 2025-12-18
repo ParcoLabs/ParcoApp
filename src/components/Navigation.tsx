@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useDemoMode } from '../context/DemoModeContext';
@@ -25,11 +25,34 @@ const demoNavItems: NavItem[] = [
 export const Navigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { demoMode } = useDemoMode();
   const { isDark, toggleTheme } = useTheme();
+  const [isAdmin, setIsAdmin] = useState(false);
 
-  const isAdmin = user?.role === 'ADMIN';
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      if (!isAuthenticated) {
+        setIsAdmin(false);
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/admin/user/role', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setIsAdmin(data.isAdmin === true);
+        }
+      } catch (error) {
+        setIsAdmin(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [isAuthenticated]);
+
   const navItems = demoMode ? demoNavItems : baseNavItems;
   const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + '/');
 

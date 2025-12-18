@@ -1,17 +1,61 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useAuth as useClerkAuth } from '@clerk/clerk-react';
 import { AdminNavigation } from '../../components/AdminNavigation';
 
 export const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated } = useAuth();
+  const { getToken } = useClerkAuth();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const userRole = user?.role || null;
-  const isAdmin = userRole === 'ADMIN';
-  const error = !isAuthenticated || !isAdmin ? 'Access Denied' : null;
+  useEffect(() => {
+    const checkAdminAccess = async () => {
+      try {
+        const token = await getToken();
+        
+        if (!token) {
+          setError('Access Denied');
+          setLoading(false);
+          return;
+        }
 
-  if (isLoading) {
+        const response = await fetch('/api/admin/user/role', {
+          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setUserRole(data.role);
+          if (!data.isAdmin) {
+            setError('Access Denied');
+          }
+        } else {
+          setError('Access Denied');
+        }
+      } catch (err) {
+        console.error('Error checking admin access:', err);
+        setError('Access Denied');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      checkAdminAccess();
+    } else {
+      setLoading(false);
+      setError('Access Denied');
+    }
+  }, [isAuthenticated, getToken]);
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
