@@ -4,7 +4,6 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
     <title>Parco - RWA Investment Platform</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Google Fonts -->
@@ -12,100 +11,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              brand: {
-                dark: '#173726',
-                medium: '#41b39a',
-                deep: '#056052',
-                offWhite: '#ffffff',
-                sage: '#7ebea6',
-                lightGray: '#d1d5db',
-                mint: '#e5f9f4',
-                black: '#101010',
-                lime: '#9eefbc',
-                tan: '#d5b48c',
-              }
-            },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              logo: ['Bungee', 'cursive'],
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      :root {
-        --bg-primary: #ffffff;
-        --bg-secondary: #f9fafb;
-        --bg-card: #ffffff;
-        --text-primary: #173726;
-        --text-secondary: #7ebea6;
-        --border-color: #d1d5db;
-        --nav-bg: #ffffff;
-        --nav-active: #e5f9f4;
-      }
-      
-      .dark {
-        --bg-primary: #101010;
-        --bg-secondary: #1a1a1a;
-        --bg-card: #1a1a1a;
-        --text-primary: #ffffff;
-        --text-secondary: #9ca3af;
-        --border-color: #2a2a2a;
-        --nav-bg: #101010;
-        --nav-active: #1a1a1a;
-        --accent-green: #e5f9f4;
-      }
-      
-      html, body {
-        font-family: 'Inter', sans-serif;
-        background-color: var(--bg-primary);
-        color: var(--text-primary);
-        overflow-x: hidden;
-        width: 100%;
-        max-width: 100vw;
-        transition: background-color 0.2s ease, color 0.2s ease;
-      }
-      #root {
-        overflow-x: hidden;
-        width: 100%;
-        max-width: 100vw;
-      }
-      /* Hide scrollbar for clean mobile look */
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-      .font-logo {
-        font-family: 'Bungee', cursive;
-      }
-      /* Safe area for mobile bottom nav */
-      .pb-safe {
-        padding-bottom: env(safe-area-inset-bottom, 0);
-      }
-      .safe-area-bottom {
-        padding-bottom: max(env(safe-area-inset-bottom, 0), 0.75rem);
-      }
-      
-      /* Theme-aware utility classes */
-      .bg-theme-primary { background-color: var(--bg-primary); }
-      .bg-theme-secondary { background-color: var(--bg-secondary); }
-      .bg-theme-card { background-color: var(--bg-card); }
-      .text-theme-primary { color: var(--text-primary); }
-      .text-theme-secondary { color: var(--text-secondary); }
-      .border-theme { border-color: var(--border-color); }
-      .nav-theme-bg { background-color: var(--nav-bg); }
-      .nav-theme-active { background-color: var(--nav-active); }
-    </style>
     <script>
       // Initialize theme from localStorage before page renders to prevent flash
       (function() {
