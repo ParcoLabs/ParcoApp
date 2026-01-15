@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth as useClerkAuth } from '@clerk/clerk-react';
+import { useTheme } from '../../context/ThemeContext';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface TokenizationSubmission {
@@ -60,6 +61,7 @@ const MOCK_HOLDER_GROWTH_DATA = [
 export const TokenizerPostDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { getToken } = useClerkAuth();
+  const { isDark } = useTheme();
   const [submissions, setSubmissions] = useState<TokenizationSubmission[]>([]);
   const [activeSubmission, setActiveSubmission] = useState<TokenizationSubmission | null>(null);
   const [stats, setStats] = useState<PropertyStats>({
@@ -109,6 +111,9 @@ export const TokenizerPostDashboard: React.FC = () => {
     return sub.propertyName || 'Untitled Property';
   };
 
+  const chartGridColor = isDark ? '#3a3a3a' : '#e5e7eb';
+  const chartAxisColor = isDark ? '#9ca3af' : '#6b7280';
+
   if (loading) {
     return (
       <div className="p-4 md:p-8 max-w-6xl mx-auto">
@@ -121,15 +126,15 @@ export const TokenizerPostDashboard: React.FC = () => {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-brand-black">Overview</h1>
+      <h1 className="text-2xl font-bold text-brand-dark dark:text-white">Overview</h1>
 
       {!activeSubmission ? (
         <div className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 dark:border-[#2a2a2a] rounded-xl p-12 text-center">
-          <div className="w-16 h-16 bg-brand-sage/10 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-brand-sage/10 dark:bg-brand-sage/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <i className="fa-solid fa-building text-2xl text-brand-sage"></i>
           </div>
-          <h3 className="text-lg font-bold text-brand-black mb-2">No Tokenized Properties</h3>
-          <p className="text-brand-sage text-sm mb-6">Submit a property for tokenization to see your dashboard.</p>
+          <h3 className="text-lg font-bold text-brand-dark dark:text-white mb-2">No Tokenized Properties</h3>
+          <p className="text-brand-sage dark:text-gray-400 text-sm mb-6">Submit a property for tokenization to see your dashboard.</p>
           <button
             onClick={() => navigate('/tokenizer/my-properties')}
             className="bg-brand-deep hover:bg-brand-dark text-white px-6 py-2.5 rounded-lg font-bold text-sm transition-all"
@@ -139,14 +144,12 @@ export const TokenizerPostDashboard: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* Top Stats Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Property Card */}
             <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
-              <p className="text-lg font-bold text-brand-black mb-3">
+              <p className="text-lg font-bold text-brand-dark dark:text-white mb-3">
                 {activeSubmission.propertyAddress || '23-45 Biscayne Bay Blvd'}
               </p>
-              <div className="aspect-[4/3] bg-brand-offWhite rounded-lg mb-4 flex items-center justify-center overflow-hidden">
+              <div className="aspect-[4/3] bg-brand-offWhite dark:bg-[#2a2a2a] rounded-lg mb-4 flex items-center justify-center overflow-hidden">
                 <img 
                   src={activeSubmission.imageUrl || activeSubmission.images?.[0] || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop'}
                   alt="Property" 
@@ -158,12 +161,10 @@ export const TokenizerPostDashboard: React.FC = () => {
               </p>
             </div>
 
-            {/* Financial Stats */}
             <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
-              {/* Occupancy Rate */}
               <div className="mb-5">
-                <p className="text-sm font-medium text-brand-dark text-center mb-2">Occupancy Rate</p>
-                <div className="w-full h-5 bg-brand-lightGray rounded-full overflow-hidden">
+                <p className="text-sm font-medium text-brand-dark dark:text-white text-center mb-2">Occupancy Rate</p>
+                <div className="w-full h-5 bg-brand-lightGray dark:bg-[#2a2a2a] rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-brand-deep rounded-full flex items-center justify-center"
                     style={{ width: `${stats.occupancyRate}%` }}
@@ -173,65 +174,67 @@ export const TokenizerPostDashboard: React.FC = () => {
                 </div>
               </div>
 
-              {/* Financial Summary */}
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-brand-dark dark:text-white">Total Rental Income:</span>
+                  <span className="text-sm text-brand-dark dark:text-gray-300">Total Rental Income:</span>
                   <span className="text-sm font-bold text-brand-dark dark:text-white">${stats.totalRentalIncome.toLocaleString()}.00</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-brand-dark dark:text-white">Total Expenses:</span>
+                  <span className="text-sm text-brand-dark dark:text-gray-300">Total Expenses:</span>
                   <span className="text-sm font-bold text-brand-dark dark:text-white">${stats.totalExpenses.toLocaleString()}.00</span>
                 </div>
-                <div className="flex justify-between items-center pt-3 border-t border-brand-lightGray">
+                <div className="flex justify-between items-center pt-3 border-t border-brand-lightGray dark:border-[#3a3a3a]">
                   <span className="text-sm font-medium text-brand-dark dark:text-white">Net Profit:</span>
                   <span className="text-sm font-bold text-brand-dark dark:text-white">${stats.netProfit.toLocaleString()}.00</span>
                 </div>
               </div>
             </div>
 
-            {/* Token Holders & Notifications */}
             <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
               <div className="mb-6">
-                <p className="text-lg font-bold text-brand-dark mb-4">Total Token holders</p>
+                <p className="text-lg font-bold text-brand-dark dark:text-white mb-4">Total Token holders</p>
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-full bg-brand-mint flex items-center justify-center">
+                  <div className="w-14 h-14 rounded-full bg-brand-mint dark:bg-brand-deep/30 flex items-center justify-center">
                     <i className="fa-solid fa-users text-brand-deep dark:text-brand-mint text-xl"></i>
                   </div>
-                  <span className="text-4xl font-bold text-brand-black">{stats.totalTokenHolders.toLocaleString()}</span>
+                  <span className="text-4xl font-bold text-brand-dark dark:text-white">{stats.totalTokenHolders.toLocaleString()}</span>
                 </div>
               </div>
 
               <div>
-                <p className="text-lg font-bold text-brand-dark mb-4">Notifications</p>
+                <p className="text-lg font-bold text-brand-dark dark:text-white mb-4">Notifications</p>
                 <div className="flex justify-center">
-                  <div className="w-14 h-14 rounded-full bg-brand-offWhite flex items-center justify-center">
-                    <i className="fa-regular fa-bell text-brand-sage text-2xl"></i>
+                  <div className="w-14 h-14 rounded-full bg-brand-offWhite dark:bg-[#2a2a2a] flex items-center justify-center">
+                    <i className="fa-regular fa-bell text-brand-sage dark:text-gray-400 text-2xl"></i>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Appreciation Chart */}
             <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
-              <h3 className="text-lg font-bold text-brand-black mb-4">Appreciation</h3>
+              <h3 className="text-lg font-bold text-brand-dark dark:text-white mb-4">Appreciation</h3>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={MOCK_APPRECIATION_DATA}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
                     <XAxis 
                       dataKey="month" 
-                      tick={{ fontSize: 10 }} 
-                      stroke="#6b7280"
+                      tick={{ fontSize: 10, fill: chartAxisColor }} 
+                      stroke={chartAxisColor}
                       angle={-45}
                       textAnchor="end"
                       height={60}
                     />
-                    <YAxis tick={{ fontSize: 10 }} stroke="#6b7280" domain={[0, 100]} />
-                    <Tooltip />
+                    <YAxis tick={{ fontSize: 10, fill: chartAxisColor }} stroke={chartAxisColor} domain={[0, 100]} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: isDark ? '#1a1a1a' : '#fff',
+                        border: `1px solid ${isDark ? '#3a3a3a' : '#e5e7eb'}`,
+                        color: isDark ? '#fff' : '#173726'
+                      }}
+                    />
                     <Line 
                       type="monotone" 
                       dataKey="value" 
@@ -244,23 +247,28 @@ export const TokenizerPostDashboard: React.FC = () => {
               </div>
             </div>
 
-            {/* Earnings/Expenses Chart */}
             <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
-              <h3 className="text-lg font-bold text-brand-black mb-4">Earnings Expenses Summary</h3>
+              <h3 className="text-lg font-bold text-brand-dark dark:text-white mb-4">Earnings Expenses Summary</h3>
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={MOCK_EARNINGS_DATA} barGap={2}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
                     <XAxis 
                       dataKey="month" 
-                      tick={{ fontSize: 10 }} 
-                      stroke="#6b7280"
+                      tick={{ fontSize: 10, fill: chartAxisColor }} 
+                      stroke={chartAxisColor}
                       angle={-45}
                       textAnchor="end"
                       height={60}
                     />
-                    <YAxis tick={{ fontSize: 10 }} stroke="#6b7280" domain={[0, 100]} />
-                    <Tooltip />
+                    <YAxis tick={{ fontSize: 10, fill: chartAxisColor }} stroke={chartAxisColor} domain={[0, 100]} />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: isDark ? '#1a1a1a' : '#fff',
+                        border: `1px solid ${isDark ? '#3a3a3a' : '#e5e7eb'}`,
+                        color: isDark ? '#fff' : '#173726'
+                      }}
+                    />
                     <Bar dataKey="earnings" fill="#0d4f4a" radius={[2, 2, 0, 0]} barSize={16} />
                     <Bar dataKey="expenses" fill="#94a3b8" radius={[2, 2, 0, 0]} barSize={16} />
                   </BarChart>
@@ -269,23 +277,28 @@ export const TokenizerPostDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Token Holder Growth Chart */}
           <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
-            <h3 className="text-lg font-bold text-brand-black mb-4">Token holder growth</h3>
+            <h3 className="text-lg font-bold text-brand-dark dark:text-white mb-4">Token holder growth</h3>
             <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={MOCK_HOLDER_GROWTH_DATA}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartGridColor} />
                   <XAxis 
                     dataKey="month" 
-                    tick={{ fontSize: 10 }} 
-                    stroke="#6b7280"
+                    tick={{ fontSize: 10, fill: chartAxisColor }} 
+                    stroke={chartAxisColor}
                     angle={-45}
                     textAnchor="end"
                     height={60}
                   />
-                  <YAxis tick={{ fontSize: 10 }} stroke="#6b7280" domain={[0, 100]} />
-                  <Tooltip />
+                  <YAxis tick={{ fontSize: 10, fill: chartAxisColor }} stroke={chartAxisColor} domain={[0, 100]} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: isDark ? '#1a1a1a' : '#fff',
+                      border: `1px solid ${isDark ? '#3a3a3a' : '#e5e7eb'}`,
+                      color: isDark ? '#fff' : '#173726'
+                    }}
+                  />
                   <Line 
                     type="monotone" 
                     dataKey="holders" 
