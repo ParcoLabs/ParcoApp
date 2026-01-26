@@ -9,6 +9,12 @@ const router = Router();
 const DEMO_WALLET_PREFIX = 'demo_wallet_';
 const INITIAL_DEMO_BALANCE = 25000;
 
+const INITIAL_DEMO_BALANCES = {
+  usdc: 10000,
+  btc: 2000,
+  parco: 1000,
+};
+
 // Mock properties for demo mode (matches frontend mockData.ts)
 const MOCK_PROPERTIES: Record<string, { id: string; title: string; tokenPrice: number; availableTokens: number; rentalYield: number }> = {
   '1': { id: '1', title: '560 State St', tokenPrice: 50, availableTokens: 450, rentalYield: 9.8 },
@@ -182,12 +188,6 @@ router.post('/create-user', requireDemoMode, apiAuth, async (req, res) => {
     });
   }
 });
-
-const INITIAL_DEMO_BALANCES = {
-  usdc: 10000,
-  btc: 2000,
-  parco: 1000,
-};
 
 const CRYPTO_NAMES: Record<string, string> = {
   usdc: 'USDC',
