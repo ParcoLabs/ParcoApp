@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../lib/prisma';
 import { isDemoMode } from '../lib/demoMode';
 import { apiAuth } from '../middleware/auth';
+import { logDemoAction, getUserDemoStats, getLeaderboard } from '../services/demoActionLogger';
 
 const router = Router();
 
@@ -409,6 +410,15 @@ router.post('/buy', requireDemoMode, apiAuth, async (req, res) => {
       });
       
       console.log('[Demo Buy] Mock purchase complete');
+      
+      // Log demo action for rewards tracking
+      await logDemoAction(user.id, 'BUY_TOKEN', {
+        propertyId,
+        tokenAmount: quantity,
+        usdcAmount: totalCost,
+        metadata: { propertyName: mockProperty.title, paymentMethod }
+      });
+      
       return res.json({
         success: true,
         data: {
@@ -891,6 +901,14 @@ router.post('/borrow', requireDemoMode, apiAuth, async (req, res) => {
 
       const updatedVault = await prisma.vaultAccount.findUnique({
         where: { id: user.vaultAccount.id },
+      });
+
+      // Log demo action for rewards tracking
+      await logDemoAction(user.id, 'BORROW_USDC', {
+        propertyId,
+        tokenAmount,
+        usdcAmount: borrowAmount,
+        metadata: { propertyName: demoHolding.propertyName, collateralValue }
       });
 
       return res.json({
@@ -1958,6 +1976,12 @@ router.post('/lending-pools/deposit', requireDemoMode, apiAuth, async (req, res)
       where: { id: user.vaultAccount.id },
     });
 
+    // Log demo action for rewards tracking
+    await logDemoAction(user.id, 'DEPOSIT_LENDING', {
+      usdcAmount: amount,
+      metadata: { poolId, poolName: pool.name }
+    });
+
     res.json({
       success: true,
       demoMode: true,
@@ -2205,6 +2229,11 @@ router.post('/governance-proposals/vote', requireDemoMode, apiAuth, async (req, 
       return { vote, updatedProposal };
     });
 
+    // Log demo action for rewards tracking
+    await logDemoAction(user.id, 'VOTE_GOVERNANCE', {
+      metadata: { proposalId, proposalTitle: result.updatedProposal.title, choice }
+    });
+
     res.json({
       success: true,
       demoMode: true,
@@ -2269,6 +2298,13 @@ router.post('/stay-booking', requireDemoMode, apiAuth, async (req, res) => {
       },
     });
 
+    // Log demo action for rewards tracking
+    await logDemoAction(user.id, 'BOOK_STAY', {
+      propertyId,
+      usdcAmount: Number(totalAmount),
+      metadata: { checkIn, checkOut, guests }
+    });
+
     res.json({
       success: true,
       demoMode: true,
@@ -2327,4 +2363,55 @@ router.get('/stay-bookings', requireDemoMode, apiAuth, async (req, res) => {
   }
 });
 
+router.get('/rewards/stats', requireDemoMode, apiAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+    });
+
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    const stats = await getUserDemoStats(user.id);
+
+    res.json({
+      success: true,
+      demoMode: true,
+      data: stats,
+    });
+  } catch (error: any) {
+    console.error('Error fetching demo rewards stats:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch stats',
+    });
+  }
+});
+
+router.get('/rewards/leaderboard', requireDemoMode, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 50;
+    const leaderboard = await getLeaderboard(Math.min(limit, 100));
+
+    res.json({
+      success: true,
+      demoMode: true,
+      data: { leaderboard },
+    });
+  } catch (error: any) {
+    console.error('Error fetching demo leaderboard:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to fetch leaderboard',
+    });
+  }
+});
+
+export { logDemoAction };
 export default router;

@@ -1,7 +1,12 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { clerkMiddleware } from '@clerk/express';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { runMigrations } from 'stripe-replit-sync';
 import authRoutes from './routes/auth';
 import propertiesRoutes from './routes/properties';
@@ -21,14 +26,42 @@ import { isDemoMode } from './lib/demoMode';
 import { getStripeSync } from './lib/stripeClient';
 import { WebhookHandlers } from './lib/webhookHandlers';
 import { scheduler } from './services/scheduler';
+import { generalLimiter, authLimiter, transactionLimiter, demoActionLimiter } from './middleware/rateLimit';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+app.use(generalLimiter);
+
+const isProduction = process.env.NODE_ENV === 'production';
+const allowedOrigins = [
+  'http://localhost:5000',
+  'http://localhost:3000',
+  process.env.FRONTEND_URL,
+  ...(process.env.REPLIT_DOMAINS?.split(',').map(d => `https://${d}`) || []),
+].filter(Boolean) as string[];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5000',
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, !isProduction);
+      return;
+    }
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+    
+    if (!isProduction && (origin.includes('.replit.dev') || origin.includes('.repl.co'))) {
+      callback(null, true);
+      return;
+    }
+    
+    callback(null, false);
+  },
   credentials: true,
 }));
 
@@ -124,17 +157,17 @@ app.use(clerkMiddleware({
   secretKey: process.env.CLERK_SECRET_KEY,
 }));
 
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/properties', propertiesRoutes);
 app.use('/api/portfolio', portfolioRoutes);
-app.use('/api/payments', paymentsRoutes);
-app.use('/api/crypto', cryptoRoutes);
+app.use('/api/payments', transactionLimiter, paymentsRoutes);
+app.use('/api/crypto', transactionLimiter, cryptoRoutes);
 app.use('/api/kyc', kycRoutes);
-app.use('/api/buy', buyRoutes);
-app.use('/api/borrow', borrowRoutes);
-app.use('/api/rent', rentRoutes);
+app.use('/api/buy', transactionLimiter, buyRoutes);
+app.use('/api/borrow', transactionLimiter, borrowRoutes);
+app.use('/api/rent', transactionLimiter, rentRoutes);
 app.use('/api/system', systemRoutes);
-app.use('/api/demo', demoRoutes);
+app.use('/api/demo', demoActionLimiter, demoRoutes);
 app.use('/api/user', userSettingsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tokenization', tokenizationRoutes);
@@ -194,9 +227,22 @@ async function initStripe() {
   }
 }
 
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../dist');
+  app.use(express.static(distPath));
+  
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
+
 initStripe().then(() => {
   app.listen(PORT, () => {
     console.log(`Backend server running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     if (isDemoMode()) {
       console.log('[Demo Mode] Demo mode is ENABLED - blockchain/payment operations will be simulated');
     }
