@@ -44,6 +44,13 @@ interface TokenizationSubmission {
   createdAt: string;
 }
 
+interface IssuanceCaseData {
+  id: string;
+  status: string;
+  eligibilityStatus: string;
+  extractionScore: number;
+}
+
 interface Pagination {
   page: number;
   limit: number;
@@ -71,6 +78,9 @@ export const AdminTokenizations: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [issuanceCase, setIssuanceCase] = useState<IssuanceCaseData | null>(null);
+  const [issuanceLoading, setIssuanceLoading] = useState(false);
+  const [issuanceActionLoading, setIssuanceActionLoading] = useState<string | null>(null);
 
   const fetchSubmissions = async (page = 1) => {
     try {
@@ -106,6 +116,77 @@ export const AdminTokenizations: React.FC = () => {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const fetchIssuanceCase = async (submissionId: string) => {
+    setIssuanceLoading(true);
+    setIssuanceCase(null);
+    try {
+      const res = await fetch(`/api/issuance/by-submission/${submissionId}`, {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setIssuanceCase(json.data);
+      } else if (res.status === 404) {
+        const createRes = await fetch(`/api/issuance/by-submission/${submissionId}/create`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (createRes.ok) {
+          const json = await createRes.json();
+          setIssuanceCase(json.data);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching issuance case:', err);
+    } finally {
+      setIssuanceLoading(false);
+    }
+  };
+
+  const handleRunEligibility = async () => {
+    if (!issuanceCase) return;
+    setIssuanceActionLoading('eligibility');
+    try {
+      const res = await fetch(`/api/issuance/case/${issuanceCase.id}/eligibility/run`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setIssuanceCase(prev => prev ? { ...prev, eligibilityStatus: json.data?.eligibilityStatus || json.data?.result?.accreditationStatus || 'PASS' } : null);
+        showToast('Eligibility check completed', 'success');
+      } else {
+        showToast('Failed to run eligibility check', 'error');
+      }
+    } catch (err) {
+      showToast('Error running eligibility check', 'error');
+    } finally {
+      setIssuanceActionLoading(null);
+    }
+  };
+
+  const handleRunExtraction = async () => {
+    if (!issuanceCase) return;
+    setIssuanceActionLoading('extraction');
+    try {
+      const res = await fetch(`/api/issuance/case/${issuanceCase.id}/extract`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setIssuanceCase(prev => prev ? { ...prev, extractionScore: json.data?.extractionScore ?? 85, status: json.data?.status || prev.status } : null);
+        showToast('Extraction completed', 'success');
+      } else {
+        showToast('Failed to run extraction', 'error');
+      }
+    } catch (err) {
+      showToast('Error running extraction', 'error');
+    } finally {
+      setIssuanceActionLoading(null);
+    }
+  };
+
   const handleViewDetails = async (submission: TokenizationSubmission) => {
     try {
       const response = await fetch(`/api/admin/tokenizations/${submission.id}`, {
@@ -116,6 +197,7 @@ export const AdminTokenizations: React.FC = () => {
         const data = await response.json();
         setSelectedSubmission(data.submission);
         setDrawerOpen(true);
+        fetchIssuanceCase(submission.id);
       }
     } catch (error) {
       console.error('Error fetching submission details:', error);
@@ -532,6 +614,50 @@ export const AdminTokenizations: React.FC = () => {
                     <p className="font-medium text-gray-900">{selectedSubmission.tokenizer.email}</p>
                   </div>
                 </div>
+              </div>
+
+              <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-xl p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Issuance Status</h4>
+                {issuanceLoading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-deep"></div>
+                  </div>
+                ) : issuanceCase ? (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <p className="text-gray-500">Case Status</p>
+                        <p className="font-medium text-gray-900">{(issuanceCase.status || 'DRAFT').replace(/_/g, ' ')}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Eligibility</p>
+                        <p className="font-medium text-gray-900">{(issuanceCase.eligibilityStatus || 'PENDING').replace(/_/g, ' ')}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Extraction Score</p>
+                        <p className="font-medium text-gray-900">{issuanceCase.extractionScore ?? 0}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleRunEligibility}
+                        disabled={issuanceActionLoading !== null}
+                        className="flex-1 px-3 py-2 bg-brand-deep text-white rounded-lg text-xs font-medium hover:bg-brand-dark disabled:opacity-50 transition-colors"
+                      >
+                        {issuanceActionLoading === 'eligibility' ? 'Running...' : 'Run Eligibility'}
+                      </button>
+                      <button
+                        onClick={handleRunExtraction}
+                        disabled={issuanceActionLoading !== null}
+                        className="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                      >
+                        {issuanceActionLoading === 'extraction' ? 'Running...' : 'Run Extraction'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400 text-center py-2">No issuance case yet</p>
+                )}
               </div>
 
               {selectedSubmission.rejectionReason && (

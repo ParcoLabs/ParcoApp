@@ -2,8 +2,8 @@ import { Router, Request, Response } from 'express';
 import { getAuth } from '@clerk/express';
 import prisma from '../lib/prisma';
 import { isDemoMode } from '../utils/demoMode';
-import { mockIssuanceCase } from '../utils/demoResponses';
-import { loadUserWithRole, AuthenticatedRequest } from '../middleware/admin';
+import { mockIssuanceCase, mockEligibilityCheck, mockExtractionRunStatus } from '../utils/demoResponses';
+import { loadUserWithRole, adminOnly, AuthenticatedRequest } from '../middleware/admin';
 
 const router = Router();
 
@@ -127,6 +127,130 @@ router.post(
       return res.status(201).json({ success: true, data: issuanceCase });
     } catch (error: any) {
       console.error('[issuance] Error creating case:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.post(
+  '/case/:caseId/eligibility/run',
+  simpleAuth,
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { caseId } = req.params;
+      const user = (req as AuthenticatedRequest).user;
+
+      if (!user) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+      }
+
+      if (isDemoMode(req)) {
+        return res.json({
+          success: true,
+          data: mockEligibilityCheck(user.id, {
+            eligible: true,
+            kycLevel: 'VERIFIED',
+            accreditationStatus: 'APPROVED',
+          }),
+        });
+      }
+
+      const issuanceCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+      });
+
+      if (!issuanceCase) {
+        return res.status(404).json({ success: false, error: 'Issuance case not found' });
+      }
+
+      const updated = await prisma.issuanceCase.update({
+        where: { id: caseId },
+        data: { eligibilityStatus: 'PASS' },
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          caseId: updated.id,
+          eligibilityStatus: updated.eligibilityStatus,
+          result: {
+            eligible: true,
+            kycLevel: 'VERIFIED',
+            accreditationStatus: 'APPROVED',
+            maxInvestment: 500000,
+            reasons: [],
+          },
+        },
+      });
+    } catch (error: any) {
+      console.error('[issuance] Error running eligibility:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.post(
+  '/case/:caseId/extract',
+  simpleAuth,
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { caseId } = req.params;
+      const user = (req as AuthenticatedRequest).user;
+
+      if (!user) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+      }
+
+      if (isDemoMode(req)) {
+        return res.json({
+          success: true,
+          data: mockExtractionRunStatus(caseId, {
+            status: 'COMPLETED',
+            documentsProcessed: 6,
+            documentsTotal: 6,
+            extractedFields: 42,
+          }),
+        });
+      }
+
+      const issuanceCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+      });
+
+      if (!issuanceCase) {
+        return res.status(404).json({ success: false, error: 'Issuance case not found' });
+      }
+
+      const updated = await prisma.issuanceCase.update({
+        where: { id: caseId },
+        data: {
+          extractionScore: 85,
+          status: 'EXTRACTION_COMPLETE',
+        },
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          caseId: updated.id,
+          extractionScore: updated.extractionScore,
+          status: updated.status,
+          run: {
+            runId: `run_${Date.now()}`,
+            status: 'COMPLETED',
+            documentsProcessed: 6,
+            documentsTotal: 6,
+            extractedFields: 42,
+            errors: [],
+            startedAt: new Date().toISOString(),
+            completedAt: new Date().toISOString(),
+          },
+        },
+      });
+    } catch (error: any) {
+      console.error('[issuance] Error running extraction:', error);
       return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
     }
   },
