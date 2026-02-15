@@ -1,118 +1,62 @@
 # Parco - RWA Investment Platform
 
-## Overview
-Parco is a Real-World Asset (RWA) investment platform built with React, TypeScript, and Vite. It enables users to invest in tokenized real estate and other real-world assets through a modern web interface. The platform aims to connect traditional finance with blockchain technology, offering a new avenue for asset ownership and investment.
+### Overview
+Parco is a Real-World Asset (RWA) investment platform that connects traditional finance with blockchain technology. Built with React, TypeScript, and Vite, it allows users to invest in tokenized real estate and other real-world assets through a modern web interface. The platform's vision is to offer a new avenue for asset ownership and investment, focusing on tokenization, robust portfolio management, and comprehensive financial tools. Key capabilities include a property marketplace, DeFi integrations, and a simulated demo mode for testing all features.
 
-## User Preferences
+### User Preferences
 None documented yet.
 
-## System Architecture
+### System Architecture
 
-### UI/UX Decisions
-The platform uses React for the frontend, styled with TailwindCSS and featuring Recharts for data visualization. Google Fonts (Inter, Bungee) and Font Awesome provide consistent typography and iconography.
+#### UI/UX Decisions
+The frontend is built with React, styled using TailwindCSS for utility-first styling, and incorporates Recharts for interactive data visualization. Typography is standardized with Google Fonts (Inter, Bungee), and iconography is provided by Font Awesome. The platform ensures full mobile responsiveness across all dashboard types (Investor, Tokenizer, Admin), adapting layouts from multi-column desktop views to single-column mobile interfaces with optimized navigation elements like bottom tab bars.
 
-### Technical Implementations
+#### Technical Implementations
 - **Frontend**: React 19.2.0, TypeScript, Vite 6.2.0, React Router DOM 7.9.6.
 - **Backend**: Express.js with TypeScript.
-- **Database**: PostgreSQL with Prisma ORM 7.
-- **Blockchain Integration**: Smart contracts (PropertyToken.sol, PropertyVault.sol) on Polygon, interacting via Ethers.js v6. Uses OpenZeppelin standards for contracts.
-- **Authentication**: Clerk for user management.
-- **KYC**: Sumsub WebSDK.
-- **Payments**: Stripe for fiat and Coinbase Commerce for cryptocurrency.
+- **Database**: PostgreSQL managed with Prisma ORM 7.
+- **Blockchain Integration**: Utilizes smart contracts (PropertyToken.sol, PropertyVault.sol) on the Polygon network, interacting via Ethers.js v6, adhering to OpenZeppelin standards.
+- **Authentication**: Clerk for user identity and authentication.
+- **KYC**: Integrated with Sumsub WebSDK for identity verification.
+- **Payments**: Stripe handles fiat transactions, and Coinbase Commerce manages cryptocurrency payments.
 
-### Feature Specifications
-- **Authentication System**: Login/Register with Clerk, protected routes.
+#### Feature Specifications
+- **Authentication**: Secure user login/registration with Clerk and protected routes.
 - **Marketplace**: Browse and purchase tokenized properties.
-- **Portfolio Management**: Track assets, performance, and transaction history.
-- **Holding Details Page**: Detailed view for individual token holdings (/holdings/:id) with:
-  - Price chart with time period selectors (1D, 1W, 1M, 1Y, All)
-  - Balance tab: Total value, tokens owned, monthly/all-time returns
-  - Insights tab: Property details and key insights
-  - Governance tab: Active proposals to vote on, past voting history (demo mode)
-  - Buy & Sell and DeFi action buttons
-  - Mobile and desktop responsive layouts
-- **Payment Processing**: Supports credit/debit cards, ACH, and cryptocurrencies.
-- **KYC/Compliance**: Integrated Sumsub for identity verification.
-- **Blockchain Integration**: USDC deposits, ERC-1155 token minting for ownership, role-based access control.
-- **Collateral Lending**: Borrow USDC against locked property tokens via BorrowVault smart contract (50% max LTV, 8% annual interest, 1% origination fee, 75% liquidation threshold).
-- **Rent Distribution Engine**: Automated monthly distribution of rent, deducting loan interest from borrowers.
-- **Demo Mode**: Comprehensive simulation environment for testing all platform features without real blockchain/payment interactions:
-  - Demo user setup with funded crypto wallet ($10K USDC, $2K BTC, $1K PARCO tokens)
-  - Property token purchases using demo USDC balance
-  - Borrow-against-tokens functionality (locks tokens via demoLockedQuantity, credits demoUsdcBalance)
-  - DeFi lending pools: deposit/withdraw USDC to earn yield (uses DemoLendingPool/DemoLendingPosition models)
-  - Governance voting on property improvement proposals (uses DemoGovernanceProposal/DemoGovernanceVote models)
-  - Rent cycle simulation with automated distributions
-  - All demo data is isolated in separate database models to avoid contaminating production data
-- **Admin Role System**: Database-driven role-based access control (USER, TOKENIZER, ADMIN) with middleware for secure access to administrative functionalities.
-- **Tokenization Review System**: Workflow for property tokenization submissions (DRAFT → SUBMITTED → IN_REVIEW → APPROVED/REJECTED → PUBLISHED).
-- **Property Management System**: Admin controls for minting, listing, pausing, and unpausing properties.
-- **Investor Operations System**: Admin tools to search investors, view profiles, holdings, vault balances, and loan positions.
-- **Tokenizer Dashboard**: Comprehensive interface for tokenizers with dual view modes:
-  - **Pre-tokenization View**: Shows application progress, document checklist with upload buttons (native file picker), Parco Intelligence Valuation, funds raising goals, token terms, and notifications. Navigation restricted to: Overview, Application, Help, Settings
-  - **Post-tokenization View**: Displays property overview with value, occupancy rate, rental income, expenses, net profit, token holder count, and charts. Full navigation available: My Properties, Governance, Compliance, Token Holders, etc.
-  - **Tokenizer Navigation**: Dedicated sidebar with tokenizer-specific navigation. Mobile bottom tab bar adapts based on pre/post view mode
-  - **Tokenizer Settings**: View mode toggle (pre/post for demo purposes), switch to investor account button, persisted via tokenizerViewMode field in database
-  - **Document Upload**: Native file picker integration supporting PDF, DOC, DOCX, JPG, JPEG, PNG with visual feedback and file management
-- **Admin Dashboard**: Dedicated admin interface with sidebar navigation:
-  - **Admin Navigation**: Sidebar with Overview, Tokenizations, Properties, Investors, Rent Distribution, Demo Tools
-  - **Admin Overview**: Dashboard home with stats cards (Total Users, Properties, Pending Reviews, Pending KYC), quick action buttons, recent activity feed, platform status
-  - **Role-Based Routing**: ADMIN users automatically redirected to /admin on login, TOKENIZER users to /tokenizer
+- **Portfolio Management**: Comprehensive tracking of assets, performance, and transaction history.
+- **Holding Details**: Detailed view for individual token holdings, including price charts, balance overviews, insights, and governance participation.
+- **Payment Processing**: Supports credit/debit cards, ACH, and cryptocurrency payments.
+- **Blockchain Features**: Facilitates USDC deposits, ERC-1155 token minting for ownership, and role-based access control.
+- **Collateral Lending**: Allows users to borrow USDC against locked property tokens via a BorrowVault smart contract with defined LTV, interest, and liquidation thresholds.
+- **Rent Distribution Engine**: Automates monthly rent distributions, including loan interest deductions.
+- **Demo Mode**: A comprehensive simulation environment for testing all platform functionalities without real-world financial or blockchain interactions. This includes simulated crypto wallets, property purchases, borrowing, DeFi lending, governance voting, and rent cycles. All demo data is isolated to prevent contamination of production data.
+- **Admin Role System**: Database-driven role-based access control (USER, TOKENIZER, ADMIN) with middleware for secure administrative access.
+- **Tokenization Review System**: Manages the workflow for property tokenization submissions through defined statuses (DRAFT, SUBMITTED, IN_REVIEW, APPROVED, REJECTED, PUBLISHED).
+- **Property Management**: Admin tools for minting, listing, pausing, and unpausing properties.
+- **Investor Operations**: Admin tools to manage investors, view profiles, holdings, and loan positions.
+- **Tokenizer Dashboard**: A dual-view interface for tokenizers, offering pre-tokenization progress tracking (application, documents, valuation) and post-tokenization property overview with detailed statistics.
+- **Admin Dashboard**: A dedicated interface for administrators with navigation for managing tokenizations, properties, investors, rent distribution, and demo tools, providing platform statistics and quick actions.
 
-### Mobile Responsiveness
-All three dashboard types (Investor, Tokenizer, Admin) are fully mobile responsive:
-- **Desktop**: Fixed sidebar navigation (264px width)
-- **Mobile**: Top header with logo and action buttons, bottom tab bar for quick navigation
-- **Responsive Grids**: Content adapts from multi-column on desktop to single-column on mobile
+#### System Design Choices
+- Employs client-side routing with React Router DOM.
+- Utilizes a custom Express.js backend for API services.
+- Leverages Prisma ORM for robust database operations and atomic transactions.
+- Implements role-based access control both in smart contracts and backend middleware for enhanced security.
+- Adheres to environment-based configuration for managing sensitive data.
+- Follows a standard Vite + React project structure.
+- **Document Upload Reality Check**: The current implementation for document uploads in the tokenizer dashboard is UI-only. Files are selected and stored in React component state but are **not** sent to a backend server for persistent storage. There is no server-side endpoint or storage solution configured for file uploads.
 
-### Project Structure
-Standard Vite + React structure (refactored December 2025):
-```
-/src                    # Frontend source code
-  /components          # Reusable UI components
-    /admin            # Admin-specific components
-    /defi             # DeFi-related components
-  /pages               # Page components (routes)
-    /admin            # Admin dashboard pages
-    /defi             # DeFi pages
-    /tokenizer        # Tokenizer dashboard pages
-  /context             # React context providers
-  /hooks               # Custom React hooks
-  /api                 # API utilities and mock data
-  /mobile              # Mobile-specific components
-  /public              # Static assets
-    /brand            # Brand assets (logos)
-  /routes              # Route definitions (if needed)
-  App.tsx              # Main app component with routing
-  main.tsx             # Entry point
-  brand.ts             # Brand colors and theming
-  types.ts             # TypeScript type definitions
-/backend               # Backend services (NOT modified)
-/server                # Express.js API server
-/prisma                # Database schema and migrations
-index.html             # HTML entry point (loads /src/main.tsx)
-vite.config.ts         # Vite configuration
-```
-
-### System Design Choices
-- Client-side routing with BrowserRouter.
-- Custom Express.js backend for API interactions.
-- Prisma ORM for database operations and atomic transactions.
-- Role-based access control implemented in smart contracts and backend middleware.
-- Environment-based configuration for sensitive data.
-- Standard Vite + React file structure with /src directory containing all frontend code.
-
-## External Dependencies
+### External Dependencies
 - **Clerk**: User authentication and authorization.
-- **Stripe**: Fiat payments (credit/debit card, ACH) and webhook management via `stripe-replit-sync`.
-- **Coinbase Commerce**: Cryptocurrency payments.
-- **Sumsub**: KYC verification.
-- **Alchemy RPC**: Blockchain interactions on Polygon.
-- **PostgreSQL (Replit Neon)**: Main database.
+- **Stripe**: Fiat payment processing, including credit/debit cards and ACH.
+- **Coinbase Commerce**: Cryptocurrency payment processing.
+- **Sumsub**: KYC (Know Your Customer) identity verification.
+- **Alchemy RPC**: Blockchain interactions, specifically on the Polygon network.
+- **PostgreSQL (Replit Neon)**: Primary database solution.
 - **Vite**: Frontend build tool.
-- **React Router DOM**: Client-side routing.
-- **Recharts**: Data visualization.
-- **Font Awesome**: Icons.
-- **Google Fonts**: Typography.
-- **OpenZeppelin Contracts**: Smart contract development standards.
+- **React Router DOM**: Client-side routing library.
+- **Recharts**: Data visualization library.
+- **Font Awesome**: Icon library.
+- **Google Fonts**: Custom typography.
+- **OpenZeppelin Contracts**: Standardized smart contract libraries.
 - **Ethers.js**: Ethereum blockchain interaction library.
