@@ -24,6 +24,13 @@ interface TokenizationSubmission {
   updatedAt: string;
 }
 
+interface IssuanceCaseData {
+  id: string;
+  status: string;
+  eligibilityStatus: string;
+  extractionScore: number;
+}
+
 interface DocumentStatus {
   received: boolean;
   approved: boolean;
@@ -45,6 +52,8 @@ export const TokenizerPreDashboard: React.FC = () => {
   const [submissions, setSubmissions] = useState<TokenizationSubmission[]>([]);
   const [activeSubmission, setActiveSubmission] = useState<TokenizationSubmission | null>(null);
   const [loading, setLoading] = useState(true);
+  const [issuanceCase, setIssuanceCase] = useState<IssuanceCaseData | null>(null);
+  const [issuanceLoading, setIssuanceLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, File[]>>({});
@@ -78,8 +87,37 @@ export const TokenizerPreDashboard: React.FC = () => {
   useEffect(() => {
     if (activeSubmission) {
       setPropertyName(getDisplayAddress(activeSubmission));
+      fetchIssuanceCase(activeSubmission.id);
+    } else {
+      setIssuanceCase(null);
     }
   }, [activeSubmission]);
+
+  const fetchIssuanceCase = async (submissionId: string) => {
+    setIssuanceLoading(true);
+    try {
+      const token = await getToken();
+      const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' };
+      const res = await fetch(`/api/issuance/by-submission/${submissionId}`, { headers });
+      if (res.ok) {
+        const json = await res.json();
+        setIssuanceCase(json.data);
+      } else if (res.status === 404) {
+        const createRes = await fetch(`/api/issuance/by-submission/${submissionId}/create`, {
+          method: 'POST',
+          headers,
+        });
+        if (createRes.ok) {
+          const json = await createRes.json();
+          setIssuanceCase(json.data);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching issuance case:', err);
+    } finally {
+      setIssuanceLoading(false);
+    }
+  };
 
   const fetchSubmissions = async () => {
     try {
@@ -238,6 +276,49 @@ export const TokenizerPreDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Issuance Status */}
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-4 md:p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base md:text-lg font-bold text-brand-dark dark:text-white">Issuance Status</h2>
+              {issuanceCase && (
+                <button
+                  onClick={() => navigate(`/tokenizer/issuance/${activeSubmission?.id}`)}
+                  className="text-xs font-medium text-brand-deep hover:text-brand-dark dark:text-brand-mint dark:hover:text-white transition-colors flex items-center gap-1"
+                >
+                  Open Issuance <i className="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+              )}
+            </div>
+            {issuanceLoading ? (
+              <div className="flex items-center justify-center py-6">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-deep"></div>
+              </div>
+            ) : issuanceCase ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 md:p-4">
+                  <p className="text-[10px] md:text-xs text-brand-sage mb-1">Case Status</p>
+                  <p className="text-sm font-bold text-brand-dark dark:text-white">
+                    {(issuanceCase.status || 'DRAFT').replace(/_/g, ' ')}
+                  </p>
+                </div>
+                <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 md:p-4">
+                  <p className="text-[10px] md:text-xs text-brand-sage mb-1">Eligibility</p>
+                  <p className="text-sm font-bold text-brand-dark dark:text-white">
+                    {(issuanceCase.eligibilityStatus || 'PENDING').replace(/_/g, ' ')}
+                  </p>
+                </div>
+                <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 md:p-4">
+                  <p className="text-[10px] md:text-xs text-brand-sage mb-1">Extraction Score</p>
+                  <p className="text-sm font-bold text-brand-dark dark:text-white">
+                    {issuanceCase.extractionScore ?? 0}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-brand-sage py-4 text-center">No issuance case yet.</p>
+            )}
           </div>
 
           {/* Document Checklist */}

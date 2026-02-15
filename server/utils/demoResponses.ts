@@ -2,6 +2,8 @@ export interface DemoIssuanceCase {
   id: string;
   propertyId: string;
   status: 'DRAFT' | 'INTAKE_COMPLETE' | 'EXTRACTION_RUNNING' | 'EXTRACTION_COMPLETE' | 'REVIEW_READY' | 'APPROVED' | 'MINT_READY' | 'MINTED' | 'LIVE' | 'REJECTED';
+  eligibilityStatus: 'PENDING' | 'PASS' | 'FAIL' | 'NEEDS_REVIEW';
+  extractionScore: number;
   tokenSymbol: string;
   totalTokens: number;
   tokenPrice: number;
@@ -36,6 +38,8 @@ export function mockIssuanceCase(overrides?: Partial<DemoIssuanceCase>): DemoIss
     id: `demo_issuance_${Date.now()}`,
     propertyId: 'demo_property_001',
     status: 'DRAFT',
+    eligibilityStatus: 'PENDING',
+    extractionScore: 0,
     tokenSymbol: 'PRCO-001',
     totalTokens: 1000,
     tokenPrice: 50,

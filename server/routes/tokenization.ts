@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { getAuth } from '@clerk/express';
 import { prisma } from '../lib/prisma';
+import { isDemoMode } from '../utils/demoMode';
 
 const router = Router();
 
@@ -278,6 +279,25 @@ router.post('/:id/submit', simpleAuth, tokenizerOrAdmin, async (req: Request, re
       }
     });
 
+    let issuanceCase = null;
+    if (!isDemoMode(req)) {
+      const existingCase = await prisma.issuanceCase.findUnique({
+        where: { submissionId: id },
+      });
+      if (!existingCase) {
+        issuanceCase = await prisma.issuanceCase.create({
+          data: {
+            submissionId: id,
+            status: 'INTAKE_COMPLETE',
+            eligibilityStatus: 'PENDING',
+          },
+        });
+        console.log(`[Tokenization] IssuanceCase created for submission ${id}`);
+      } else {
+        issuanceCase = existingCase;
+      }
+    }
+
     return res.json({ 
       success: true, 
       message: 'Submission sent for review',
@@ -285,7 +305,8 @@ router.post('/:id/submit', simpleAuth, tokenizerOrAdmin, async (req: Request, re
         id: updated.id,
         status: updated.status,
         submittedAt: updated.submittedAt
-      }
+      },
+      issuanceCase: issuanceCase ? { id: issuanceCase.id, status: issuanceCase.status } : undefined,
     });
   } catch (error) {
     console.error('[Tokenization] Error submitting:', error);

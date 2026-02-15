@@ -87,3 +87,11 @@ Demo mode is detected at multiple layers. Here is every location where it is che
 | `server/utils/demoResponses.ts` | `mockExtractionRunStatus(runId?, overrides?)` | Returns a stable mock `DemoExtractionRunStatus` (runId, status, documentsProcessed/Total, extractedFields, errors, timestamps). |
 
 All three accept optional `overrides` to customize individual fields while keeping defaults stable.
+
+### Issuance Case Lifecycle Triggers
+
+| Trigger Point | File | Behavior |
+|---------------|------|----------|
+| Tokenization submission (`POST /api/tokenization/:id/submit`) | `server/routes/tokenization.ts` | After status is set to SUBMITTED, creates an `IssuanceCase` with status `INTAKE_COMPLETE` if one doesn't already exist. Skipped in demo mode. |
+| Explicit creation (`POST /api/issuance/by-submission/:submissionId/create`) | `server/routes/issuance.ts` | Creates an `IssuanceCase` on demand. Returns existing case if already present. Returns mock in demo mode. |
+| Frontend auto-fetch (TokenizerPreDashboard) | `src/pages/tokenizer/TokenizerPreDashboard.tsx` | On load, fetches issuance case via GET; if 404, calls POST create. Displays case status, eligibility, and extraction score in an "Issuance Status" card. |
