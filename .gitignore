@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 /generated/prisma
+
+# Uploaded files
+attached_assets/uploads/

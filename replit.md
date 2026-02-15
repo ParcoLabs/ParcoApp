@@ -44,7 +44,7 @@ The frontend is built with React, styled using TailwindCSS for utility-first sty
 - Implements role-based access control both in smart contracts and backend middleware for enhanced security.
 - Adheres to environment-based configuration for managing sensitive data.
 - Follows a standard Vite + React project structure.
-- **Document Upload Reality Check**: The current implementation for document uploads in the tokenizer dashboard is UI-only. Files are selected and stored in React component state but are **not** sent to a backend server for persistent storage. There is no server-side endpoint or storage solution configured for file uploads.
+- **Document Upload**: Tokenizer dashboard supports real file uploads via `POST /api/uploads/tokenization/:submissionId/:docKey`. Files are stored locally under `attached_assets/uploads/{submissionId}/{docKey}/` and URLs are persisted to the TokenizationSubmission model fields (ownershipProof, legalDocuments, financialStatements, documents). Uses multer for multipart handling with 15MB limit and PDF/PNG/JPEG validation. In demo mode, fake URLs are generated and stored without actual file I/O. This is MVP local storage; will migrate to R2 signed uploads later.
 
 ### External Dependencies
 - **Clerk**: User authentication and authorization.

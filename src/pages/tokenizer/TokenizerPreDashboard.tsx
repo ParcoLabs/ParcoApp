@@ -20,6 +20,7 @@ interface TokenizationSubmission {
   ownershipProof: string | null;
   legalDocuments: string[];
   financialStatements: string[];
+  documents: string[];
   images: string[];
   updatedAt: string;
 }
@@ -56,16 +57,57 @@ export const TokenizerPreDashboard: React.FC = () => {
   const [issuanceLoading, setIssuanceLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<Record<string, File[]>>({});
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const totalPages = 14;
 
-  const handleFileSelect = (docKey: string, files: FileList | null) => {
-    if (files && files.length > 0) {
-      setUploadedFiles(prev => ({
-        ...prev,
-        [docKey]: [...(prev[docKey] || []), ...Array.from(files)]
-      }));
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleFileSelect = async (docKey: string, files: FileList | null) => {
+    if (!files || files.length === 0 || !activeSubmission) return;
+
+    const file = files[0];
+    const allowed = ['application/pdf', 'image/png', 'image/jpeg'];
+    if (!allowed.includes(file.type)) {
+      showToast('Only PDF, PNG, and JPEG files are allowed', 'error');
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      showToast('File too large. Maximum size is 15MB.', 'error');
+      return;
+    }
+
+    setUploadingDoc(docKey);
+    try {
+      const token = await getToken();
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(`/api/uploads/tokenization/${activeSubmission.id}/${docKey}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (res.ok) {
+        showToast(`${file.name} uploaded successfully`, 'success');
+        await refreshSubmission();
+      } else {
+        const data = await res.json().catch(() => ({ error: 'Upload failed' }));
+        showToast(data.error || 'Upload failed', 'error');
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      showToast('Upload failed. Please try again.', 'error');
+    } finally {
+      setUploadingDoc(null);
+      if (fileInputRefs.current[docKey]) {
+        fileInputRefs.current[docKey]!.value = '';
+      }
     }
   };
 
@@ -73,11 +115,26 @@ export const TokenizerPreDashboard: React.FC = () => {
     fileInputRefs.current[docKey]?.click();
   };
 
-  const removeFile = (docKey: string, index: number) => {
-    setUploadedFiles(prev => ({
-      ...prev,
-      [docKey]: prev[docKey]?.filter((_, i) => i !== index) || []
-    }));
+  const refreshSubmission = async () => {
+    if (!activeSubmission) return;
+    try {
+      const token = await getToken();
+      const response = await fetch('/api/tokenization/my-properties', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const subs = data.submissions || [];
+        setSubmissions(subs);
+        const updated = subs.find((s: TokenizationSubmission) => s.id === activeSubmission.id);
+        if (updated) setActiveSubmission(updated);
+      }
+    } catch (err) {
+      console.error('Error refreshing submission:', err);
+    }
   };
 
   useEffect(() => {
@@ -145,15 +202,33 @@ export const TokenizerPreDashboard: React.FC = () => {
     }
   };
 
+  const getStoredDocsForKey = (submission: TokenizationSubmission | null, docKey: string): string[] => {
+    if (!submission) return [];
+    switch (docKey) {
+      case 'ownershipProof':
+        return submission.ownershipProof ? [submission.ownershipProof] : [];
+      case 'taxRecords':
+      case 'bankStatements':
+      case 'rentalStatements':
+        return (submission.financialStatements || []).filter(u => u.includes(`/${docKey}/`));
+      case 'leaseAgreements':
+        return (submission.legalDocuments || []).filter(u => u.includes(`/${docKey}/`));
+      case 'valuation':
+        return (submission.documents || []).filter(u => u.includes(`/${docKey}/`));
+      default:
+        return [];
+    }
+  };
+
   const getDocumentStatus = (submission: TokenizationSubmission | null): Record<string, DocumentStatus> => {
     if (!submission) return {};
     return {
       ownershipProof: { received: !!submission.ownershipProof, approved: !!submission.ownershipProof },
-      taxRecords: { received: submission.financialStatements?.length > 0, approved: false },
-      bankStatements: { received: submission.financialStatements?.length > 1, approved: submission.financialStatements?.length > 1 },
-      leaseAgreements: { received: submission.legalDocuments?.length > 0, approved: false },
-      rentalStatements: { received: false, approved: false },
-      valuation: { received: !!submission.totalValue, approved: false },
+      taxRecords: { received: getStoredDocsForKey(submission, 'taxRecords').length > 0, approved: false },
+      bankStatements: { received: getStoredDocsForKey(submission, 'bankStatements').length > 0, approved: false },
+      leaseAgreements: { received: getStoredDocsForKey(submission, 'leaseAgreements').length > 0, approved: false },
+      rentalStatements: { received: getStoredDocsForKey(submission, 'rentalStatements').length > 0, approved: false },
+      valuation: { received: getStoredDocsForKey(submission, 'valuation').length > 0 || !!submission.totalValue, approved: false },
     };
   };
 
@@ -182,6 +257,13 @@ export const TokenizerPreDashboard: React.FC = () => {
 
   return (
     <div className="p-4 md:p-8 max-w-5xl mx-auto space-y-4 md:space-y-6 w-full box-border">
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-sm font-medium transition-all ${
+          toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+        }`}>
+          {toast.message}
+        </div>
+      )}
       {!activeSubmission ? (
         <div className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 dark:border-[#2a2a2a] rounded-xl p-8 md:p-12 text-center">
           <div className="w-16 h-16 bg-brand-sage/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -329,14 +411,15 @@ export const TokenizerPreDashboard: React.FC = () => {
             <div className="md:hidden space-y-3">
               {DOCUMENT_CHECKLIST.map((doc) => {
                 const status = docStatus[doc.key] || { received: false, approved: false };
-                const files = uploadedFiles[doc.key] || [];
+                const storedDocs = getStoredDocsForKey(activeSubmission, doc.key);
+                const isUploading = uploadingDoc === doc.key;
                 return (
-                  <div key={doc.key} className="bg-brand-offWhite rounded-lg p-4">
+                  <div key={doc.key} className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-sm font-medium text-brand-dark dark:text-white">{doc.label}</span>
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5">
-                          <div className={`w-2.5 h-2.5 rounded-full ${status.received || files.length > 0 ? 'bg-brand-deep' : 'bg-brand-lightGray'}`}></div>
+                          <div className={`w-2.5 h-2.5 rounded-full ${status.received ? 'bg-brand-deep' : 'bg-brand-lightGray'}`}></div>
                           <span className="text-[10px] text-brand-sage">Received</span>
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -346,17 +429,12 @@ export const TokenizerPreDashboard: React.FC = () => {
                       </div>
                     </div>
                     
-                    {files.length > 0 && (
+                    {storedDocs.length > 0 && (
                       <div className="mb-3 space-y-1">
-                        {files.map((file, idx) => (
-                          <div key={idx} className="flex items-center justify-between bg-white rounded px-2 py-1.5">
-                            <span className="text-xs text-brand-dark truncate flex-1 mr-2">{file.name}</span>
-                            <button
-                              onClick={() => removeFile(doc.key, idx)}
-                              className="text-red-500 hover:text-red-700 text-xs"
-                            >
-                              <i className="fa-solid fa-times"></i>
-                            </button>
+                        {storedDocs.map((url, idx) => (
+                          <div key={idx} className="flex items-center gap-2 bg-white dark:bg-[#1a1a1a] rounded px-2 py-1.5">
+                            <i className="fa-solid fa-file-check text-brand-deep dark:text-brand-mint text-xs"></i>
+                            <span className="text-xs text-brand-dark dark:text-white truncate flex-1">{url.split('/').pop()}</span>
                           </div>
                         ))}
                       </div>
@@ -366,16 +444,19 @@ export const TokenizerPreDashboard: React.FC = () => {
                       type="file"
                       ref={el => { fileInputRefs.current[doc.key] = el; }}
                       onChange={(e) => handleFileSelect(doc.key, e.target.files)}
-                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                      multiple
+                      accept=".pdf,.jpg,.jpeg,.png"
                       className="hidden"
                     />
                     <button
                       onClick={() => handleUploadClick(doc.key)}
-                      className="w-full py-2 px-3 bg-white border border-brand-sage/30 rounded-lg text-xs font-medium text-brand-dark hover:bg-brand-deep hover:text-white hover:border-brand-deep transition-colors flex items-center justify-center gap-2"
+                      disabled={isUploading}
+                      className="w-full py-2 px-3 bg-white dark:bg-[#1a1a1a] border border-brand-sage/30 rounded-lg text-xs font-medium text-brand-dark dark:text-white hover:bg-brand-deep hover:text-white hover:border-brand-deep disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
                     >
-                      <i className="fa-solid fa-cloud-arrow-up"></i>
-                      {files.length > 0 ? 'Add More Files' : 'Upload Document'}
+                      {isUploading ? (
+                        <><div className="animate-spin rounded-full h-3 w-3 border-b-2 border-brand-deep"></div> Uploading...</>
+                      ) : (
+                        <><i className="fa-solid fa-cloud-arrow-up"></i> {storedDocs.length > 0 ? 'Upload Another' : 'Upload Document'}</>
+                      )}
                     </button>
                   </div>
                 );
@@ -396,24 +477,19 @@ export const TokenizerPreDashboard: React.FC = () => {
                 <tbody>
                   {DOCUMENT_CHECKLIST.map((doc) => {
                     const status = docStatus[doc.key] || { received: false, approved: false };
-                    const files = uploadedFiles[doc.key] || [];
+                    const storedDocs = getStoredDocsForKey(activeSubmission, doc.key);
+                    const isUploading = uploadingDoc === doc.key;
                     return (
                       <tr key={doc.key} className="border-b border-brand-lightGray/50 last:border-0">
                         <td className="py-3 pr-4">
                           <div>
                             <span className="text-sm text-brand-dark dark:text-white">{doc.label}</span>
-                            {files.length > 0 && (
+                            {storedDocs.length > 0 && (
                               <div className="mt-1 space-y-1">
-                                {files.map((file, idx) => (
+                                {storedDocs.map((url, idx) => (
                                   <div key={idx} className="flex items-center gap-2 text-xs text-brand-sage">
-                                    <i className="fa-solid fa-file text-brand-deep dark:text-brand-mint dark:text-brand-mint"></i>
-                                    <span className="truncate max-w-[150px]">{file.name}</span>
-                                    <button
-                                      onClick={() => removeFile(doc.key, idx)}
-                                      className="text-red-500 hover:text-red-700"
-                                    >
-                                      <i className="fa-solid fa-times"></i>
-                                    </button>
+                                    <i className="fa-solid fa-file-check text-brand-deep dark:text-brand-mint"></i>
+                                    <span className="truncate max-w-[150px]">{url.split('/').pop()}</span>
                                   </div>
                                 ))}
                               </div>
@@ -421,7 +497,7 @@ export const TokenizerPreDashboard: React.FC = () => {
                           </div>
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <div className={`w-3 h-3 rounded-full mx-auto ${status.received || files.length > 0 ? 'bg-brand-deep' : 'bg-brand-lightGray'}`}></div>
+                          <div className={`w-3 h-3 rounded-full mx-auto ${status.received ? 'bg-brand-deep' : 'bg-brand-lightGray'}`}></div>
                         </td>
                         <td className="py-3 px-4 text-center">
                           <div className={`w-3 h-3 rounded-full mx-auto ${status.approved ? 'bg-brand-deep' : 'bg-brand-lightGray'}`}></div>
@@ -431,16 +507,19 @@ export const TokenizerPreDashboard: React.FC = () => {
                             type="file"
                             ref={el => { fileInputRefs.current[doc.key] = el; }}
                             onChange={(e) => handleFileSelect(doc.key, e.target.files)}
-                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                            multiple
+                            accept=".pdf,.jpg,.jpeg,.png"
                             className="hidden"
                           />
                           <button
                             onClick={() => handleUploadClick(doc.key)}
-                            className="px-3 py-1.5 bg-brand-offWhite border border-brand-sage/30 rounded-lg text-xs font-medium text-brand-dark hover:bg-brand-deep hover:text-white hover:border-brand-deep transition-colors inline-flex items-center gap-1.5"
+                            disabled={isUploading}
+                            className="px-3 py-1.5 bg-brand-offWhite dark:bg-[#222] border border-brand-sage/30 rounded-lg text-xs font-medium text-brand-dark dark:text-white hover:bg-brand-deep hover:text-white hover:border-brand-deep disabled:opacity-50 transition-colors inline-flex items-center gap-1.5"
                           >
-                            <i className="fa-solid fa-cloud-arrow-up"></i>
-                            Upload
+                            {isUploading ? (
+                              <><div className="animate-spin rounded-full h-3 w-3 border-b-2 border-brand-deep"></div> Uploading...</>
+                            ) : (
+                              <><i className="fa-solid fa-cloud-arrow-up"></i> {storedDocs.length > 0 ? 'Upload More' : 'Upload'}</>
+                            )}
                           </button>
                         </td>
                       </tr>

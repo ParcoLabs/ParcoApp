@@ -23,6 +23,7 @@ import userSettingsRoutes from './routes/userSettings';
 import adminRoutes from './routes/admin';
 import tokenizationRoutes from './routes/tokenization';
 import issuanceRoutes from './routes/issuance';
+import uploadsRoutes from './routes/uploads';
 import { isDemoMode } from './lib/demoMode';
 import { getStripeSync } from './lib/stripeClient';
 import { WebhookHandlers } from './lib/webhookHandlers';
@@ -175,6 +176,9 @@ app.use('/api/user', userSettingsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tokenization', tokenizationRoutes);
 app.use('/api/issuance', issuanceRoutes);
+app.use('/api/uploads', uploadsRoutes);
+
+app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets')));
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
