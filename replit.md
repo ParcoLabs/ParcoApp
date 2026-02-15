@@ -60,3 +60,30 @@ The frontend is built with React, styled using TailwindCSS for utility-first sty
 - **Google Fonts**: Custom typography.
 - **OpenZeppelin Contracts**: Standardized smart contract libraries.
 - **Ethers.js**: Ethereum blockchain interaction library.
+
+---
+
+## SYSTEM MAP
+
+### Demo Mode Detection Points
+
+Demo mode is detected at multiple layers. Here is every location where it is checked:
+
+| File | Function / Export | Detection Logic |
+|------|-------------------|-----------------|
+| `server/lib/demoMode.ts` | `isDemoMode()` | `process.env.DEMO_MODE === 'true'` — original helper, used by existing routes (`buy`, `borrow`, `rent`, `kyc`, `admin`, `system`, `userSettings`, `demo`) |
+| `server/utils/demoMode.ts` | `isDemoMode(req?)` | Unified check: returns `true` if `process.env.DEMO_MODE === 'true'` OR `server/lib/demoMode.isDemoMode()` returns true OR `req.user.isDemoUser` is truthy. New helper for issuance/servicing engine integration. |
+| `server/routes/demo.ts` | `requireDemoMode` middleware | Calls `server/lib/demoMode.isDemoMode()`; returns 403 if false. Gates all `/api/demo/*` routes. |
+| `server/index.ts` | Startup log | Logs whether demo mode is enabled via `isDemoMode()` |
+| `src/context/DemoModeContext.tsx` | `DemoModeProvider` | Fetches `/api/system/config` for `serverDemoEnabled` and `/api/user/demo-mode` for `userDemoEnabled`. Demo is active only when both are true. |
+| `src/hooks/useDemo.ts` | `useDemoMode()` | Consumes `DemoModeContext` |
+
+### Demo Response Utilities
+
+| File | Exports | Purpose |
+|------|---------|---------|
+| `server/utils/demoResponses.ts` | `mockIssuanceCase(overrides?)` | Returns a stable mock `DemoIssuanceCase` payload (id, propertyId, status, tokenSymbol, totalTokens, tokenPrice, totalValue, timestamps). |
+| `server/utils/demoResponses.ts` | `mockEligibilityCheck(userId, overrides?)` | Returns a stable mock `DemoEligibilityResult` (eligible, kycLevel, accreditationStatus, maxInvestment, reasons). |
+| `server/utils/demoResponses.ts` | `mockExtractionRunStatus(runId?, overrides?)` | Returns a stable mock `DemoExtractionRunStatus` (runId, status, documentsProcessed/Total, extractedFields, errors, timestamps). |
+
+All three accept optional `overrides` to customize individual fields while keeping defaults stable.
