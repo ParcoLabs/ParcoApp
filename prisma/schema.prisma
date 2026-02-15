@@ -484,9 +484,22 @@ model IssuanceCase {
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
   submission        TokenizationSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  documents         IssuanceDocument[]
 
   @@index([status])
   @@index([eligibilityStatus])
+}
+
+model IssuanceDocument {
+  id        String           @id @default(cuid())
+  caseId    String
+  type      IssuanceDocType
+  name      String
+  url       String
+  createdAt DateTime         @default(now())
+  case      IssuanceCase     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@index([caseId])
 }
 
 enum IssuanceCaseStatus {
@@ -500,6 +513,15 @@ enum IssuanceCaseStatus {
   MINTED
   LIVE
   REJECTED
+}
+
+enum IssuanceDocType {
+  OWNERSHIP
+  LEGAL
+  FINANCIAL
+  PROPERTY
+  IDENTITY
+  OTHER
 }
 
 enum EligibilityStatus {

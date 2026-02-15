@@ -46,6 +46,42 @@ const DOC_KEY_MAP: Record<string, 'ownershipProof' | 'legalDocuments' | 'financi
   valuation: 'documents',
 };
 
+const DOC_KEY_TO_ISSUANCE_TYPE: Record<string, string> = {
+  ownershipProof: 'OWNERSHIP',
+  taxRecords: 'FINANCIAL',
+  bankStatements: 'FINANCIAL',
+  leaseAgreements: 'LEGAL',
+  rentalStatements: 'FINANCIAL',
+  valuation: 'PROPERTY',
+};
+
+async function createIssuanceDocument(submissionId: string, docKey: string, url: string, fileName: string) {
+  try {
+    let issuanceCase = await prisma.issuanceCase.findUnique({
+      where: { submissionId },
+    });
+
+    if (!issuanceCase) {
+      issuanceCase = await prisma.issuanceCase.create({
+        data: { submissionId, status: 'DRAFT' },
+      });
+    }
+
+    const docType = DOC_KEY_TO_ISSUANCE_TYPE[docKey] || 'OTHER';
+
+    await prisma.issuanceDocument.create({
+      data: {
+        caseId: issuanceCase.id,
+        type: docType as any,
+        name: fileName,
+        url,
+      },
+    });
+  } catch (err) {
+    console.error('[uploads] Failed to create IssuanceDocument:', err);
+  }
+}
+
 router.post(
   '/tokenization/:submissionId/:docKey',
   async (req: Request, res: Response) => {
@@ -91,6 +127,8 @@ router.post(
           });
         }
 
+        await createIssuanceDocument(submissionId, docKey, fakeUrl, `demo-${docKey}-document.pdf`);
+
         return res.json({ success: true, url: fakeUrl });
       }
 
@@ -122,6 +160,8 @@ router.post(
               data: { [field]: [...current, url] },
             });
           }
+
+          await createIssuanceDocument(submissionId, docKey, url, req.file.originalname);
 
           return res.json({ success: true, url });
         } catch (dbError: any) {

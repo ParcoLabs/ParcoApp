@@ -81,6 +81,7 @@ export const AdminTokenizations: React.FC = () => {
   const [issuanceCase, setIssuanceCase] = useState<IssuanceCaseData | null>(null);
   const [issuanceLoading, setIssuanceLoading] = useState(false);
   const [issuanceActionLoading, setIssuanceActionLoading] = useState<string | null>(null);
+  const [issuanceDocCount, setIssuanceDocCount] = useState<number>(0);
 
   const fetchSubmissions = async (page = 1) => {
     try {
@@ -126,6 +127,7 @@ export const AdminTokenizations: React.FC = () => {
       if (res.ok) {
         const json = await res.json();
         setIssuanceCase(json.data);
+        if (json.data?.id) fetchIssuanceDocCount(json.data.id);
       } else if (res.status === 404) {
         const createRes = await fetch(`/api/issuance/by-submission/${submissionId}/create`, {
           method: 'POST',
@@ -134,12 +136,27 @@ export const AdminTokenizations: React.FC = () => {
         if (createRes.ok) {
           const json = await createRes.json();
           setIssuanceCase(json.data);
+          if (json.data?.id) fetchIssuanceDocCount(json.data.id);
         }
       }
     } catch (err) {
       console.error('Error fetching issuance case:', err);
     } finally {
       setIssuanceLoading(false);
+    }
+  };
+
+  const fetchIssuanceDocCount = async (caseId: string) => {
+    try {
+      const res = await fetch(`/api/issuance/case/${caseId}/documents`, {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setIssuanceDocCount((json.data || []).length);
+      }
+    } catch (err) {
+      console.error('Error fetching issuance doc count:', err);
     }
   };
 
@@ -198,6 +215,7 @@ export const AdminTokenizations: React.FC = () => {
         setSelectedSubmission(data.submission);
         setDrawerOpen(true);
         fetchIssuanceCase(submission.id);
+        setIssuanceDocCount(0);
       }
     } catch (error) {
       console.error('Error fetching submission details:', error);
@@ -658,6 +676,47 @@ export const AdminTokenizations: React.FC = () => {
                 ) : (
                   <p className="text-sm text-gray-400 text-center py-2">No issuance case yet</p>
                 )}
+              </div>
+
+              <div className="bg-slate-50 dark:bg-[#2a2a2a] rounded-xl p-4 border border-slate-200 dark:border-[#333]">
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                  <i className="fa-solid fa-heartbeat text-green-500 text-sm"></i>
+                  Engine Health
+                </h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-gray-500 text-xs">Submission Status</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{selectedSubmission.status}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs">Issuance Case</p>
+                    <p className={`font-medium ${issuanceCase ? 'text-green-600' : 'text-amber-500'}`}>
+                      {issuanceCase ? 'Exists' : 'Not Created'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs">Case Status</p>
+                    <p className="font-medium text-gray-900 dark:text-white">
+                      {issuanceCase ? (issuanceCase.status || 'DRAFT').replace(/_/g, ' ') : 'N/A'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gray-500 text-xs">Issuance Documents</p>
+                    <p className="font-medium text-gray-900 dark:text-white">{issuanceDocCount}</p>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-slate-200 dark:border-[#444]">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${issuanceCase ? 'bg-green-500' : 'bg-amber-400'}`}></div>
+                    <span className="text-xs text-gray-500">
+                      {issuanceCase && issuanceDocCount > 0
+                        ? 'Engine linked — submission, case, and documents are connected'
+                        : issuanceCase
+                        ? 'Case exists but no documents tracked yet'
+                        : 'No issuance case — engine not yet linked'}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {selectedSubmission.rejectionReason && (

@@ -95,3 +95,20 @@ All three accept optional `overrides` to customize individual fields while keepi
 | Tokenization submission (`POST /api/tokenization/:id/submit`) | `server/routes/tokenization.ts` | After status is set to SUBMITTED, creates an `IssuanceCase` with status `INTAKE_COMPLETE` if one doesn't already exist. Skipped in demo mode. |
 | Explicit creation (`POST /api/issuance/by-submission/:submissionId/create`) | `server/routes/issuance.ts` | Creates an `IssuanceCase` on demand. Returns existing case if already present. Returns mock in demo mode. |
 | Frontend auto-fetch (TokenizerPreDashboard) | `src/pages/tokenizer/TokenizerPreDashboard.tsx` | On load, fetches issuance case via GET; if 404, calls POST create. Displays case status, eligibility, and extraction score in an "Issuance Status" card. |
+| Document upload (`POST /api/uploads/tokenization/:submissionId/:docKey`) | `server/routes/uploads.ts` | After successful upload, auto-creates `IssuanceCase` if missing, then creates `IssuanceDocument` row with mapped doc type (OWNERSHIP, LEGAL, FINANCIAL, PROPERTY, OTHER). |
+
+### IssuanceDocument Tracking
+
+Documents uploaded through the tokenizer dashboard are persisted in two locations:
+1. **TokenizationSubmission fields** (legacy): `ownershipProof`, `legalDocuments[]`, `financialStatements[]`, `documents[]`
+2. **IssuanceDocument model** (new): Linked to `IssuanceCase` via `caseId`, with typed categorization via `IssuanceDocType` enum
+
+The `GET /api/issuance/case/:caseId/documents` endpoint returns all IssuanceDocuments for a case. The tokenizer dashboard prefers IssuanceDocument data when available, falling back to submission fields.
+
+### Engine Health (Admin)
+
+The admin tokenization detail drawer includes an "Engine Health" panel that shows:
+- Submission status
+- Issuance case existence and status
+- Number of IssuanceDocuments attached
+- Overall linkage health indicator

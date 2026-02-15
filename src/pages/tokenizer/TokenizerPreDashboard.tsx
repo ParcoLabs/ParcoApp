@@ -32,6 +32,15 @@ interface IssuanceCaseData {
   extractionScore: number;
 }
 
+interface IssuanceDocumentData {
+  id: string;
+  caseId: string;
+  type: string;
+  name: string;
+  url: string;
+  createdAt: string;
+}
+
 interface DocumentStatus {
   received: boolean;
   approved: boolean;
@@ -57,6 +66,7 @@ export const TokenizerPreDashboard: React.FC = () => {
   const [issuanceLoading, setIssuanceLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+  const [issuanceDocs, setIssuanceDocs] = useState<IssuanceDocumentData[]>([]);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const totalPages = 14;
 
@@ -96,6 +106,7 @@ export const TokenizerPreDashboard: React.FC = () => {
       if (res.ok) {
         showToast(`${file.name} uploaded successfully`, 'success');
         await refreshSubmission();
+        if (issuanceCase?.id) fetchIssuanceDocs(issuanceCase.id);
       } else {
         const data = await res.json().catch(() => ({ error: 'Upload failed' }));
         showToast(data.error || 'Upload failed', 'error');
@@ -150,6 +161,21 @@ export const TokenizerPreDashboard: React.FC = () => {
     }
   }, [activeSubmission]);
 
+  const fetchIssuanceDocs = async (caseId: string) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/issuance/case/${caseId}/documents`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setIssuanceDocs(json.data || []);
+      }
+    } catch (err) {
+      console.error('Error fetching issuance docs:', err);
+    }
+  };
+
   const fetchIssuanceCase = async (submissionId: string) => {
     setIssuanceLoading(true);
     try {
@@ -159,6 +185,7 @@ export const TokenizerPreDashboard: React.FC = () => {
       if (res.ok) {
         const json = await res.json();
         setIssuanceCase(json.data);
+        if (json.data?.id) fetchIssuanceDocs(json.data.id);
       } else if (res.status === 404) {
         const createRes = await fetch(`/api/issuance/by-submission/${submissionId}/create`, {
           method: 'POST',
@@ -167,6 +194,7 @@ export const TokenizerPreDashboard: React.FC = () => {
         if (createRes.ok) {
           const json = await createRes.json();
           setIssuanceCase(json.data);
+          if (json.data?.id) fetchIssuanceDocs(json.data.id);
         }
       }
     } catch (err) {
@@ -202,19 +230,36 @@ export const TokenizerPreDashboard: React.FC = () => {
     }
   };
 
-  const getStoredDocsForKey = (submission: TokenizationSubmission | null, docKey: string): string[] => {
+  const DOC_KEY_TO_ISSUANCE_TYPE: Record<string, string> = {
+    ownershipProof: 'OWNERSHIP',
+    taxRecords: 'FINANCIAL',
+    bankStatements: 'FINANCIAL',
+    leaseAgreements: 'LEGAL',
+    rentalStatements: 'FINANCIAL',
+    valuation: 'PROPERTY',
+  };
+
+  const getStoredDocsForKey = (submission: TokenizationSubmission | null, docKey: string): { name: string; url: string }[] => {
+    const issuanceType = DOC_KEY_TO_ISSUANCE_TYPE[docKey];
+    if (issuanceDocs.length > 0 && issuanceType) {
+      const matched = issuanceDocs.filter(d => d.type === issuanceType && d.url.includes(`/${docKey}/`));
+      if (matched.length > 0) {
+        return matched.map(d => ({ name: d.name, url: d.url }));
+      }
+    }
+
     if (!submission) return [];
     switch (docKey) {
       case 'ownershipProof':
-        return submission.ownershipProof ? [submission.ownershipProof] : [];
+        return submission.ownershipProof ? [{ name: submission.ownershipProof.split('/').pop() || 'Document', url: submission.ownershipProof }] : [];
       case 'taxRecords':
       case 'bankStatements':
       case 'rentalStatements':
-        return (submission.financialStatements || []).filter(u => u.includes(`/${docKey}/`));
+        return (submission.financialStatements || []).filter(u => u.includes(`/${docKey}/`)).map(u => ({ name: u.split('/').pop() || 'Document', url: u }));
       case 'leaseAgreements':
-        return (submission.legalDocuments || []).filter(u => u.includes(`/${docKey}/`));
+        return (submission.legalDocuments || []).filter(u => u.includes(`/${docKey}/`)).map(u => ({ name: u.split('/').pop() || 'Document', url: u }));
       case 'valuation':
-        return (submission.documents || []).filter(u => u.includes(`/${docKey}/`));
+        return (submission.documents || []).filter(u => u.includes(`/${docKey}/`)).map(u => ({ name: u.split('/').pop() || 'Document', url: u }));
       default:
         return [];
     }
@@ -222,13 +267,14 @@ export const TokenizerPreDashboard: React.FC = () => {
 
   const getDocumentStatus = (submission: TokenizationSubmission | null): Record<string, DocumentStatus> => {
     if (!submission) return {};
+    const has = (key: string) => getStoredDocsForKey(submission, key).length > 0;
     return {
-      ownershipProof: { received: !!submission.ownershipProof, approved: !!submission.ownershipProof },
-      taxRecords: { received: getStoredDocsForKey(submission, 'taxRecords').length > 0, approved: false },
-      bankStatements: { received: getStoredDocsForKey(submission, 'bankStatements').length > 0, approved: false },
-      leaseAgreements: { received: getStoredDocsForKey(submission, 'leaseAgreements').length > 0, approved: false },
-      rentalStatements: { received: getStoredDocsForKey(submission, 'rentalStatements').length > 0, approved: false },
-      valuation: { received: getStoredDocsForKey(submission, 'valuation').length > 0 || !!submission.totalValue, approved: false },
+      ownershipProof: { received: has('ownershipProof'), approved: !!submission.ownershipProof },
+      taxRecords: { received: has('taxRecords'), approved: false },
+      bankStatements: { received: has('bankStatements'), approved: false },
+      leaseAgreements: { received: has('leaseAgreements'), approved: false },
+      rentalStatements: { received: has('rentalStatements'), approved: false },
+      valuation: { received: has('valuation') || !!submission.totalValue, approved: false },
     };
   };
 
@@ -431,10 +477,10 @@ export const TokenizerPreDashboard: React.FC = () => {
                     
                     {storedDocs.length > 0 && (
                       <div className="mb-3 space-y-1">
-                        {storedDocs.map((url, idx) => (
+                        {storedDocs.map((doc, idx) => (
                           <div key={idx} className="flex items-center gap-2 bg-white dark:bg-[#1a1a1a] rounded px-2 py-1.5">
                             <i className="fa-solid fa-file-check text-brand-deep dark:text-brand-mint text-xs"></i>
-                            <span className="text-xs text-brand-dark dark:text-white truncate flex-1">{url.split('/').pop()}</span>
+                            <span className="text-xs text-brand-dark dark:text-white truncate flex-1">{doc.name}</span>
                           </div>
                         ))}
                       </div>
@@ -486,10 +532,10 @@ export const TokenizerPreDashboard: React.FC = () => {
                             <span className="text-sm text-brand-dark dark:text-white">{doc.label}</span>
                             {storedDocs.length > 0 && (
                               <div className="mt-1 space-y-1">
-                                {storedDocs.map((url, idx) => (
+                                {storedDocs.map((doc, idx) => (
                                   <div key={idx} className="flex items-center gap-2 text-xs text-brand-sage">
                                     <i className="fa-solid fa-file-check text-brand-deep dark:text-brand-mint"></i>
-                                    <span className="truncate max-w-[150px]">{url.split('/').pop()}</span>
+                                    <span className="truncate max-w-[150px]">{doc.name}</span>
                                   </div>
                                 ))}
                               </div>

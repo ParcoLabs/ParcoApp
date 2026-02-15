@@ -132,6 +132,45 @@ router.post(
   },
 );
 
+router.get(
+  '/case/:caseId/documents',
+  simpleAuth,
+  loadUserWithRole,
+  async (req: Request, res: Response) => {
+    try {
+      const { caseId } = req.params;
+      const user = (req as AuthenticatedRequest).user;
+
+      if (!user) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+      }
+
+      const issuanceCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+        include: { submission: true },
+      });
+
+      if (!issuanceCase) {
+        return res.status(404).json({ success: false, error: 'Issuance case not found' });
+      }
+
+      if (user.role !== 'ADMIN' && issuanceCase.submission.tokenizerId !== user.id) {
+        return res.status(403).json({ success: false, error: 'Not authorized' });
+      }
+
+      const documents = await prisma.issuanceDocument.findMany({
+        where: { caseId },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return res.json({ success: true, data: documents });
+    } catch (error: any) {
+      console.error('[issuance] Error fetching documents:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
 router.post(
   '/case/:caseId/eligibility/run',
   simpleAuth,
