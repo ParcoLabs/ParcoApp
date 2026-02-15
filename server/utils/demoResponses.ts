@@ -1,7 +1,7 @@
 export interface DemoIssuanceCase {
   id: string;
   propertyId: string;
-  status: 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED' | 'PUBLISHED';
+  status: 'DRAFT' | 'INTAKE_COMPLETE' | 'EXTRACTION_RUNNING' | 'EXTRACTION_COMPLETE' | 'REVIEW_READY' | 'APPROVED' | 'MINT_READY' | 'MINTED' | 'LIVE' | 'REJECTED';
   tokenSymbol: string;
   totalTokens: number;
   tokenPrice: number;

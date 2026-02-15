@@ -467,10 +467,46 @@ model TokenizationSubmission {
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
   tokenizer           User               @relation(fields: [tokenizerId], references: [id], onDelete: Cascade)
+  issuanceCase        IssuanceCase?
 
   @@index([tokenizerId])
   @@index([status])
   @@index([createdAt])
+}
+
+model IssuanceCase {
+  id                String              @id @default(cuid())
+  submissionId      String              @unique
+  status            IssuanceCaseStatus  @default(DRAFT)
+  eligibilityStatus EligibilityStatus   @default(PENDING)
+  extractionScore   Int                 @default(0)
+  notes             String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  submission        TokenizationSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([eligibilityStatus])
+}
+
+enum IssuanceCaseStatus {
+  DRAFT
+  INTAKE_COMPLETE
+  EXTRACTION_RUNNING
+  EXTRACTION_COMPLETE
+  REVIEW_READY
+  APPROVED
+  MINT_READY
+  MINTED
+  LIVE
+  REJECTED
+}
+
+enum EligibilityStatus {
+  PENDING
+  PASS
+  FAIL
+  NEEDS_REVIEW
 }
 
 enum KYCLevel {
