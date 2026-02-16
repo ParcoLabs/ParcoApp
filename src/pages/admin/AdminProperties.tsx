@@ -28,6 +28,14 @@ interface Property {
   };
 }
 
+interface Capabilities {
+  secondaryEnabled: boolean;
+  borrowEnabled: boolean;
+  transferRestricted: boolean;
+  lockupDays: number;
+  [key: string]: any;
+}
+
 export const AdminProperties: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +45,16 @@ export const AdminProperties: React.FC = () => {
   const [showMintModal, setShowMintModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [showCapabilities, setShowCapabilities] = useState(false);
+  const [capProperty, setCapProperty] = useState<Property | null>(null);
+  const [capabilities, setCapabilities] = useState<Capabilities>({
+    secondaryEnabled: false,
+    borrowEnabled: false,
+    transferRestricted: false,
+    lockupDays: 0,
+  });
+  const [capLoading, setCapLoading] = useState(false);
+  const [capSaving, setCapSaving] = useState(false);
 
   const fetchProperties = async () => {
     try {
@@ -117,6 +135,52 @@ export const AdminProperties: React.FC = () => {
     }
   };
 
+  const openCapabilities = async (property: Property) => {
+    setCapProperty(property);
+    setShowCapabilities(true);
+    setCapLoading(true);
+    try {
+      const res = await fetch(`/api/admin/properties/${property.id}/capabilities`, {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setCapabilities({
+          secondaryEnabled: json.data?.secondaryEnabled ?? false,
+          borrowEnabled: json.data?.borrowEnabled ?? false,
+          transferRestricted: json.data?.transferRestricted ?? false,
+          lockupDays: json.data?.lockupDays ?? 0,
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching capabilities:', err);
+    } finally {
+      setCapLoading(false);
+    }
+  };
+
+  const saveCapabilities = async () => {
+    if (!capProperty) return;
+    setCapSaving(true);
+    try {
+      const res = await fetch(`/api/admin/properties/${capProperty.id}/capabilities`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ capabilities }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to save');
+      showToast('Capabilities updated successfully!', 'success');
+      setShowCapabilities(false);
+      setCapProperty(null);
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to save capabilities', 'error');
+    } finally {
+      setCapSaving(false);
+    }
+  };
+
   const canMint = (property: Property) => {
     return !property.isMinted && 
            (property.status === 'PENDING_APPROVAL' || property.status === 'DRAFT') &&
@@ -165,11 +229,11 @@ export const AdminProperties: React.FC = () => {
       )}
 
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-gray-900">Properties Management</h2>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">Properties Management</h2>
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+          className="px-3 py-2 border border-gray-300 dark:border-[#2a2a2a] rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white"
         >
           <option value="">All Statuses</option>
           <option value="DRAFT">Draft</option>
@@ -194,34 +258,34 @@ export const AdminProperties: React.FC = () => {
         </div>
       ) : (
         <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-[#2a2a2a]">
+            <thead className="bg-gray-50 dark:bg-[#151515]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Property</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tokens</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">APY</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Minted</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Property</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Value</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tokens</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">APY</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Minted</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-[#1a1a1a] divide-y divide-gray-200 dark:divide-[#2a2a2a]">
               {properties.map((property) => (
-                <tr key={property.id} className={property.isPaused ? 'bg-red-50' : ''}>
+                <tr key={property.id} className={property.isPaused ? 'bg-red-50 dark:bg-red-900/10' : ''}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{property.name}</div>
-                      <div className="text-sm text-gray-500">{property.city}, {property.state}</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">{property.name}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{property.city}, {property.state}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {getStatusBadge(property.status, property.isPaused)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     ${property.totalValue.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {property.availableTokens} / {property.totalTokens}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-emerald-600 font-medium">
@@ -238,6 +302,12 @@ export const AdminProperties: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => openCapabilities(property)}
+                        className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 text-xs"
+                      >
+                        <i className="fa-solid fa-sliders mr-1"></i>Capabilities
+                      </button>
                       {canMint(property) && (
                         <button
                           onClick={() => {
@@ -272,24 +342,140 @@ export const AdminProperties: React.FC = () => {
         </div>
       )}
 
+      {showCapabilities && capProperty && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-6 max-w-lg w-full mx-4 border border-gray-200 dark:border-[#2a2a2a]">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-sliders text-blue-600"></i>
+                Capabilities
+              </h3>
+              <button
+                onClick={() => { setShowCapabilities(false); setCapProperty(null); }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <i className="fa-solid fa-times"></i>
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              {capProperty.name} &mdash; {capProperty.city}, {capProperty.state}
+            </p>
+
+            {capLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-[#222] rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Secondary Trading</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Allow token trading on secondary markets (tZERO)</p>
+                  </div>
+                  <button
+                    onClick={() => setCapabilities(c => ({ ...c, secondaryEnabled: !c.secondaryEnabled }))}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      capabilities.secondaryEnabled ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      capabilities.secondaryEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-[#222] rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Borrow Against Tokens</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Enable USDC borrowing with tokens as collateral</p>
+                  </div>
+                  <button
+                    onClick={() => setCapabilities(c => ({ ...c, borrowEnabled: !c.borrowEnabled }))}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      capabilities.borrowEnabled ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      capabilities.borrowEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-[#222] rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Transfer Restricted</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Restrict token transfers during lockup period</p>
+                  </div>
+                  <button
+                    onClick={() => setCapabilities(c => ({ ...c, transferRestricted: !c.transferRestricted }))}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      capabilities.transferRestricted ? 'bg-amber-500' : 'bg-gray-300 dark:bg-gray-600'
+                    }`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      capabilities.transferRestricted ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                  </button>
+                </div>
+
+                <div className="p-3 bg-gray-50 dark:bg-[#222] rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Lockup Period</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Days tokens must be held before transfer</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="0"
+                        value={capabilities.lockupDays}
+                        onChange={(e) => setCapabilities(c => ({ ...c, lockupDays: Math.max(0, parseInt(e.target.value) || 0) }))}
+                        className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-[#3a3a3a] rounded-lg bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white text-right"
+                      />
+                      <span className="text-xs text-gray-500 dark:text-gray-400">days</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => { setShowCapabilities(false); setCapProperty(null); }}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-[#3a3a3a] rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#222]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveCapabilities}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    disabled={capSaving}
+                  >
+                    {capSaving ? 'Saving...' : 'Save Capabilities'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {showMintModal && selectedProperty && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Confirm Mint & List</h3>
-            <p className="text-gray-600 mb-4">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">Confirm Mint & List</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
               Are you sure you want to mint and list <strong>{selectedProperty.name}</strong>?
             </p>
-            <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-lg p-4 mb-4">
+            <div className="bg-gray-50 dark:bg-[#222] rounded-lg p-4 mb-4">
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="text-gray-500">Total Tokens:</div>
-                <div className="font-medium">{selectedProperty.totalTokens.toLocaleString()}</div>
-                <div className="text-gray-500">Token Price:</div>
-                <div className="font-medium">${selectedProperty.tokenPrice}</div>
-                <div className="text-gray-500">Total Value:</div>
-                <div className="font-medium">${selectedProperty.totalValue.toLocaleString()}</div>
+                <div className="text-gray-500 dark:text-gray-400">Total Tokens:</div>
+                <div className="font-medium text-gray-900 dark:text-white">{selectedProperty.totalTokens.toLocaleString()}</div>
+                <div className="text-gray-500 dark:text-gray-400">Token Price:</div>
+                <div className="font-medium text-gray-900 dark:text-white">${selectedProperty.tokenPrice}</div>
+                <div className="text-gray-500 dark:text-gray-400">Total Value:</div>
+                <div className="font-medium text-gray-900 dark:text-white">${selectedProperty.totalValue.toLocaleString()}</div>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mb-4">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
               This will create ERC-1155 tokens on the blockchain and make the property available for purchase in the marketplace.
             </p>
             <div className="flex gap-3">
@@ -298,7 +484,7 @@ export const AdminProperties: React.FC = () => {
                   setShowMintModal(false);
                   setSelectedProperty(null);
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-[#3a3a3a] rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#222]"
                 disabled={actionLoading}
               >
                 Cancel

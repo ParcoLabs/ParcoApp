@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
+import { getAuth } from '@clerk/express';
 import prisma from '../lib/prisma';
+import { recordActivity } from '../services/investorEngagement';
 
 const router = Router();
 
@@ -96,6 +98,16 @@ router.get('/:id', async (req: Request, res: Response) => {
       contractAddress: property.token?.contractAddress || null,
       hasParcoStays: property.hasParcoStays,
     };
+
+    try {
+      const auth = getAuth(req);
+      if (auth?.userId) {
+        const viewer = await prisma.user.findUnique({ where: { clerkId: auth.userId }, select: { id: true } });
+        if (viewer) {
+          recordActivity(viewer.id, id, 'PROPERTY_VIEW', { propertyName: property.name });
+        }
+      }
+    } catch (_) {}
 
     res.json({
       success: true,

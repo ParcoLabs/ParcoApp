@@ -991,4 +991,162 @@ router.get('/rent/pending', simpleAuth, adminOnly, async (req: Request, res: Res
   }
 });
 
+const VALID_CAPABILITY_KEYS = ['secondaryEnabled', 'borrowEnabled', 'transferRestricted', 'lockupDays'];
+
+router.get('/properties/:id/capabilities', simpleAuth, adminOnly, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (isDemoMode(req)) {
+      return res.json({
+        success: true,
+        data: { secondaryEnabled: false, borrowEnabled: true, transferRestricted: true, lockupDays: 90 },
+      });
+    }
+
+    const property = await prisma.property.findUnique({ where: { id }, select: { capabilities: true } });
+    if (!property) return res.status(404).json({ error: 'Property not found' });
+
+    return res.json({ success: true, data: property.capabilities || {} });
+  } catch (error: any) {
+    console.error('[admin] Error fetching capabilities:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+router.post('/properties/:id/capabilities', simpleAuth, adminOnly, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { capabilities } = req.body;
+    const admin = (req as AuthenticatedRequest).user;
+
+    if (!capabilities || typeof capabilities !== 'object') {
+      return res.status(400).json({ error: 'capabilities object is required' });
+    }
+
+    for (const key of Object.keys(capabilities)) {
+      if (!VALID_CAPABILITY_KEYS.includes(key)) {
+        return res.status(400).json({ error: `Unknown capability key: ${key}. Valid keys: ${VALID_CAPABILITY_KEYS.join(', ')}` });
+      }
+      if (key === 'lockupDays') {
+        if (typeof capabilities[key] !== 'number' || capabilities[key] < 0) {
+          return res.status(400).json({ error: 'lockupDays must be a non-negative number' });
+        }
+      } else {
+        if (typeof capabilities[key] !== 'boolean') {
+          return res.status(400).json({ error: `${key} must be a boolean` });
+        }
+      }
+    }
+
+    if (isDemoMode(req)) {
+      return res.json({
+        success: true,
+        data: capabilities,
+      });
+    }
+
+    const property = await prisma.property.findUnique({ where: { id }, select: { capabilities: true } });
+    if (!property) return res.status(404).json({ error: 'Property not found' });
+
+    const oldCapabilities = property.capabilities || {};
+    const merged = { ...(oldCapabilities as object), ...capabilities };
+
+    const updated = await prisma.property.update({
+      where: { id },
+      data: { capabilities: merged },
+      select: { id: true, capabilities: true },
+    });
+
+    await prisma.auditEvent.create({
+      data: {
+        type: 'CAPABILITIES_UPDATED',
+        entityId: id,
+        userId: admin?.id || null,
+        oldValue: oldCapabilities as object,
+        newValue: merged,
+      },
+    });
+
+    console.log(`[Admin] Capabilities updated for property ${id} by ${admin?.email}`);
+
+    return res.json({ success: true, data: updated.capabilities });
+  } catch (error: any) {
+    console.error('[admin] Error updating capabilities:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+router.get('/engagement/summary', simpleAuth, adminOnly, async (req: Request, res: Response) => {
+  try {
+    if (isDemoMode(req)) {
+      return res.json({
+        success: true,
+        data: {
+          totalUsers: 127,
+          activeCount: 89,
+          atRiskCount: 23,
+          dormantCount: 15,
+          scoreBuckets: { high: 45, medium: 44, low: 23, none: 15 },
+          atRiskUsers: [
+            { id: 'demo_1', email: 'jane.doe@example.com', firstName: 'Jane', lastName: 'Doe', lastActiveAt: new Date(Date.now() - 18 * 86400000).toISOString(), score: 2 },
+            { id: 'demo_2', email: 'bob.smith@example.com', firstName: 'Bob', lastName: 'Smith', lastActiveAt: new Date(Date.now() - 21 * 86400000).toISOString(), score: 1 },
+            { id: 'demo_3', email: 'alice.jones@example.com', firstName: 'Alice', lastName: 'Jones', lastActiveAt: new Date(Date.now() - 30 * 86400000).toISOString(), score: 0 },
+          ],
+        },
+      });
+    }
+
+    const { recomputeAllEngagement } = await import('../services/investorEngagement');
+
+    const now = new Date();
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * 86400000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000);
+
+    const [totalUsers, activeRecent, allStatuses] = await Promise.all([
+      prisma.user.count({ where: { role: 'USER' } }),
+      prisma.investorActivityEvent.groupBy({
+        by: ['userId'],
+        where: { createdAt: { gte: sevenDaysAgo } },
+      }),
+      prisma.investorEngagementStatus.findMany({
+        include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+      }),
+    ]);
+
+    const atRiskUsers = allStatuses
+      .filter(s => s.lastActiveAt && s.lastActiveAt < fourteenDaysAgo)
+      .sort((a, b) => (a.lastActiveAt?.getTime() || 0) - (b.lastActiveAt?.getTime() || 0))
+      .slice(0, 20)
+      .map(s => ({
+        id: s.user.id,
+        email: s.user.email,
+        firstName: s.user.firstName,
+        lastName: s.user.lastName,
+        lastActiveAt: s.lastActiveAt,
+        score: s.score,
+      }));
+
+    const high = allStatuses.filter(s => s.score >= 10).length;
+    const medium = allStatuses.filter(s => s.score >= 5 && s.score < 10).length;
+    const low = allStatuses.filter(s => s.score > 0 && s.score < 5).length;
+    const none = allStatuses.filter(s => s.score === 0).length;
+
+    return res.json({
+      success: true,
+      data: {
+        totalUsers,
+        activeCount: activeRecent.length,
+        atRiskCount: atRiskUsers.length,
+        dormantCount: none,
+        scoreBuckets: { high, medium, low, none },
+        atRiskUsers,
+      },
+    });
+  } catch (error: any) {
+    console.error('[admin] Error fetching engagement summary:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 export default router;

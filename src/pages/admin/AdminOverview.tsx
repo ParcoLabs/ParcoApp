@@ -11,6 +11,15 @@ interface DashboardStats {
   pendingKYC: number;
 }
 
+interface EngagementData {
+  activeCount: number;
+  atRiskCount: number;
+  dormantCount: number;
+  totalUsers: number;
+  scoreBuckets: { high: number; medium: number; low: number; none: number };
+  atRiskUsers: Array<{ id: string; email: string; firstName: string | null; lastName: string | null; lastActiveAt: string; score: number }>;
+}
+
 export const AdminOverview: React.FC = () => {
   const navigate = useNavigate();
   const { getToken } = useClerkAuth();
@@ -24,9 +33,11 @@ export const AdminOverview: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [engagement, setEngagement] = useState<EngagementData | null>(null);
 
   useEffect(() => {
     fetchStats();
+    fetchEngagement();
   }, []);
 
   const fetchStats = async () => {
@@ -76,6 +87,18 @@ export const AdminOverview: React.FC = () => {
       console.error('Error fetching stats:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchEngagement = async () => {
+    try {
+      const res = await fetch('/api/admin/engagement/summary', { credentials: 'include' });
+      if (res.ok) {
+        const json = await res.json();
+        setEngagement(json.data);
+      }
+    } catch (error) {
+      console.error('Error fetching engagement:', error);
     }
   };
 
@@ -210,6 +233,57 @@ export const AdminOverview: React.FC = () => {
           )}
         </div>
       </div>
+
+      {engagement && (
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#3a3a3a] p-5">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+            <i className="fa-solid fa-chart-line text-blue-500"></i>
+            Investor Engagement
+          </h2>
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-emerald-600">{engagement.activeCount}</p>
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">Active (7d)</p>
+            </div>
+            <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-amber-600">{engagement.atRiskCount}</p>
+              <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">At Risk (14d+)</p>
+            </div>
+            <div className="bg-gray-50 dark:bg-[#222] rounded-lg p-3 text-center">
+              <p className="text-2xl font-bold text-gray-500">{engagement.dormantCount}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 font-medium">Dormant</p>
+            </div>
+          </div>
+          {engagement.atRiskUsers.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">At-Risk Investors</p>
+              <div className="space-y-2">
+                {engagement.atRiskUsers.slice(0, 3).map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-2 bg-amber-50 dark:bg-amber-900/10 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                        <i className="fa-solid fa-user text-amber-600 text-xs"></i>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {user.firstName || user.email.split('@')[0]}
+                        </p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">{user.email}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-amber-600 font-medium">
+                        {Math.floor((Date.now() - new Date(user.lastActiveAt).getTime()) / 86400000)}d inactive
+                      </p>
+                      <p className="text-[10px] text-gray-400">Score: {user.score}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="bg-gradient-to-r from-brand-deep to-brand-dark rounded-xl p-5 sm:p-6 text-white">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

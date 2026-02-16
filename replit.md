@@ -32,6 +32,8 @@ The frontend utilizes React, TailwindCSS for styling, and Recharts for data visu
 - **Demo Mode**: A comprehensive simulation environment for testing all platform functionalities without real-world financial or blockchain interactions, including simulated crypto wallets, property purchases, borrowing, DeFi lending, governance voting, and rent cycles.
 - **Admin Role System**: Database-driven role-based access control (USER, TOKENIZER, ADMIN).
 - **Tokenization Review System**: Manages property tokenization submission workflow through defined statuses.
+- **Property Capabilities**: Admin-managed JSON flags per property (secondaryEnabled, borrowEnabled, transferRestricted, lockupDays) with audit trail.
+- **Investor Engagement Tracking**: Activity event recording, engagement scoring, at-risk detection, daily cron nudges via Notification model.
 - **Property Management**: Admin tools for minting, listing, pausing, and unpausing properties.
 - **Investor Operations**: Admin tools to manage investors, view profiles, holdings, and loan positions.
 - **Tokenizer Dashboard**: Dual-view interface for pre-tokenization progress tracking and post-tokenization property overview.

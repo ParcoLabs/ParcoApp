@@ -30,6 +30,9 @@ model User {
   tokenizationSubmissions TokenizationSubmission[]
   transactions            Transaction[]
   vaultAccount            VaultAccount?
+  activityEvents          InvestorActivityEvent[]
+  engagementStatus        InvestorEngagementStatus?
+  notifications           Notification[]
 
   @@index([clerkId])
   @@index([email])
@@ -101,10 +104,13 @@ model Property {
   mintTxHash       String?
   mintedAt         DateTime?
   hasParcoStays    Boolean        @default(false)
+  capabilities     Json           @default("{}")
+  ownerId          String?
   holdings              Holding[]
   rentPayments          RentPayment[]
   token                 Token?
   complianceRequirements ComplianceRequirement[]
+  activityEvents        InvestorActivityEvent[]
 
   @@index([status])
   @@index([propertyType])
@@ -920,4 +926,60 @@ enum DemoActionType {
   BOOK_STAY
   COMPLETE_KYC
   TOKENIZATION_POPULATE
+}
+
+model AuditEvent {
+  id        String   @id @default(cuid())
+  type      String
+  entityId  String?
+  userId    String?
+  oldValue  Json?
+  newValue  Json?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([type])
+  @@index([entityId])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model InvestorActivityEvent {
+  id         String    @id @default(cuid())
+  userId     String
+  propertyId String?
+  type       String
+  metadata   Json?
+  createdAt  DateTime  @default(now())
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([type])
+  @@index([propertyId])
+}
+
+model InvestorEngagementStatus {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  lastActiveAt DateTime?
+  score        Int       @default(0)
+  tags         Json?
+  updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([score])
+  @@index([lastActiveAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  message   String
+  status    String   @default("UNREAD")
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@index([createdAt])
 }

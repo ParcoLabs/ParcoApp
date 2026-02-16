@@ -3,6 +3,7 @@ import { validateAuth } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import { getUncachableStripeClient } from '../lib/stripeClient';
 import { isDemoMode, generateMockTxHash, simulateDelay } from '../lib/demoMode';
+import { recordActivity } from '../services/investorEngagement';
 
 const router = Router();
 
@@ -311,6 +312,12 @@ router.post('/', validateAuth, async (req, res) => {
         holdings,
         mintTxHash,
       };
+    });
+
+    recordActivity(user.id, propertyId, 'TOKEN_PURCHASE', {
+      tokenAmount,
+      totalCost: Number(totalCost),
+      propertyName: property.name,
     });
 
     const portfolioValue = result.holdings.reduce((sum, h) => {

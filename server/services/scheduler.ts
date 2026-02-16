@@ -1,5 +1,6 @@
 import * as cron from 'node-cron';
 import { rentDistributionService } from './rentDistribution';
+import { recomputeAllEngagement, checkAtRiskAndNotify } from './investorEngagement';
 
 class SchedulerService {
   private static instance: SchedulerService;
@@ -22,6 +23,7 @@ class SchedulerService {
     console.log('[Scheduler] Initializing scheduled jobs...');
 
     this.scheduleRentDistribution();
+    this.scheduleEngagementCheck();
 
     this.isInitialized = true;
     console.log('[Scheduler] All jobs scheduled successfully');
@@ -56,6 +58,29 @@ class SchedulerService {
 
     this.jobs.set('rent-distribution', job);
     console.log(`[Scheduler] Rent distribution scheduled: ${cronExpression}`);
+  }
+
+  private scheduleEngagementCheck(): void {
+    const cronExpression = process.env.ENGAGEMENT_CHECK_CRON || '0 6 * * *';
+
+    const job = cron.schedule(cronExpression, async () => {
+      if (process.env.DEMO_MODE === 'true') {
+        console.log('[Scheduler] Skipping engagement check in demo mode');
+        return;
+      }
+      console.log('[Scheduler] Starting daily engagement check...');
+
+      try {
+        await recomputeAllEngagement();
+        const result = await checkAtRiskAndNotify();
+        console.log('[Scheduler] Engagement check completed:', result);
+      } catch (err: any) {
+        console.error('[Scheduler] Engagement check failed:', err.message);
+      }
+    });
+
+    this.jobs.set('engagement-check', job);
+    console.log(`[Scheduler] Engagement check scheduled: ${cronExpression}`);
   }
 
   stopAll(): void {
