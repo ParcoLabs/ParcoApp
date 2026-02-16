@@ -15,7 +15,7 @@ The frontend utilizes React, TailwindCSS for styling, and Recharts for data visu
 - **Frontend**: React, TypeScript, Vite, React Router DOM.
 - **Backend**: Express.js with TypeScript.
 - **Database**: PostgreSQL with Prisma ORM.
-- **Blockchain Integration**: Smart contracts (PropertyToken.sol, PropertyVault.sol) on Polygon, interacting via Ethers.js, adhering to OpenZeppelin standards.
+- **Blockchain Integration**: Smart contracts (PropertyToken.sol, PropertyVault.sol, AllowlistRegistry.sol, RestrictedToken.sol) on Polygon, interacting via Ethers.js, adhering to OpenZeppelin standards. Hardhat for smart contract development/testing (ESM-compatible: uses `hardhat.config.cts`, `tsconfig.hardhat.json`, run tests with `NODE_OPTIONS="--import tsx --no-warnings" TS_NODE_PROJECT=tsconfig.hardhat.json npx hardhat test`).
 - **Authentication**: Clerk for user identity.
 - **KYC**: Sumsub WebSDK for identity verification.
 - **Payments**: Stripe for fiat, Coinbase Commerce for crypto.
