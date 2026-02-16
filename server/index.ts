@@ -27,6 +27,7 @@ import servicingRoutes from './routes/servicing';
 import uploadsRoutes from './routes/uploads';
 import blockchainRoutes from './routes/blockchain';
 import transferPolicyRoutes from './routes/transferPolicy';
+import complianceRoutes from './routes/compliance';
 import { isDemoMode } from './lib/demoMode';
 import { getStripeSync } from './lib/stripeClient';
 import { WebhookHandlers } from './lib/webhookHandlers';
@@ -183,6 +184,7 @@ app.use('/api/servicing', servicingRoutes);
 app.use('/api/uploads', uploadsRoutes);
 app.use('/api/blockchain', blockchainRoutes);
 app.use('/api/properties', transferPolicyRoutes);
+app.use('/api/compliance', complianceRoutes);
 
 app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets')));
 

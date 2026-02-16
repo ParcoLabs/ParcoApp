@@ -92,6 +92,95 @@ export const Settings: React.FC = () => {
     }
   };
 
+  const [kycStatus, setKycStatus] = useState('NOT_STARTED');
+  const [accreditationStatus, setAccreditationStatus] = useState('NOT_REQUIRED');
+  const [kycLoading, setKycLoading] = useState(false);
+  const [accreditationLoading, setAccreditationLoading] = useState(false);
+  const [complianceLoaded, setComplianceLoaded] = useState(false);
+
+  React.useEffect(() => {
+    const fetchCompliance = async () => {
+      try {
+        const res = await fetch('/api/compliance/status', { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          setKycStatus(data.data?.kycStatus || 'NOT_STARTED');
+          setAccreditationStatus(data.data?.accreditationStatus || 'NOT_REQUIRED');
+        }
+      } catch {}
+      setComplianceLoaded(true);
+    };
+    fetchCompliance();
+  }, []);
+
+  const handleStartKyc = async () => {
+    setKycLoading(true);
+    try {
+      if (demoMode) {
+        const res = await fetch('/api/compliance/demo/toggle', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ kycStatus: kycStatus === 'APPROVED' ? 'NOT_STARTED' : 'APPROVED' }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setKycStatus(data.data?.kycStatus || 'NOT_STARTED');
+        }
+      } else {
+        const res = await fetch('/api/compliance/kyc/start', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setKycStatus(data.data?.kycStatus || 'PENDING');
+        }
+      }
+    } catch {}
+    setKycLoading(false);
+  };
+
+  const handleStartAccreditation = async () => {
+    setAccreditationLoading(true);
+    try {
+      if (demoMode) {
+        const res = await fetch('/api/compliance/demo/toggle', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ accreditationStatus: accreditationStatus === 'APPROVED' ? 'NOT_REQUIRED' : 'APPROVED' }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAccreditationStatus(data.data?.accreditationStatus || 'NOT_REQUIRED');
+        }
+      } else {
+        const res = await fetch('/api/compliance/accreditation/start', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAccreditationStatus(data.data?.accreditationStatus || 'PENDING');
+        }
+      }
+    } catch {}
+    setAccreditationLoading(false);
+  };
+
+  const getStatusBadge = (status: string) => {
+    const map: Record<string, { bg: string; text: string; label: string }> = {
+      NOT_STARTED: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-400', label: 'Not Started' },
+      NOT_REQUIRED: { bg: 'bg-gray-100 dark:bg-gray-800', text: 'text-gray-600 dark:text-gray-400', label: 'Not Required' },
+      PENDING: { bg: 'bg-amber-100 dark:bg-amber-900/30', text: 'text-amber-700 dark:text-amber-300', label: 'Pending' },
+      APPROVED: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-700 dark:text-green-300', label: 'Verified' },
+      REJECTED: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-700 dark:text-red-300', label: 'Rejected' },
+    };
+    const config = map[status] || map.NOT_STARTED;
+    return <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>{config.label}</span>;
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -159,6 +248,73 @@ export const Settings: React.FC = () => {
                 {walletMessage && (
                   <p className={`text-xs mt-2 ${walletMessage.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
                     {walletMessage.text}
+                  </p>
+                )}
+            </div>
+        </div>
+
+        {/* Verification Section */}
+        <div className="mb-8">
+            <h2 className="font-bold text-brand-dark dark:text-white mb-2 text-lg px-2">Verification</h2>
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#3a3a3a] px-4 py-4 shadow-sm">
+                <p className="text-xs text-brand-sage dark:text-gray-400 mb-4">
+                  Complete identity verification (KYC) and accreditation to access all investment opportunities.
+                </p>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${kycStatus === 'APPROVED' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                        <i className={`fa-solid fa-id-card text-sm ${kycStatus === 'APPROVED' ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}></i>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-brand-dark dark:text-white">Identity (KYC)</p>
+                        <div className="mt-0.5">{getStatusBadge(kycStatus)}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleStartKyc}
+                      disabled={kycLoading || kycStatus === 'PENDING'}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 ${
+                        kycStatus === 'APPROVED'
+                          ? (demoMode ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200' : 'bg-green-100 dark:bg-green-900/30 text-green-700 cursor-default')
+                          : 'bg-brand-deep text-white hover:bg-brand-deep/90'
+                      }`}
+                    >
+                      {kycLoading ? '...' : kycStatus === 'APPROVED' ? (demoMode ? 'Reset' : 'Verified') : kycStatus === 'PENDING' ? 'Pending' : 'Verify'}
+                    </button>
+                  </div>
+
+                  <div className="border-t border-brand-lightGray dark:border-[#3a3a3a]"></div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${accreditationStatus === 'APPROVED' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-800'}`}>
+                        <i className={`fa-solid fa-certificate text-sm ${accreditationStatus === 'APPROVED' ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}></i>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-brand-dark dark:text-white">Accredited Investor</p>
+                        <div className="mt-0.5">{getStatusBadge(accreditationStatus)}</div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleStartAccreditation}
+                      disabled={accreditationLoading || accreditationStatus === 'PENDING'}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 ${
+                        accreditationStatus === 'APPROVED'
+                          ? (demoMode ? 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200' : 'bg-green-100 dark:bg-green-900/30 text-green-700 cursor-default')
+                          : 'bg-brand-deep text-white hover:bg-brand-deep/90'
+                      }`}
+                    >
+                      {accreditationLoading ? '...' : accreditationStatus === 'APPROVED' ? (demoMode ? 'Reset' : 'Verified') : accreditationStatus === 'PENDING' ? 'Pending' : 'Verify'}
+                    </button>
+                  </div>
+                </div>
+
+                {demoMode && (
+                  <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-3">
+                    <i className="fa-solid fa-flask mr-1"></i>
+                    Demo mode: Click Verify/Reset to toggle statuses instantly
                   </p>
                 )}
             </div>

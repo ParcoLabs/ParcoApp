@@ -104,6 +104,8 @@ export const AdminTokenizations: React.FC = () => {
   const [showOverrideModal, setShowOverrideModal] = useState(false);
   const [overrideReason, setOverrideReason] = useState('');
   const [advanceLoading, setAdvanceLoading] = useState(false);
+  const [mintActivateLoading, setMintActivateLoading] = useState(false);
+  const [mintActivateResult, setMintActivateResult] = useState<any>(null);
 
   const fetchSubmissions = async (page = 1) => {
     try {
@@ -296,6 +298,58 @@ export const AdminTokenizations: React.FC = () => {
       showToast('Error advancing status', 'error');
     } finally {
       setAdvanceLoading(false);
+    }
+  };
+
+  const handleMintAndActivate = async () => {
+    if (!issuanceCase) return;
+    setMintActivateLoading(true);
+    setMintActivateResult(null);
+    try {
+      const res = await fetch(`/api/issuance/case/${issuanceCase.id}/mint-and-activate`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const json = await res.json();
+      if (res.ok) {
+        setMintActivateResult(json);
+        setIssuanceCase((prev: any) => prev ? { ...prev, status: 'LIVE' } : null);
+        showToast('Mint & Activate completed successfully!', 'success');
+        if (selectedSubmission) {
+          fetchIssuanceCase(selectedSubmission.id);
+        }
+      } else {
+        if (json.requiresOverride) {
+          const reason = prompt('Eligibility override required. Enter reason:');
+          if (reason && reason.trim()) {
+            const retryRes = await fetch(`/api/issuance/case/${issuanceCase.id}/mint-and-activate`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ overrideReason: reason.trim() }),
+            });
+            const retryJson = await retryRes.json();
+            if (retryRes.ok) {
+              setMintActivateResult(retryJson);
+              setIssuanceCase((prev: any) => prev ? { ...prev, status: 'LIVE' } : null);
+              showToast('Mint & Activate completed with override!', 'success');
+              if (selectedSubmission) {
+                fetchIssuanceCase(selectedSubmission.id);
+              }
+            } else {
+              showToast(retryJson.error || 'Failed to mint & activate', 'error');
+            }
+          }
+        } else {
+          showToast(json.error || 'Failed to mint & activate', 'error');
+        }
+      }
+    } catch (err) {
+      showToast('Error during mint & activate', 'error');
+    } finally {
+      setMintActivateLoading(false);
     }
   };
 
@@ -898,6 +952,49 @@ export const AdminTokenizations: React.FC = () => {
                             </>
                           )}
                         </button>
+                      </div>
+                    )}
+
+                    {issuanceCase.status && ['APPROVED', 'MINT_READY', 'REVIEW_READY'].includes(issuanceCase.status) && (
+                      <div className="border-t border-gray-200 dark:border-[#444] pt-3">
+                        <button
+                          onClick={handleMintAndActivate}
+                          disabled={mintActivateLoading}
+                          className="w-full px-3 py-2.5 bg-green-600 text-white rounded-lg text-xs font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                        >
+                          {mintActivateLoading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                              Minting & Activating...
+                            </>
+                          ) : (
+                            <>
+                              <i className="fa-solid fa-rocket"></i>
+                              Mint & Activate
+                            </>
+                          )}
+                        </button>
+                        <p className="text-[10px] text-gray-400 mt-1.5 text-center">
+                          Deploy token, mint supply to treasury, and set case LIVE
+                        </p>
+                      </div>
+                    )}
+
+                    {mintActivateResult && (
+                      <div className="border-t border-gray-200 dark:border-[#444] pt-3">
+                        <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-3">
+                          <p className="text-xs font-semibold text-green-800 dark:text-green-300 mb-2">
+                            <i className="fa-solid fa-check-circle mr-1"></i>Mint & Activate Complete
+                          </p>
+                          <div className="space-y-1 text-[10px] text-green-700 dark:text-green-400">
+                            {mintActivateResult.steps?.map((step: any, i: number) => (
+                              <p key={i}><span className="font-medium">{step.type}:</span> {step.details}</p>
+                            ))}
+                            {mintActivateResult.deployment && (
+                              <p className="font-mono break-all mt-1">Token: {mintActivateResult.deployment.tokenAddress}</p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     )}
 

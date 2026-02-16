@@ -40,6 +40,8 @@ The frontend utilizes React, TailwindCSS for styling, and Recharts for data visu
 - **Investor Operations**: Admin tools to manage investors, view profiles, holdings, and loan positions.
 - **Tokenizer Dashboard**: Dual-view interface for pre-tokenization progress tracking and post-tokenization property overview.
 - **Admin Dashboard**: Dedicated interface for platform administration, including tokenizations, properties, investors, rent distribution, and demo tools.
+- **Mint & Activate**: Admin endpoint (`POST /api/issuance/case/:caseId/mint-and-activate`) that performs full issuance-to-chain gating: eligibility check (with override), approval verification, transfer policy creation (default from track), on-chain deployment, treasury allowlisting, token minting, status progression (MINTED → LIVE), property activation, and compliance pack application. Full demo mode simulation. UI button in AdminTokenizations drawer.
+- **KYC/Accreditation Scaffolding**: Provider-agnostic compliance routes (`/api/compliance`) for KYC start/webhook and accreditation start/webhook. Updates InvestorProfile kycStatus/accreditationStatus. Demo mode toggle endpoint. Verification section in Settings page with status badges and action buttons. `checkAccreditedInvestor()` helper exported for Reg D gating.
 
 #### System Design Choices
 - Client-side routing with React Router DOM.

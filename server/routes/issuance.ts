@@ -533,4 +533,297 @@ router.get(
   },
 );
 
+const TRACK_DEFAULT_POLICY: Record<string, string> = {
+  SERIES_LLC: 'ALLOWLIST_ONLY',
+  REG_CF: 'ALLOWLIST_ONLY',
+  REG_A: 'ALLOWLIST_ONLY',
+  REG_D: 'REG_D_12M_LOCKUP',
+};
+
+function generateDemoAddress(): string {
+  const hex = Array.from({ length: 40 }, () =>
+    Math.floor(Math.random() * 16).toString(16)
+  ).join('');
+  return `0x${hex}`;
+}
+
+function generateMockTxHash(): string {
+  return `0xdemo${Date.now().toString(16)}${Math.random().toString(16).slice(2, 10)}`.padEnd(66, '0');
+}
+
+router.post(
+  '/case/:caseId/mint-and-activate',
+  simpleAuth,
+  loadUserWithRole,
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { caseId } = req.params;
+      const { overrideReason } = req.body;
+      const user = (req as AuthenticatedRequest).user;
+
+      if (!user) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+      }
+
+      const auditEvents: Array<{ type: string; details: string }> = [];
+      const demo = isDemoMode(req);
+
+      const issuanceCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+        include: {
+          submission: true,
+          approvalTasks: true,
+        },
+      });
+
+      if (!issuanceCase) {
+        return res.status(404).json({ success: false, error: 'Issuance case not found' });
+      }
+
+      const propertyId = issuanceCase.submission.propertyId;
+      if (!propertyId) {
+        return res.status(400).json({ success: false, error: 'Submission has no linked property. Approve and create a property first.' });
+      }
+
+      const property = await (prisma.property as any).findUnique({
+        where: { id: propertyId },
+        include: { onchainDeployment: true, transferPolicy: true },
+      }) as any;
+
+      if (!property) {
+        return res.status(404).json({ success: false, error: 'Linked property not found' });
+      }
+
+      if (issuanceCase.eligibilityStatus !== 'PASS') {
+        if (overrideReason && typeof overrideReason === 'string' && overrideReason.trim().length > 0) {
+          await prisma.auditEvent.create({
+            data: {
+              type: 'ELIGIBILITY_OVERRIDE',
+              entityId: caseId,
+              userId: user.id,
+              oldValue: { eligibilityStatus: issuanceCase.eligibilityStatus },
+              newValue: { action: 'MINT_AND_ACTIVATE', overrideReason: overrideReason.trim() },
+            },
+          });
+          auditEvents.push({ type: 'ELIGIBILITY_OVERRIDE', details: overrideReason.trim() });
+        } else {
+          return res.status(400).json({
+            success: false,
+            error: 'Eligibility status is not PASS. Provide overrideReason to proceed.',
+            eligibilityStatus: issuanceCase.eligibilityStatus,
+            requiresOverride: true,
+          });
+        }
+      }
+
+      const pendingApprovals = issuanceCase.approvalTasks.filter(t => t.status !== 'COMPLETED');
+      if (pendingApprovals.length > 0) {
+        return res.status(400).json({
+          success: false,
+          error: `${pendingApprovals.length} approval task(s) are not complete: ${pendingApprovals.map(t => t.role).join(', ')}`,
+          pendingApprovals: pendingApprovals.map(t => ({ role: t.role, status: t.status })),
+        });
+      }
+      auditEvents.push({ type: 'APPROVALS_VERIFIED', details: `${issuanceCase.approvalTasks.length} tasks verified` });
+
+      if (!property.transferPolicy) {
+        const defaultType = TRACK_DEFAULT_POLICY[issuanceCase.track] || 'ALLOWLIST_ONLY';
+        const lockupEndsAt = defaultType === 'REG_D_12M_LOCKUP'
+          ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+          : null;
+        await (prisma as any).transferPolicy.create({
+          data: {
+            propertyId,
+            type: defaultType as any,
+            lockupEndsAt,
+          },
+        });
+        auditEvents.push({ type: 'TRANSFER_POLICY_CREATED', details: `Default policy ${defaultType} created for track ${issuanceCase.track}` });
+      } else {
+        auditEvents.push({ type: 'TRANSFER_POLICY_EXISTS', details: `Policy type: ${property.transferPolicy.type}` });
+      }
+
+      let deployment = property.onchainDeployment;
+      let deployTxHash: string | null = null;
+      let registryTxHash: string | null = null;
+
+      if (!deployment) {
+        const tokenName = `Parco ${property.name}`;
+        const symbolBase = property.name.replace(/[^A-Z0-9]/gi, '').toUpperCase().slice(0, 5);
+        const symbol = `P${symbolBase}`;
+
+        if (demo) {
+          const tokenAddress = generateDemoAddress();
+          const registryAddress = generateDemoAddress();
+          deployTxHash = generateMockTxHash();
+          registryTxHash = generateMockTxHash();
+
+          deployment = await (prisma as any).onchainDeployment.create({
+            data: {
+              propertyId,
+              chainId: 137,
+              tokenAddress,
+              registryAddress,
+              deployedByUserId: user.id,
+              deployedAt: new Date(),
+            },
+          });
+        } else {
+          const { deployRestrictedToken } = await import('../services/blockchain');
+          try {
+            const result = await deployRestrictedToken({ name: tokenName, symbol });
+            deployTxHash = result.deployTxHash;
+            registryTxHash = result.registryTxHash;
+
+            deployment = await (prisma as any).onchainDeployment.create({
+              data: {
+                propertyId,
+                chainId: 137,
+                tokenAddress: result.tokenAddress,
+                registryAddress: result.registryAddress,
+                deployedByUserId: user.id,
+                deployedAt: new Date(),
+              },
+            });
+          } catch (err: any) {
+            return res.status(412).json({ success: false, error: `Deploy failed: ${err.message}` });
+          }
+        }
+        auditEvents.push({ type: 'TOKEN_DEPLOYED', details: `Token deployed at ${deployment.tokenAddress}` });
+      } else {
+        auditEvents.push({ type: 'DEPLOYMENT_EXISTS', details: `Already deployed at ${deployment.tokenAddress}` });
+      }
+
+      const currentPolicy = property.transferPolicy || await (prisma as any).transferPolicy.findUnique({ where: { propertyId } });
+      if (currentPolicy && deployment && !demo) {
+        try {
+          const { tokenSetAllowlistRequired, tokenSetLockupEndsAt } = await import('../services/blockchain');
+          const needsAllowlist = ['ALLOWLIST_ONLY', 'ALLOWLIST_AND_LOCKUP', 'REG_D_12M_LOCKUP'].includes(currentPolicy.type);
+          await tokenSetAllowlistRequired({ tokenAddress: deployment.tokenAddress, required: needsAllowlist });
+
+          if (['ALLOWLIST_AND_LOCKUP', 'REG_D_12M_LOCKUP'].includes(currentPolicy.type) && currentPolicy.lockupEndsAt) {
+            const lockupTs = Math.floor(new Date(currentPolicy.lockupEndsAt).getTime() / 1000);
+            await tokenSetLockupEndsAt({ tokenAddress: deployment.tokenAddress, lockupEndsAt: lockupTs });
+          }
+          auditEvents.push({ type: 'TRANSFER_POLICY_SYNCED', details: `Policy ${currentPolicy.type} synced on-chain` });
+        } catch (err: any) {
+          auditEvents.push({ type: 'TRANSFER_POLICY_SYNC_WARNING', details: `Failed to sync policy: ${err.message}` });
+        }
+      } else if (currentPolicy && demo) {
+        auditEvents.push({ type: 'TRANSFER_POLICY_SYNCED', details: `Policy ${currentPolicy.type} synced (demo)` });
+      }
+
+      const treasuryWallet = process.env.TREASURY_WALLET_ADDRESS || (demo ? '0x' + 'TREASURY'.padEnd(40, '0') : null);
+      if (!treasuryWallet) {
+        return res.status(412).json({ success: false, error: 'TREASURY_WALLET_ADDRESS not configured' });
+      }
+
+      if (demo) {
+        auditEvents.push({ type: 'TREASURY_ALLOWLISTED', details: `Treasury ${treasuryWallet} allowlisted (demo)` });
+      } else {
+        try {
+          const { registrySetAllowed } = await import('../services/blockchain');
+          if (deployment.registryAddress) {
+            await registrySetAllowed({
+              registryAddress: deployment.registryAddress,
+              investorAddress: treasuryWallet,
+              allowed: true,
+            });
+          }
+          auditEvents.push({ type: 'TREASURY_ALLOWLISTED', details: `Treasury ${treasuryWallet} allowlisted on-chain` });
+        } catch (err: any) {
+          auditEvents.push({ type: 'TREASURY_ALLOWLIST_WARNING', details: `Failed to allowlist treasury: ${err.message}` });
+        }
+      }
+
+      const initialSupply = process.env.INITIAL_SUPPLY_TOKENS || String(property.totalTokens || 1000);
+      let mintTxHash: string | null = null;
+
+      if (demo) {
+        mintTxHash = generateMockTxHash();
+        auditEvents.push({ type: 'TOKENS_MINTED', details: `${initialSupply} tokens minted to treasury (demo)` });
+      } else {
+        try {
+          const { tokenMint } = await import('../services/blockchain');
+          mintTxHash = await tokenMint({
+            tokenAddress: deployment.tokenAddress,
+            to: treasuryWallet,
+            amount: initialSupply,
+          });
+          auditEvents.push({ type: 'TOKENS_MINTED', details: `${initialSupply} tokens minted to treasury` });
+        } catch (err: any) {
+          auditEvents.push({ type: 'MINT_WARNING', details: `Mint failed: ${err.message}` });
+        }
+      }
+
+      await prisma.issuanceCase.update({
+        where: { id: caseId },
+        data: { status: 'MINTED' },
+      });
+      auditEvents.push({ type: 'STATUS_MINTED', details: 'Case status set to MINTED' });
+
+      await prisma.issuanceCase.update({
+        where: { id: caseId },
+        data: { status: 'LIVE' },
+      });
+      auditEvents.push({ type: 'STATUS_LIVE', details: 'Case status set to LIVE' });
+
+      await prisma.property.update({
+        where: { id: propertyId },
+        data: { isMinted: true, status: 'ACTIVE' },
+      });
+      auditEvents.push({ type: 'PROPERTY_ACTIVATED', details: 'Property set to ACTIVE and isMinted=true' });
+
+      let complianceResult = null;
+      try {
+        const { applyCompliancePack } = await import('../services/compliancePack');
+        complianceResult = await applyCompliancePack(caseId, propertyId);
+        auditEvents.push({ type: 'COMPLIANCE_PACK_APPLIED', details: `${complianceResult.requirementsCreated} requirements created` });
+      } catch (err: any) {
+        auditEvents.push({ type: 'COMPLIANCE_PACK_SKIPPED', details: err.message });
+      }
+
+      for (const event of auditEvents) {
+        await prisma.auditEvent.create({
+          data: {
+            type: event.type,
+            entityId: caseId,
+            userId: user.id,
+            oldValue: { propertyId },
+            newValue: { details: event.details },
+          },
+        });
+      }
+
+      console.log(`[issuance] Mint & Activate completed for case ${caseId} by admin ${user.id}. Steps: ${auditEvents.length}`);
+
+      const updatedCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+        include: { submission: true, checklistItems: true, approvalTasks: true, eligibilityChecks: true },
+      });
+
+      return res.json({
+        success: true,
+        isDemo: demo,
+        data: updatedCase,
+        steps: auditEvents,
+        deployment: {
+          tokenAddress: deployment.tokenAddress,
+          registryAddress: deployment.registryAddress,
+        },
+        mint: {
+          txHash: mintTxHash,
+          supply: initialSupply,
+          treasury: treasuryWallet,
+        },
+        compliance: complianceResult,
+      });
+    } catch (error: any) {
+      console.error('[issuance] Error in mint-and-activate:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
 export default router;
