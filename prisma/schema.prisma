@@ -33,6 +33,9 @@ model User {
   activityEvents          InvestorActivityEvent[]
   engagementStatus        InvestorEngagementStatus?
   notifications           Notification[]
+  investorProfile         InvestorProfile?
+  allowlistEntries        InvestorAllowlist[]        @relation("AllowlistUser")
+  addedAllowlistEntries   InvestorAllowlist[]        @relation("AllowlistAddedBy")
 
   @@index([clerkId])
   @@index([email])
@@ -111,6 +114,9 @@ model Property {
   token                 Token?
   complianceRequirements ComplianceRequirement[]
   activityEvents        InvestorActivityEvent[]
+  allowlistEntries      InvestorAllowlist[]
+  transferPolicy        TransferPolicy?
+  onchainDeployment     OnchainDeployment?
 
   @@index([status])
   @@index([propertyType])
@@ -982,4 +988,85 @@ model Notification {
 
   @@index([userId, status])
   @@index([createdAt])
+}
+
+enum InvestorKycStatus {
+  NOT_STARTED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AccreditationStatus {
+  NOT_REQUIRED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TransferPolicyType {
+  UNRESTRICTED
+  ALLOWLIST_ONLY
+  ALLOWLIST_AND_LOCKUP
+  REG_D_12M_LOCKUP
+  CUSTOM
+}
+
+model InvestorProfile {
+  id                  String              @id @default(cuid())
+  userId              String              @unique
+  kycStatus           InvestorKycStatus   @default(NOT_STARTED)
+  accreditationStatus AccreditationStatus @default(NOT_REQUIRED)
+  country             String?
+  state               String?
+  jurisdictionTags    Json?
+  riskFlags           Json?
+  lastKycCheckAt      DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model InvestorAllowlist {
+  id            String   @id @default(cuid())
+  propertyId    String
+  userId        String
+  isAllowed     Boolean  @default(true)
+  reason        String?
+  addedByUserId String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  user          User     @relation("AllowlistUser", fields: [userId], references: [id], onDelete: Cascade)
+  addedBy       User?    @relation("AllowlistAddedBy", fields: [addedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([propertyId, userId])
+  @@index([propertyId])
+  @@index([userId])
+}
+
+model TransferPolicy {
+  id                 String             @id @default(cuid())
+  propertyId         String             @unique
+  type               TransferPolicyType @default(ALLOWLIST_ONLY)
+  lockupEndsAt       DateTime?
+  maxHolders         Int?
+  maxPerInvestorCents Int?
+  notes              String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  property           Property           @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model OnchainDeployment {
+  id               String   @id @default(cuid())
+  propertyId       String   @unique
+  chainId          Int
+  tokenAddress     String
+  registryAddress  String?
+  deployedByUserId String?
+  deployedAt       DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  property         Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 }
