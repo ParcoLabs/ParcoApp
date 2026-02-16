@@ -4,6 +4,7 @@ import prisma from '../lib/prisma';
 import { isDemoMode } from '../utils/demoMode';
 import { mockIssuanceCase, mockEligibilityCheck, mockExtractionRunStatus } from '../utils/demoResponses';
 import { loadUserWithRole, adminOnly, AuthenticatedRequest } from '../middleware/admin';
+import { seedCaseFromTemplate, mockSeedResult } from '../services/templateSeeder';
 
 const router = Router();
 
@@ -56,14 +57,19 @@ router.get(
 
       const issuanceCase = await prisma.issuanceCase.findUnique({
         where: { submissionId },
-        include: { submission: true },
+        include: { submission: true, checklistItems: true, approvalTasks: true },
       });
 
       if (!issuanceCase) {
         return res.status(404).json({ success: false, error: 'No issuance case found for this submission' });
       }
 
-      return res.json({ success: true, data: issuanceCase });
+      const template = await prisma.issuanceTemplate.findUnique({
+        where: { track: issuanceCase.track },
+      });
+      const requiredDocTypes = template ? (template.rules as any).requiredDocTypes || [] : [];
+
+      return res.json({ success: true, data: { ...issuanceCase, requiredDocTypes } });
     } catch (error: any) {
       console.error('[issuance] Error fetching case:', error);
       return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
@@ -124,7 +130,25 @@ router.post(
         },
       });
 
-      return res.status(201).json({ success: true, data: issuanceCase });
+      let seedResult = null;
+      try {
+        seedResult = await seedCaseFromTemplate(issuanceCase.id);
+      } catch (e) {
+        console.warn('[issuance] Template seeding skipped (template may not exist):', (e as Error).message);
+      }
+
+      const fullCase = await prisma.issuanceCase.findUnique({
+        where: { id: issuanceCase.id },
+        include: { checklistItems: true, approvalTasks: true },
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: {
+          ...fullCase,
+          requiredDocTypes: seedResult?.requiredDocTypes || [],
+        },
+      });
     } catch (error: any) {
       console.error('[issuance] Error creating case:', error);
       return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
@@ -290,6 +314,86 @@ router.post(
       });
     } catch (error: any) {
       console.error('[issuance] Error running extraction:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.post(
+  '/case/:caseId/track',
+  simpleAuth,
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { caseId } = req.params;
+      const { track, targetState, maxPropertyPriceCents } = req.body;
+
+      if (!track) {
+        return res.status(400).json({ success: false, error: 'track is required' });
+      }
+
+      const validTracks = ['SERIES_LLC', 'REG_CF', 'REG_A', 'REG_D'];
+      if (!validTracks.includes(track)) {
+        return res.status(400).json({ success: false, error: `Invalid track. Must be one of: ${validTracks.join(', ')}` });
+      }
+
+      if (isDemoMode(req)) {
+        const mockCase = mockIssuanceCase({
+          id: caseId,
+          track,
+          targetState: targetState || 'OTHER',
+          maxPropertyPriceCents: maxPropertyPriceCents ?? null,
+        });
+        return res.json({
+          success: true,
+          data: mockCase,
+          seedResult: mockSeedResult(caseId, track),
+        });
+      }
+
+      const issuanceCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+      });
+
+      if (!issuanceCase) {
+        return res.status(404).json({ success: false, error: 'Issuance case not found' });
+      }
+
+      const updateData: any = { track };
+      if (targetState) updateData.targetState = targetState;
+      if (maxPropertyPriceCents !== undefined) updateData.maxPropertyPriceCents = maxPropertyPriceCents;
+
+      await prisma.issuanceCase.update({
+        where: { id: caseId },
+        data: updateData,
+      });
+
+      let seedResult = null;
+      try {
+        seedResult = await seedCaseFromTemplate(caseId);
+      } catch (e) {
+        console.warn('[issuance] Template seeding after track change failed:', (e as Error).message);
+      }
+
+      const updatedCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+        include: { checklistItems: true, approvalTasks: true },
+      });
+
+      const template = await prisma.issuanceTemplate.findUnique({
+        where: { track },
+      });
+      const requiredDocTypes = template ? (template.rules as any).requiredDocTypes || [] : [];
+
+      console.log(`[issuance] Admin updated case ${caseId} track to ${track}${targetState ? `, targetState=${targetState}` : ''}`);
+
+      return res.json({
+        success: true,
+        data: { ...updatedCase, requiredDocTypes },
+        seedResult,
+      });
+    } catch (error: any) {
+      console.error('[issuance] Error updating track:', error);
       return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
     }
   },

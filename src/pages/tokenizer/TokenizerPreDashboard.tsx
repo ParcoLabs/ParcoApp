@@ -30,6 +30,10 @@ interface IssuanceCaseData {
   status: string;
   eligibilityStatus: string;
   extractionScore: number;
+  track?: string;
+  targetState?: string;
+  maxPropertyPriceCents?: number | null;
+  requiredDocTypes?: string[];
 }
 
 interface IssuanceDocumentData {
@@ -424,24 +428,40 @@ export const TokenizerPreDashboard: React.FC = () => {
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-deep"></div>
               </div>
             ) : issuanceCase ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-                <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 md:p-4">
-                  <p className="text-[10px] md:text-xs text-brand-sage mb-1">Case Status</p>
-                  <p className="text-sm font-bold text-brand-dark dark:text-white">
-                    {(issuanceCase.status || 'DRAFT').replace(/_/g, ' ')}
-                  </p>
+              <div className="space-y-3 md:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                  <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 md:p-4">
+                    <p className="text-[10px] md:text-xs text-brand-sage mb-1">Case Status</p>
+                    <p className="text-sm font-bold text-brand-dark dark:text-white">
+                      {(issuanceCase.status || 'DRAFT').replace(/_/g, ' ')}
+                    </p>
+                  </div>
+                  <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 md:p-4">
+                    <p className="text-[10px] md:text-xs text-brand-sage mb-1">Eligibility</p>
+                    <p className="text-sm font-bold text-brand-dark dark:text-white">
+                      {(issuanceCase.eligibilityStatus || 'PENDING').replace(/_/g, ' ')}
+                    </p>
+                  </div>
+                  <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 md:p-4">
+                    <p className="text-[10px] md:text-xs text-brand-sage mb-1">Extraction Score</p>
+                    <p className="text-sm font-bold text-brand-dark dark:text-white">
+                      {issuanceCase.extractionScore ?? 0}
+                    </p>
+                  </div>
                 </div>
-                <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 md:p-4">
-                  <p className="text-[10px] md:text-xs text-brand-sage mb-1">Eligibility</p>
-                  <p className="text-sm font-bold text-brand-dark dark:text-white">
-                    {(issuanceCase.eligibilityStatus || 'PENDING').replace(/_/g, ' ')}
-                  </p>
-                </div>
-                <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 md:p-4">
-                  <p className="text-[10px] md:text-xs text-brand-sage mb-1">Extraction Score</p>
-                  <p className="text-sm font-bold text-brand-dark dark:text-white">
-                    {issuanceCase.extractionScore ?? 0}
-                  </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                  <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 md:p-4">
+                    <p className="text-[10px] md:text-xs text-brand-sage mb-1">Regulatory Track</p>
+                    <p className="text-sm font-bold text-brand-dark dark:text-white">
+                      {(issuanceCase.track || 'SERIES_LLC').replace(/_/g, ' ')}
+                    </p>
+                  </div>
+                  <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 md:p-4">
+                    <p className="text-[10px] md:text-xs text-brand-sage mb-1">Target State</p>
+                    <p className="text-sm font-bold text-brand-dark dark:text-white">
+                      {issuanceCase.targetState === 'NV' ? 'Nevada' : issuanceCase.targetState === 'FL' ? 'Florida' : issuanceCase.targetState === 'WY' ? 'Wyoming' : issuanceCase.targetState || 'Other'}
+                    </p>
+                  </div>
                 </div>
               </div>
             ) : (

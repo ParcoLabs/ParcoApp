@@ -144,6 +144,14 @@ The issuance engine now supports multiple regulatory tracks via first-class Pris
 - `StateSeriesLlcProfile` — one per state (unique), holds state-specific LLC formation rules (fees, agent requirements, tax rates). NV/FL/WY enabled by default.
 - `EligibilityCheck` — per-case key-value checks (@@unique([caseId, key])), tracks individual eligibility criteria with status and details
 
+**New Models:**
+- `ChecklistItem` — per-case key-value checklist items (@@unique([caseId, key])), tracks critical steps with label, ownerRole (ApprovalRole), and status (ChecklistStatus)
+- `ApprovalTask` — per-case role-based approval tasks (@@unique([caseId, role])), tracks OPS/LEGAL/ACCOUNTING/COMPLIANCE sign-offs
+
+**Template Seeder:** `server/services/templateSeeder.ts` — `seedCaseFromTemplate(caseId)` loads the IssuanceTemplate for a case's track, then idempotently creates ChecklistItem and ApprovalTask rows from the template's `criticalKeys` and `approvals` rules. Skips existing completed items. Also sets `maxPropertyPriceCents` from template defaults if not already set. `mockSeedResult(caseId, track)` provides stable mock output for demo mode.
+
+**Admin Track Endpoint:** `POST /api/issuance/case/:caseId/track` — admin-only endpoint to change a case's regulatory track, target state, and price cap. Calls `seedCaseFromTemplate` after updating to provision checklist/approval items for the new track.
+
 **Seed script:** `prisma/seed-issuance.ts` — run with `npx tsx prisma/seed-issuance.ts`. Uses upsert so it's idempotent.
 
 ### Engine Health (Admin)

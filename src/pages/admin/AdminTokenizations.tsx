@@ -49,6 +49,13 @@ interface IssuanceCaseData {
   status: string;
   eligibilityStatus: string;
   extractionScore: number;
+  track: string;
+  targetState: string;
+  maxPropertyPriceCents: number | null;
+  eligibilityNotes: string | null;
+  checklistItems: Array<{ id: string; key: string; label: string; ownerRole: string; status: string }>;
+  approvalTasks: Array<{ id: string; role: string; status: string }>;
+  requiredDocTypes: string[];
 }
 
 interface Pagination {
@@ -82,6 +89,11 @@ export const AdminTokenizations: React.FC = () => {
   const [issuanceLoading, setIssuanceLoading] = useState(false);
   const [issuanceActionLoading, setIssuanceActionLoading] = useState<string | null>(null);
   const [issuanceDocCount, setIssuanceDocCount] = useState<number>(0);
+  const [trackEditing, setTrackEditing] = useState(false);
+  const [editTrack, setEditTrack] = useState('SERIES_LLC');
+  const [editTargetState, setEditTargetState] = useState('OTHER');
+  const [editPriceCap, setEditPriceCap] = useState('');
+  const [trackSaving, setTrackSaving] = useState(false);
 
   const fetchSubmissions = async (page = 1) => {
     try {
@@ -202,6 +214,43 @@ export const AdminTokenizations: React.FC = () => {
     } finally {
       setIssuanceActionLoading(null);
     }
+  };
+
+  const handleSaveTrack = async () => {
+    if (!issuanceCase) return;
+    setTrackSaving(true);
+    try {
+      const body: any = { track: editTrack, targetState: editTargetState };
+      if (editPriceCap) body.maxPropertyPriceCents = parseInt(editPriceCap, 10);
+      else body.maxPropertyPriceCents = null;
+      const res = await fetch(`/api/issuance/case/${issuanceCase.id}/track`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setIssuanceCase(json.data);
+        setTrackEditing(false);
+        showToast('Track updated and checklist seeded', 'success');
+      } else {
+        showToast('Failed to update track', 'error');
+      }
+    } catch (err) {
+      showToast('Error updating track', 'error');
+    } finally {
+      setTrackSaving(false);
+    }
+  };
+
+  const startTrackEdit = () => {
+    if (issuanceCase) {
+      setEditTrack(issuanceCase.track || 'SERIES_LLC');
+      setEditTargetState(issuanceCase.targetState || 'OTHER');
+      setEditPriceCap(issuanceCase.maxPropertyPriceCents ? String(issuanceCase.maxPropertyPriceCents) : '');
+    }
+    setTrackEditing(true);
   };
 
   const handleViewDetails = async (submission: TokenizationSubmission) => {
@@ -635,7 +684,7 @@ export const AdminTokenizations: React.FC = () => {
               </div>
 
               <div className="bg-gray-50 dark:bg-[#2a2a2a] rounded-xl p-4">
-                <h4 className="font-semibold text-gray-900 mb-3">Issuance Status</h4>
+                <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Issuance Status</h4>
                 {issuanceLoading ? (
                   <div className="flex items-center justify-center py-4">
                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-deep"></div>
@@ -645,17 +694,118 @@ export const AdminTokenizations: React.FC = () => {
                     <div className="grid grid-cols-3 gap-3 text-sm">
                       <div>
                         <p className="text-gray-500">Case Status</p>
-                        <p className="font-medium text-gray-900">{(issuanceCase.status || 'DRAFT').replace(/_/g, ' ')}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{(issuanceCase.status || 'DRAFT').replace(/_/g, ' ')}</p>
                       </div>
                       <div>
                         <p className="text-gray-500">Eligibility</p>
-                        <p className="font-medium text-gray-900">{(issuanceCase.eligibilityStatus || 'PENDING').replace(/_/g, ' ')}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{(issuanceCase.eligibilityStatus || 'PENDING').replace(/_/g, ' ')}</p>
                       </div>
                       <div>
                         <p className="text-gray-500">Extraction Score</p>
-                        <p className="font-medium text-gray-900">{issuanceCase.extractionScore ?? 0}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">{issuanceCase.extractionScore ?? 0}</p>
                       </div>
                     </div>
+
+                    <div className="border-t border-gray-200 dark:border-[#444] pt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold text-gray-500 uppercase">Regulatory Track</p>
+                        {!trackEditing && (
+                          <button onClick={startTrackEdit} className="text-xs text-brand-deep hover:text-brand-dark dark:text-brand-mint">
+                            Edit
+                          </button>
+                        )}
+                      </div>
+                      {trackEditing ? (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-[10px] text-gray-500 block mb-0.5">Track</label>
+                              <select
+                                value={editTrack}
+                                onChange={(e) => setEditTrack(e.target.value)}
+                                className="w-full border border-gray-300 dark:border-[#444] dark:bg-[#1a1a1a] dark:text-white rounded px-2 py-1 text-xs"
+                              >
+                                <option value="SERIES_LLC">Series LLC</option>
+                                <option value="REG_D">Reg D</option>
+                                <option value="REG_CF">Reg CF</option>
+                                <option value="REG_A">Reg A+</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-gray-500 block mb-0.5">Target State</label>
+                              <select
+                                value={editTargetState}
+                                onChange={(e) => setEditTargetState(e.target.value)}
+                                className="w-full border border-gray-300 dark:border-[#444] dark:bg-[#1a1a1a] dark:text-white rounded px-2 py-1 text-xs"
+                              >
+                                <option value="NV">Nevada</option>
+                                <option value="FL">Florida</option>
+                                <option value="WY">Wyoming</option>
+                                <option value="OTHER">Other</option>
+                              </select>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-500 block mb-0.5">Price Cap (cents)</label>
+                            <input
+                              type="number"
+                              value={editPriceCap}
+                              onChange={(e) => setEditPriceCap(e.target.value)}
+                              placeholder="e.g. 50000000"
+                              className="w-full border border-gray-300 dark:border-[#444] dark:bg-[#1a1a1a] dark:text-white rounded px-2 py-1 text-xs"
+                            />
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={handleSaveTrack}
+                              disabled={trackSaving}
+                              className="flex-1 px-2 py-1 bg-brand-deep text-white rounded text-xs font-medium hover:bg-brand-dark disabled:opacity-50"
+                            >
+                              {trackSaving ? 'Saving...' : 'Save & Seed'}
+                            </button>
+                            <button
+                              onClick={() => setTrackEditing(false)}
+                              className="px-2 py-1 border border-gray-300 dark:border-[#444] rounded text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#333]"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-3 text-sm">
+                          <div>
+                            <p className="text-gray-500 text-xs">Track</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{(issuanceCase.track || 'SERIES_LLC').replace(/_/g, ' ')}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 text-xs">State</p>
+                            <p className="font-medium text-gray-900 dark:text-white">{issuanceCase.targetState || 'OTHER'}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 text-xs">Price Cap</p>
+                            <p className="font-medium text-gray-900 dark:text-white">
+                              {issuanceCase.maxPropertyPriceCents
+                                ? `$${(issuanceCase.maxPropertyPriceCents / 100).toLocaleString()}`
+                                : 'None'}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {issuanceCase.requiredDocTypes && issuanceCase.requiredDocTypes.length > 0 && (
+                      <div className="border-t border-gray-200 dark:border-[#444] pt-3">
+                        <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Required Documents</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {issuanceCase.requiredDocTypes.map((docType: string) => (
+                            <span key={docType} className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-[10px] font-medium">
+                              {docType}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex gap-2">
                       <button
                         onClick={handleRunEligibility}
