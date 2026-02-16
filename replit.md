@@ -34,6 +34,8 @@ The frontend utilizes React, TailwindCSS for styling, and Recharts for data visu
 - **Tokenization Review System**: Manages property tokenization submission workflow through defined statuses.
 - **Property Capabilities**: Admin-managed JSON flags per property (secondaryEnabled, borrowEnabled, transferRestricted, lockupDays) with audit trail.
 - **Investor Engagement Tracking**: Activity event recording, engagement scoring, at-risk detection, daily cron nudges via Notification model.
+- **Issuance Pipeline Board**: Admin kanban-style board (`/admin/pipeline`) showing IssuanceCases grouped by status columns with filtering by track and eligibility.
+- **Eligibility Gating**: Status machine enforcement — cannot advance to REVIEW_READY unless eligibilityStatus is PASS. Admin override with reason creates ELIGIBILITY_OVERRIDE audit event.
 - **Property Management**: Admin tools for minting, listing, pausing, and unpausing properties.
 - **Investor Operations**: Admin tools to manage investors, view profiles, holdings, and loan positions.
 - **Tokenizer Dashboard**: Dual-view interface for pre-tokenization progress tracking and post-tokenization property overview.

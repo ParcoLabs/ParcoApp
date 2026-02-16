@@ -371,4 +371,166 @@ router.post(
   },
 );
 
+const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
+  DRAFT: ['INTAKE_COMPLETE'],
+  INTAKE_COMPLETE: ['EXTRACTION_RUNNING'],
+  EXTRACTION_RUNNING: ['EXTRACTION_COMPLETE'],
+  EXTRACTION_COMPLETE: ['REVIEW_READY'],
+  REVIEW_READY: ['APPROVED', 'REJECTED'],
+  APPROVED: ['MINT_READY'],
+  MINT_READY: ['MINTED'],
+  MINTED: ['LIVE'],
+};
+
+router.post(
+  '/case/:caseId/status',
+  simpleAuth,
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { caseId } = req.params;
+      const { status: newStatus, override, reason } = req.body;
+      const user = (req as AuthenticatedRequest).user;
+
+      if (!user) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+      }
+
+      if (!newStatus) {
+        return res.status(400).json({ success: false, error: 'status is required' });
+      }
+
+      const validStatuses = [
+        'DRAFT', 'INTAKE_COMPLETE', 'EXTRACTION_RUNNING', 'EXTRACTION_COMPLETE',
+        'REVIEW_READY', 'APPROVED', 'MINT_READY', 'MINTED', 'LIVE', 'REJECTED',
+      ];
+      if (!validStatuses.includes(newStatus)) {
+        return res.status(400).json({ success: false, error: `Invalid status. Must be one of: ${validStatuses.join(', ')}` });
+      }
+
+      if (isDemoMode(req)) {
+        const mockCase = mockIssuanceCase({ id: caseId, status: newStatus });
+        let warning = 'Demo mode: status transitions are simulated without real enforcement';
+        if (newStatus === 'REVIEW_READY') {
+          warning = 'Demo mode: eligibility gating bypassed — would normally require PASS status';
+        }
+        return res.json({ success: true, data: mockCase, warning });
+      }
+
+      const issuanceCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+      });
+
+      if (!issuanceCase) {
+        return res.status(404).json({ success: false, error: 'Issuance case not found' });
+      }
+
+      const allowedNext = VALID_STATUS_TRANSITIONS[issuanceCase.status] || [];
+      if (!allowedNext.includes(newStatus)) {
+        return res.status(400).json({
+          success: false,
+          error: `Cannot transition from ${issuanceCase.status} to ${newStatus}. Allowed: ${allowedNext.join(', ') || 'none'}`,
+        });
+      }
+
+      if (newStatus === 'REVIEW_READY' && issuanceCase.eligibilityStatus !== 'PASS') {
+        if (override === true && reason && typeof reason === 'string' && reason.trim().length > 0) {
+          await prisma.auditEvent.create({
+            data: {
+              type: 'ELIGIBILITY_OVERRIDE',
+              entityId: caseId,
+              userId: user.id,
+              oldValue: { eligibilityStatus: issuanceCase.eligibilityStatus },
+              newValue: { status: newStatus, overrideReason: reason.trim() },
+            },
+          });
+          console.log(`[issuance] Admin ${user.id} overrode eligibility for case ${caseId}: ${reason.trim()}`);
+        } else {
+          return res.status(400).json({
+            success: false,
+            error: 'Cannot advance to REVIEW_READY: eligibility status is not PASS. Provide { override: true, reason: "..." } to override.',
+            eligibilityStatus: issuanceCase.eligibilityStatus,
+            requiresOverride: true,
+          });
+        }
+      }
+
+      const updated = await prisma.issuanceCase.update({
+        where: { id: caseId },
+        data: { status: newStatus },
+        include: { submission: true, checklistItems: true, approvalTasks: true, eligibilityChecks: true },
+      });
+
+      console.log(`[issuance] Case ${caseId} status changed: ${issuanceCase.status} -> ${newStatus} by admin ${user.id}`);
+
+      return res.json({ success: true, data: updated });
+    } catch (error: any) {
+      console.error('[issuance] Error updating case status:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.get(
+  '/cases',
+  simpleAuth,
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { status, track, targetState, eligibilityStatus } = req.query;
+
+      if (isDemoMode(req)) {
+        const demoStatuses = ['DRAFT', 'INTAKE_COMPLETE', 'EXTRACTION_COMPLETE', 'REVIEW_READY', 'APPROVED', 'MINTED', 'LIVE'];
+        const demoCases = demoStatuses.map((s, i) => ({
+          ...mockIssuanceCase({
+            id: `demo_case_${i}`,
+            propertyId: `demo_prop_${i}`,
+            status: s as any,
+            eligibilityStatus: s === 'REVIEW_READY' || s === 'APPROVED' || s === 'MINTED' || s === 'LIVE' ? 'PASS' : 'PENDING',
+            extractionScore: s === 'DRAFT' || s === 'INTAKE_COMPLETE' ? 0 : 85,
+          }),
+          submission: {
+            id: `demo_sub_${i}`,
+            propertyName: `Demo Property ${i + 1}`,
+            propertyCity: ['Las Vegas', 'Miami', 'Austin', 'Denver', 'Portland', 'Chicago', 'Seattle'][i],
+            propertyState: ['NV', 'FL', 'TX', 'CO', 'OR', 'IL', 'WA'][i],
+          },
+        }));
+        let filtered = demoCases;
+        if (status) filtered = filtered.filter(c => c.status === status);
+        if (track) filtered = filtered.filter(c => c.track === track);
+        if (targetState) filtered = filtered.filter(c => c.targetState === targetState);
+        if (eligibilityStatus) filtered = filtered.filter(c => c.eligibilityStatus === eligibilityStatus);
+        return res.json({ success: true, data: filtered });
+      }
+
+      const where: any = {};
+      if (status) where.status = status;
+      if (track) where.track = track;
+      if (targetState) where.targetState = targetState;
+      if (eligibilityStatus) where.eligibilityStatus = eligibilityStatus;
+
+      const cases = await prisma.issuanceCase.findMany({
+        where,
+        include: {
+          submission: {
+            select: {
+              id: true,
+              propertyName: true,
+              propertyCity: true,
+              propertyState: true,
+            },
+          },
+        },
+        orderBy: { updatedAt: 'desc' },
+      });
+
+      return res.json({ success: true, data: cases });
+    } catch (error: any) {
+      console.error('[issuance] Error fetching cases:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
 export default router;

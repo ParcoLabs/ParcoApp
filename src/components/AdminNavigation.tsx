@@ -13,6 +13,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { id: 'overview', label: 'Overview', icon: 'fa-grid-2', path: '/admin' },
   { id: 'tokenizations', label: 'Tokenizations', icon: 'fa-file-contract', path: '/admin/tokenizations' },
+  { id: 'pipeline', label: 'Pipeline', icon: 'fa-diagram-project', path: '/admin/pipeline' },
   { id: 'properties', label: 'Properties', icon: 'fa-building', path: '/admin/properties' },
   { id: 'investors', label: 'Investors', icon: 'fa-users', path: '/admin/investors' },
   { id: 'rent', label: 'Rent Distribution', icon: 'fa-money-bill-wave', path: '/admin/rent' },

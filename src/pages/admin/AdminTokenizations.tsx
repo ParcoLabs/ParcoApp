@@ -101,6 +101,9 @@ export const AdminTokenizations: React.FC = () => {
   const [editPriceCap, setEditPriceCap] = useState('');
   const [trackSaving, setTrackSaving] = useState(false);
   const [eligibilityChecks, setEligibilityChecks] = useState<EligibilityCheckData[]>([]);
+  const [showOverrideModal, setShowOverrideModal] = useState(false);
+  const [overrideReason, setOverrideReason] = useState('');
+  const [advanceLoading, setAdvanceLoading] = useState(false);
 
   const fetchSubmissions = async (page = 1) => {
     try {
@@ -253,6 +256,46 @@ export const AdminTokenizations: React.FC = () => {
       showToast('Error updating track', 'error');
     } finally {
       setTrackSaving(false);
+    }
+  };
+
+  const handleAdvanceToReview = async (forceOverride = false) => {
+    if (!issuanceCase) return;
+    if (issuanceCase.eligibilityStatus !== 'PASS' && !forceOverride) {
+      setShowOverrideModal(true);
+      return;
+    }
+    setAdvanceLoading(true);
+    try {
+      const body: any = { status: 'REVIEW_READY' };
+      if (forceOverride && overrideReason.trim()) {
+        body.override = true;
+        body.reason = overrideReason.trim();
+      }
+      const res = await fetch(`/api/issuance/case/${issuanceCase.id}/status`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setIssuanceCase(prev => prev ? { ...prev, status: json.data?.status || 'REVIEW_READY' } : null);
+        showToast(json.warning || 'Advanced to Review Ready', json.warning ? 'error' : 'success');
+        setShowOverrideModal(false);
+        setOverrideReason('');
+      } else {
+        const err = await res.json();
+        if (err.requiresOverride) {
+          setShowOverrideModal(true);
+        } else {
+          showToast(err.error || 'Failed to advance status', 'error');
+        }
+      }
+    } catch (err) {
+      showToast('Error advancing status', 'error');
+    } finally {
+      setAdvanceLoading(false);
     }
   };
 
@@ -836,6 +879,28 @@ export const AdminTokenizations: React.FC = () => {
                       </button>
                     </div>
 
+                    {issuanceCase.status === 'EXTRACTION_COMPLETE' && (
+                      <div className="border-t border-gray-200 dark:border-[#444] pt-3">
+                        <button
+                          onClick={() => handleAdvanceToReview()}
+                          disabled={advanceLoading}
+                          className="w-full px-3 py-2 bg-amber-500 text-white rounded-lg text-xs font-medium hover:bg-amber-600 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                        >
+                          {advanceLoading ? (
+                            'Advancing...'
+                          ) : (
+                            <>
+                              <i className="fa-solid fa-arrow-right"></i>
+                              Advance to Review
+                              {issuanceCase.eligibilityStatus !== 'PASS' && (
+                                <span className="bg-amber-700 px-1.5 py-0.5 rounded text-[10px]">Override Required</span>
+                              )}
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+
                     {eligibilityChecks.length > 0 && (
                       <div className="border-t border-gray-200 dark:border-[#444] pt-3">
                         <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Eligibility Checks</p>
@@ -956,6 +1021,51 @@ export const AdminTokenizations: React.FC = () => {
                 className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 disabled:opacity-50"
               >
                 {actionLoading ? 'Rejecting...' : 'Reject'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showOverrideModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                <i className="fa-solid fa-triangle-exclamation text-amber-600 dark:text-amber-400"></i>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Eligibility Override Required</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Eligibility status is <span className="font-semibold text-red-600 dark:text-red-400">{issuanceCase?.eligibilityStatus || 'NOT PASS'}</span>
+                </p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              This case has not passed eligibility checks. To proceed to review, provide a reason for the override. This action will be logged in the audit trail.
+            </p>
+            <textarea
+              value={overrideReason}
+              onChange={(e) => setOverrideReason(e.target.value)}
+              placeholder="Enter reason for eligibility override..."
+              className="w-full border border-gray-300 dark:border-[#444] dark:bg-[#2a2a2a] dark:text-white rounded-lg px-3 py-2 h-24 resize-none focus:outline-none focus:ring-2 focus:ring-amber-500 text-sm"
+            />
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => {
+                  setShowOverrideModal(false);
+                  setOverrideReason('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-[#444] rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-[#2a2a2a] text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleAdvanceToReview(true)}
+                disabled={advanceLoading || !overrideReason.trim()}
+                className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50 text-sm"
+              >
+                {advanceLoading ? 'Overriding...' : 'Override & Advance'}
               </button>
             </div>
           </div>
