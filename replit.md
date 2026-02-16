@@ -125,6 +125,27 @@ Both are merged via `getAllDemoOverrides(id)` in tokenization.ts for all reads.
 
 **Frontend**: `TokenizerDashboard.tsx` shows a "Populate Demo Application" banner (amber) when `demoMode && isDraft`, with two actions: "Populate" (fills data only) and "Populate & Submit" (fills + sets SUBMITTED with confirmation).
 
+### Issuance Roadmap Framework
+
+The issuance engine now supports multiple regulatory tracks via first-class Prisma models:
+
+**Enums:**
+- `IssuanceTrack`: SERIES_LLC, REG_CF, REG_A, REG_D
+- `USState`: NV, FL, WY, OTHER (expandable)
+
+**Extended IssuanceCase fields:**
+- `track` (IssuanceTrack, default SERIES_LLC) — which regulatory pathway
+- `targetState` (USState, default OTHER) — target jurisdiction
+- `maxPropertyPriceCents` (Int?) — price cap gating per track
+- `eligibilityNotes` (String?) — separate from general notes
+
+**New Models:**
+- `IssuanceTemplate` — one per track (unique), holds rules JSON with requiredDocTypes, criticalKeys, approvals, defaultPriceCapCents, maxInvestors, accreditationRequired
+- `StateSeriesLlcProfile` — one per state (unique), holds state-specific LLC formation rules (fees, agent requirements, tax rates). NV/FL/WY enabled by default.
+- `EligibilityCheck` — per-case key-value checks (@@unique([caseId, key])), tracks individual eligibility criteria with status and details
+
+**Seed script:** `prisma/seed-issuance.ts` — run with `npx tsx prisma/seed-issuance.ts`. Uses upsert so it's idempotent.
+
 ### Engine Health (Admin)
 
 The admin tokenization detail drawer includes an "Engine Health" panel that shows:

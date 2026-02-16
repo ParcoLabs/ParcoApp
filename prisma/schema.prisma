@@ -475,19 +475,25 @@ model TokenizationSubmission {
 }
 
 model IssuanceCase {
-  id                String              @id @default(cuid())
-  submissionId      String              @unique
-  status            IssuanceCaseStatus  @default(DRAFT)
-  eligibilityStatus EligibilityStatus   @default(PENDING)
-  extractionScore   Int                 @default(0)
-  notes             String?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  submission        TokenizationSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-  documents         IssuanceDocument[]
+  id                   String              @id @default(cuid())
+  submissionId         String              @unique
+  status               IssuanceCaseStatus  @default(DRAFT)
+  eligibilityStatus    EligibilityStatus   @default(PENDING)
+  extractionScore      Int                 @default(0)
+  notes                String?
+  track                IssuanceTrack       @default(SERIES_LLC)
+  targetState          USState             @default(OTHER)
+  maxPropertyPriceCents Int?
+  eligibilityNotes     String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  submission           TokenizationSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  documents            IssuanceDocument[]
+  eligibilityChecks    EligibilityCheck[]
 
   @@index([status])
   @@index([eligibilityStatus])
+  @@index([track])
 }
 
 model IssuanceDocument {
@@ -500,6 +506,54 @@ model IssuanceDocument {
   case      IssuanceCase     @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@index([caseId])
+}
+
+model IssuanceTemplate {
+  id          String        @id @default(cuid())
+  track       IssuanceTrack @unique
+  name        String
+  description String?
+  rules       Json
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model StateSeriesLlcProfile {
+  id        String   @id @default(cuid())
+  state     USState  @unique
+  isEnabled Boolean  @default(false)
+  notes     String?
+  rules     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EligibilityCheck {
+  id        String            @id @default(cuid())
+  caseId    String
+  key       String
+  status    EligibilityStatus
+  details   String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  case      IssuanceCase      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+  @@unique([caseId, key])
+  @@index([caseId])
+}
+
+enum IssuanceTrack {
+  SERIES_LLC
+  REG_CF
+  REG_A
+  REG_D
+}
+
+enum USState {
+  NV
+  FL
+  WY
+  OTHER
 }
 
 enum IssuanceCaseStatus {
