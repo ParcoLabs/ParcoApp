@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth as useClerkAuth } from '@clerk/clerk-react';
 
@@ -103,6 +103,8 @@ export const TokenizerDashboard: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -196,6 +198,56 @@ export const TokenizerDashboard: React.FC = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleFileUpload = async (docKey: string, files: FileList | null) => {
+    if (!files || files.length === 0 || !id) return;
+    const file = files[0];
+    const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+    if (!allowedTypes.includes(file.type)) {
+      showToast('Only PDF, PNG, and JPEG files are allowed', 'error');
+      return;
+    }
+    if (file.size > 15 * 1024 * 1024) {
+      showToast('File too large. Maximum size is 15MB.', 'error');
+      return;
+    }
+
+    setUploadingKey(docKey);
+    try {
+      const token = await getToken();
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch(`/api/uploads/tokenization/${id}/${docKey}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (res.ok) {
+        showToast(`${file.name} uploaded`, 'success');
+        await fetchSubmission();
+      } else {
+        const data = await res.json().catch(() => ({ error: 'Upload failed' }));
+        showToast(data.error || 'Upload failed', 'error');
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      showToast('Upload failed. Please try again.', 'error');
+    } finally {
+      setUploadingKey(null);
+      if (fileInputRefs.current[docKey]) {
+        fileInputRefs.current[docKey]!.value = '';
+      }
+    }
+  };
+
+  const getFileName = (url: string) => {
+    const parts = url.split('/');
+    const raw = parts[parts.length - 1] || 'Document';
+    const noTimestamp = raw.replace(/^\d+-/, '');
+    return decodeURIComponent(noTimestamp);
   };
 
   if (loading) {
@@ -482,34 +534,85 @@ export const TokenizerDashboard: React.FC = () => {
       </div>
 
       <div className="bg-white dark:bg-[#1a1a1a] border border-brand-sage/20 dark:border-[#2a2a2a] rounded-xl p-5 md:p-6">
-        <h2 className="text-lg font-bold text-brand-black dark:text-white mb-4">Documents & Media</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className={labelCls}>Images</label>
-            <p className="text-brand-black dark:text-white font-medium mt-1">
-              {submission.images?.length || 0} uploaded
-              {submission.imageUrl && ' (+ cover image)'}
-            </p>
-          </div>
-          <div>
-            <label className={labelCls}>Legal Documents</label>
-            <p className="text-brand-black dark:text-white font-medium mt-1">{submission.legalDocuments?.length || 0} uploaded</p>
-          </div>
-          <div>
-            <label className={labelCls}>Financial Statements</label>
-            <p className="text-brand-black dark:text-white font-medium mt-1">{submission.financialStatements?.length || 0} uploaded</p>
-          </div>
-        </div>
+        <h2 className="text-lg font-bold text-brand-black dark:text-white mb-5">Documents & Media</h2>
+        <div className="space-y-5">
+          {[
+            { key: 'ownershipProof', label: 'Ownership Proof', icon: 'fa-file-shield', multiple: false, accept: '.pdf,.jpg,.jpeg,.png' },
+            { key: 'images', label: 'Property Images', icon: 'fa-images', multiple: true, accept: '.jpg,.jpeg,.png' },
+            { key: 'legalDocuments', label: 'Legal Documents', icon: 'fa-scale-balanced', multiple: true, accept: '.pdf,.jpg,.jpeg,.png' },
+            { key: 'financialStatements', label: 'Financial Statements', icon: 'fa-file-invoice-dollar', multiple: true, accept: '.pdf,.jpg,.jpeg,.png' },
+          ].map((cat) => {
+            const isUploading = uploadingKey === cat.key;
+            const files: string[] = cat.key === 'ownershipProof'
+              ? (submission.ownershipProof ? [submission.ownershipProof] : [])
+              : ((submission as any)[cat.key] || []);
+            const count = files.length;
+            const hasFiles = count > 0;
 
-        <div className="mt-4">
-          <label className={labelCls}>Ownership Proof</label>
-          <p className="text-brand-black dark:text-white font-medium mt-1">
-            {submission.ownershipProof ? (
-              <span className="text-green-600"><i className="fa-solid fa-check-circle mr-1"></i> Uploaded</span>
-            ) : (
-              <span className="text-amber-600"><i className="fa-solid fa-exclamation-circle mr-1"></i> Not uploaded</span>
-            )}
-          </p>
+            return (
+              <div key={cat.key} className="border border-brand-sage/15 dark:border-[#333] rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <i className={`fa-solid ${cat.icon} text-brand-deep dark:text-brand-mint text-sm`}></i>
+                    <span className="text-sm font-semibold text-brand-dark dark:text-white">{cat.label}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {hasFiles ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                        <i className="fa-solid fa-check text-[9px]"></i> {count} received
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                        <i className="fa-solid fa-clock text-[9px]"></i> Missing
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {hasFiles && (
+                  <div className="space-y-1.5 mb-3">
+                    {files.map((url, idx) => (
+                      <div key={idx} className="flex items-center gap-2 bg-brand-offWhite dark:bg-[#262626] rounded px-3 py-1.5">
+                        <i className="fa-solid fa-file text-brand-sage text-xs flex-shrink-0"></i>
+                        <span className="text-xs text-brand-dark dark:text-gray-300 truncate flex-1">{getFileName(url)}</span>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-brand-deep dark:text-brand-mint text-xs hover:underline flex-shrink-0"
+                        >
+                          View
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {isDraft && (
+                  <>
+                    <input
+                      type="file"
+                      ref={el => { fileInputRefs.current[cat.key] = el; }}
+                      onChange={e => handleFileUpload(cat.key, e.target.files)}
+                      accept={cat.accept}
+                      className="hidden"
+                    />
+                    <button
+                      onClick={() => fileInputRefs.current[cat.key]?.click()}
+                      disabled={isUploading}
+                      className="w-full py-2 px-3 border border-dashed border-brand-sage/40 dark:border-[#444] rounded-lg text-xs font-medium text-brand-dark dark:text-gray-300 hover:bg-brand-deep hover:text-white hover:border-brand-deep disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+                    >
+                      {isUploading ? (
+                        <><div className="animate-spin rounded-full h-3 w-3 border-b-2 border-brand-deep"></div> Uploading...</>
+                      ) : (
+                        <><i className="fa-solid fa-cloud-arrow-up"></i> {hasFiles ? (cat.multiple ? 'Upload More' : 'Replace') : 'Upload'}</>
+                      )}
+                    </button>
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

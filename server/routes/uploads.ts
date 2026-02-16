@@ -37,13 +37,16 @@ const upload = multer({
   },
 });
 
-const DOC_KEY_MAP: Record<string, 'ownershipProof' | 'legalDocuments' | 'financialStatements' | 'documents'> = {
+const DOC_KEY_MAP: Record<string, 'ownershipProof' | 'legalDocuments' | 'financialStatements' | 'documents' | 'images'> = {
   ownershipProof: 'ownershipProof',
   taxRecords: 'financialStatements',
   bankStatements: 'financialStatements',
   leaseAgreements: 'legalDocuments',
   rentalStatements: 'financialStatements',
   valuation: 'documents',
+  images: 'images',
+  legalDocuments: 'legalDocuments',
+  financialStatements: 'financialStatements',
 };
 
 const DOC_KEY_TO_ISSUANCE_TYPE: Record<string, string> = {
@@ -53,6 +56,9 @@ const DOC_KEY_TO_ISSUANCE_TYPE: Record<string, string> = {
   leaseAgreements: 'LEGAL',
   rentalStatements: 'FINANCIAL',
   valuation: 'PROPERTY',
+  images: 'PROPERTY',
+  legalDocuments: 'LEGAL',
+  financialStatements: 'FINANCIAL',
 };
 
 async function createIssuanceDocument(submissionId: string, docKey: string, url: string, fileName: string) {
