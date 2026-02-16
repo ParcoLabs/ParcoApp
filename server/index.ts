@@ -25,6 +25,7 @@ import tokenizationRoutes from './routes/tokenization';
 import issuanceRoutes from './routes/issuance';
 import servicingRoutes from './routes/servicing';
 import uploadsRoutes from './routes/uploads';
+import blockchainRoutes from './routes/blockchain';
 import { isDemoMode } from './lib/demoMode';
 import { getStripeSync } from './lib/stripeClient';
 import { WebhookHandlers } from './lib/webhookHandlers';
@@ -179,6 +180,7 @@ app.use('/api/tokenization', tokenizationRoutes);
 app.use('/api/issuance', issuanceRoutes);
 app.use('/api/servicing', servicingRoutes);
 app.use('/api/uploads', uploadsRoutes);
+app.use('/api/blockchain', blockchainRoutes);
 
 app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets')));
 

@@ -26,7 +26,7 @@ The frontend utilizes React, TailwindCSS for styling, and Recharts for data visu
 - **Portfolio Management**: Asset tracking, performance, and transaction history.
 - **Holding Details**: Detailed views for individual token holdings, including charts, balances, and governance.
 - **Payment Processing**: Supports credit/debit cards, ACH, and cryptocurrency.
-- **Blockchain Features**: USDC deposits, ERC-1155 token minting, role-based access control.
+- **Blockchain Features**: USDC deposits, ERC-1155 token minting, role-based access control. Backend blockchain service (`server/services/blockchain.ts`) provides RestrictedToken + AllowlistRegistry deployment and management via ethers.js with typed config errors (HTTP 412). Admin-only API routes (`/api/blockchain`) for deploy, allowlist, and mint operations with full demo mode simulation.
 - **Collateral Lending**: Borrow USDC against locked property tokens via a BorrowVault smart contract.
 - **Rent Distribution Engine**: Automates monthly rent distributions, including loan interest deductions.
 - **Demo Mode**: A comprehensive simulation environment for testing all platform functionalities without real-world financial or blockchain interactions, including simulated crypto wallets, property purchases, borrowing, DeFi lending, governance voting, and rent cycles.
