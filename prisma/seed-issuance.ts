@@ -153,6 +153,72 @@ async function main() {
     console.log(`  Upserted StateSeriesLlcProfile: ${profile.state} (enabled=${profile.isEnabled})`);
   }
 
+  const compliancePacks = [
+    {
+      track: 'SERIES_LLC' as const,
+      name: 'Series LLC Servicing Standard',
+      rules: {
+        requirements: [
+          { key: 'monthly_kpi', label: 'Monthly KPI Report', cadence: 'MONTHLY' },
+          { key: 'quarterly_ops_update', label: 'Quarterly Operations Update', cadence: 'QUARTERLY' },
+          { key: 'annual_summary', label: 'Annual Financial Summary', cadence: 'ANNUAL' },
+        ],
+      },
+    },
+    {
+      track: 'REG_D' as const,
+      name: 'Reg D Servicing Standard',
+      rules: {
+        requirements: [
+          { key: 'monthly_kpi', label: 'Monthly KPI Report', cadence: 'MONTHLY' },
+          { key: 'quarterly_ops_update', label: 'Quarterly Operations Update', cadence: 'QUARTERLY' },
+          { key: 'annual_summary', label: 'Annual Financial Summary', cadence: 'ANNUAL' },
+          { key: 'investor_notice', label: 'Annual Investor Notice', cadence: 'ANNUAL' },
+          { key: 'transfer_restriction_review', label: 'Transfer Restriction Review', cadence: 'SEMI_ANNUAL' },
+        ],
+      },
+    },
+    {
+      track: 'REG_CF' as const,
+      name: 'Reg CF Servicing Standard',
+      rules: {
+        requirements: [
+          { key: 'monthly_kpi', label: 'Monthly KPI Report', cadence: 'MONTHLY' },
+          { key: 'quarterly_disclosure', label: 'Quarterly Disclosure Report', cadence: 'QUARTERLY' },
+          { key: 'annual_summary', label: 'Annual Financial Summary', cadence: 'ANNUAL' },
+          { key: 'annual_sec_filing', label: 'Annual SEC Filing Update', cadence: 'ANNUAL' },
+          { key: 'investor_communication', label: 'Investor Communication Log', cadence: 'QUARTERLY' },
+        ],
+      },
+    },
+    {
+      track: 'REG_A' as const,
+      name: 'Reg A+ Servicing Standard',
+      rules: {
+        requirements: [
+          { key: 'monthly_kpi', label: 'Monthly KPI Report', cadence: 'MONTHLY' },
+          { key: 'quarterly_disclosure', label: 'Quarterly Disclosure Report', cadence: 'QUARTERLY' },
+          { key: 'semi_annual_financials', label: 'Semi-Annual Financial Statements', cadence: 'SEMI_ANNUAL' },
+          { key: 'annual_summary', label: 'Annual Financial Summary', cadence: 'ANNUAL' },
+          { key: 'annual_sec_reporting', label: 'Annual SEC Ongoing Reporting', cadence: 'ANNUAL' },
+          { key: 'investor_notice', label: 'Annual Investor Notice', cadence: 'ANNUAL' },
+        ],
+      },
+    },
+  ];
+
+  for (const pack of compliancePacks) {
+    await prisma.compliancePackTemplate.upsert({
+      where: { track: pack.track },
+      update: {
+        name: pack.name,
+        rules: pack.rules,
+      },
+      create: pack,
+    });
+    console.log(`  Upserted CompliancePackTemplate: ${pack.name}`);
+  }
+
   console.log('Issuance roadmap seed complete.');
 }
 

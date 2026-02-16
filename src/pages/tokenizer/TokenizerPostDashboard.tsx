@@ -18,6 +18,26 @@ interface TokenizationSubmission {
   monthlyRent: number | null;
   imageUrl: string | null;
   images?: string[];
+  propertyId?: string | null;
+}
+
+interface ComplianceEvidence {
+  id: string;
+  name: string;
+  url: string;
+  createdAt: string;
+}
+
+interface ComplianceRequirement {
+  id: string;
+  propertyId: string;
+  key: string;
+  label: string;
+  cadence: string;
+  status: string;
+  dueAt: string | null;
+  notes: string | null;
+  evidence: ComplianceEvidence[];
 }
 
 interface PropertyStats {
@@ -72,6 +92,8 @@ export const TokenizerPostDashboard: React.FC = () => {
     totalTokenHolders: 1500,
   });
   const [loading, setLoading] = useState(true);
+  const [complianceReqs, setComplianceReqs] = useState<ComplianceRequirement[]>([]);
+  const [complianceLoading, setComplianceLoading] = useState(false);
 
   useEffect(() => {
     fetchSubmissions();
@@ -101,6 +123,56 @@ export const TokenizerPostDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (activeSubmission?.propertyId) {
+      fetchCompliance(activeSubmission.propertyId);
+    } else if (activeSubmission?.id) {
+      fetchCompliance(activeSubmission.id);
+    }
+  }, [activeSubmission]);
+
+  const fetchCompliance = async (propertyId: string) => {
+    setComplianceLoading(true);
+    try {
+      const res = await fetch(`/api/servicing/property/${propertyId}/compliance`, {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setComplianceReqs(json.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching compliance:', error);
+    } finally {
+      setComplianceLoading(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'COMPLETED': return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300';
+      case 'OVERDUE': return 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300';
+      case 'PENDING': return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300';
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300';
+    }
+  };
+
+  const getCadenceBadge = (cadence: string) => {
+    switch (cadence) {
+      case 'MONTHLY': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300';
+      case 'QUARTERLY': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300';
+      case 'SEMI_ANNUAL': return 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300';
+      case 'ANNUAL': return 'bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300';
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
+    }
+  };
+
+  const formatDueDate = (dueAt: string | null) => {
+    if (!dueAt) return 'No due date';
+    const date = new Date(dueAt);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const getDisplayAddress = (sub: TokenizationSubmission | null) => {
@@ -310,6 +382,101 @@ export const TokenizerPostDashboard: React.FC = () => {
                 </LineChart>
               </ResponsiveContainer>
             </div>
+          </div>
+
+          <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-brand-dark dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-shield-check text-brand-deep"></i>
+                Compliance
+              </h3>
+              {complianceReqs.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-brand-sage dark:text-gray-400">
+                    {complianceReqs.filter(r => r.status === 'COMPLETED').length}/{complianceReqs.length} complete
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {complianceLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-deep"></div>
+              </div>
+            ) : complianceReqs.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-brand-sage/10 dark:bg-brand-sage/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <i className="fa-solid fa-clipboard-check text-brand-sage text-lg"></i>
+                </div>
+                <p className="text-sm text-brand-sage dark:text-gray-400">No compliance requirements yet.</p>
+                <p className="text-xs text-brand-sage/70 dark:text-gray-500 mt-1">Requirements are applied after tokenization is live.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {complianceReqs.map((req) => (
+                  <div
+                    key={req.id}
+                    className="border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg p-3 hover:bg-brand-offWhite dark:hover:bg-[#222] transition-colors"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-sm font-semibold text-brand-dark dark:text-white">{req.label}</p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${getCadenceBadge(req.cadence)}`}>
+                            {req.cadence.replace(/_/g, ' ')}
+                          </span>
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${getStatusColor(req.status)}`}>
+                            {req.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-brand-sage dark:text-gray-400">
+                          Due: {formatDueDate(req.dueAt)}
+                        </p>
+                        {req.notes && (
+                          <p className="text-xs text-brand-sage dark:text-gray-500 mt-1 italic">{req.notes}</p>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0">
+                        {req.status === 'COMPLETED' ? (
+                          <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                            <i className="fa-solid fa-check text-green-600 dark:text-green-400 text-xs"></i>
+                          </div>
+                        ) : req.status === 'OVERDUE' ? (
+                          <div className="w-6 h-6 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                            <i className="fa-solid fa-exclamation text-red-600 dark:text-red-400 text-xs"></i>
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                            <i className="fa-solid fa-clock text-amber-600 dark:text-amber-400 text-xs"></i>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    {req.evidence && req.evidence.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-brand-lightGray dark:border-[#2a2a2a]">
+                        <p className="text-[10px] font-semibold text-brand-sage dark:text-gray-500 uppercase mb-1">Evidence</p>
+                        <div className="space-y-1">
+                          {req.evidence.map((ev) => (
+                            <a
+                              key={ev.id}
+                              href={ev.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1.5 text-xs text-brand-deep dark:text-brand-mint hover:underline"
+                            >
+                              <i className="fa-solid fa-paperclip text-[10px]"></i>
+                              {ev.name}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}

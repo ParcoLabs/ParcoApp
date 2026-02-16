@@ -101,9 +101,10 @@ model Property {
   mintTxHash       String?
   mintedAt         DateTime?
   hasParcoStays    Boolean        @default(false)
-  holdings         Holding[]
-  rentPayments     RentPayment[]
-  token            Token?
+  holdings              Holding[]
+  rentPayments          RentPayment[]
+  token                 Token?
+  complianceRequirements ComplianceRequirement[]
 
   @@index([status])
   @@index([propertyType])
@@ -492,6 +493,7 @@ model IssuanceCase {
   eligibilityChecks    EligibilityCheck[]
   checklistItems       ChecklistItem[]
   approvalTasks        ApprovalTask[]
+  complianceRequirements ComplianceRequirement[]
 
   @@index([status])
   @@index([eligibilityStatus])
@@ -629,6 +631,47 @@ enum EligibilityStatus {
   PASS
   FAIL
   NEEDS_REVIEW
+}
+
+model CompliancePackTemplate {
+  id        String        @id @default(cuid())
+  track     IssuanceTrack @unique
+  name      String
+  rules     Json
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+model ComplianceRequirement {
+  id         String               @id @default(cuid())
+  propertyId String
+  caseId     String?
+  key        String
+  label      String
+  cadence    String
+  status     String               @default("PENDING")
+  dueAt      DateTime?
+  notes      String?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+  property   Property             @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  case       IssuanceCase?        @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  evidence   ComplianceEvidence[]
+
+  @@unique([propertyId, key])
+  @@index([propertyId, status, dueAt])
+}
+
+model ComplianceEvidence {
+  id               String                @id @default(cuid())
+  requirementId    String
+  name             String
+  url              String
+  uploadedByUserId String?
+  createdAt        DateTime              @default(now())
+  requirement      ComplianceRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
+
+  @@index([requirementId])
 }
 
 enum KYCLevel {

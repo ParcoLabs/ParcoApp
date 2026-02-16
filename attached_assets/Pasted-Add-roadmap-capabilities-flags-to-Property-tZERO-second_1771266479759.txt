@@ -1,0 +1,73 @@
+Add roadmap capabilities flags to Property (tZERO/secondary/borrow future unlocks).
+
+Prisma:
+- Add Property.capabilities Json @default("{}")
+
+Define keys stored in capabilities:
+- secondaryEnabled boolean
+- borrowEnabled boolean
+- transferRestricted boolean
+- lockupDays number
+
+Backend:
+- Add endpoints (admin):
+  - GET /api/properties/:id/capabilities
+  - POST /api/properties/:id/capabilities body { capabilities }
+- Validate the JSON keys; preserve unknown keys.
+
+UI:
+- Add a small “Capabilities” admin panel on the property management/admin property detail view:
+  - toggles for secondaryEnabled/borrowEnabled/transferRestricted
+  - lockupDays input
+- Keep it demo safe.
+
+Audit:
+- If AuditEvent exists, write an event CAPABILITIES_UPDATED with old/new values   
+
+Implement investor engagement tracking and simple nudges.
+
+Prisma:
+- Add InvestorActivityEvent:
+  - id cuid
+  - userId String (FK User)
+  - propertyId String? (FK Property)
+  - type String
+  - metadata Json?
+  - createdAt
+- Add InvestorEngagementStatus:
+  - id cuid
+  - userId String @unique (FK User)
+  - lastActiveAt DateTime?
+  - score Int @default(0)
+  - tags Json?
+  - updatedAt
+
+Backend:
+- Create server/services/investorEngagement.ts:
+  - recordActivity(userId, propertyId?, type, metadata?)
+  - recomputeEngagement(userId) using simple scoring:
+    - activity in last 7 days = +10
+    - last 30 days = +5
+    - older = +0
+- Hook recording into existing investor flows:
+  - marketplace property view
+  - purchase flow
+  - report view (if exists)
+(If these don’t exist, add minimal calls where the pages fetch property details / confirm purchase.)
+
+Add admin endpoint:
+- GET /api/admin/engagement/summary
+  - counts by score buckets
+  - list top “at risk” users (lastActiveAt > 14 days)
+
+Add a daily cron (or existing scheduler):
+- identify at-risk users and create Notification records if your app has notifications
+- if no Notification model exists, add a minimal one (id, userId, message, status, createdAt)
+
+UI:
+- Add an “Engagement” card to Admin dashboard showing:
+  - at-risk count
+  - active count
+
+Demo mode:
+- Use deterministic fake counts.

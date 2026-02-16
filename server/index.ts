@@ -23,6 +23,7 @@ import userSettingsRoutes from './routes/userSettings';
 import adminRoutes from './routes/admin';
 import tokenizationRoutes from './routes/tokenization';
 import issuanceRoutes from './routes/issuance';
+import servicingRoutes from './routes/servicing';
 import uploadsRoutes from './routes/uploads';
 import { isDemoMode } from './lib/demoMode';
 import { getStripeSync } from './lib/stripeClient';
@@ -176,6 +177,7 @@ app.use('/api/user', userSettingsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/tokenization', tokenizationRoutes);
 app.use('/api/issuance', issuanceRoutes);
+app.use('/api/servicing', servicingRoutes);
 app.use('/api/uploads', uploadsRoutes);
 
 app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets')));

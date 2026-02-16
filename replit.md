@@ -62,3 +62,22 @@ The frontend utilizes React, TailwindCSS for styling, and Recharts for data visu
 - **Google Fonts**: Custom typography.
 - **OpenZeppelin Contracts**: Standardized smart contract libraries.
 - **Ethers.js**: Ethereum blockchain interaction library.
+
+### Compliance Pack (Servicing Standard)
+
+`server/services/compliancePack.ts` — `applyCompliancePack(caseId, propertyId)` loads the CompliancePackTemplate for a case's track and creates ComplianceRequirement rows with calculated due dates. `mockComplianceRequirements(propertyId)` returns 5 demo requirements.
+
+**Models:**
+- `CompliancePackTemplate` — one per track (unique), holds `rules.requirements[]` array with key, label, cadence
+- `ComplianceRequirement` — per-property requirements with cadence (MONTHLY/QUARTERLY/SEMI_ANNUAL/ANNUAL), status, dueAt, linked to Property and optionally IssuanceCase
+- `ComplianceEvidence` — uploaded evidence files linked to requirements
+
+**Routes (server/routes/servicing.ts):**
+- `GET /api/servicing/property/:propertyId/compliance` — list compliance requirements with evidence
+- `POST /api/servicing/property/:propertyId/compliance/apply` — admin: apply compliance pack from template (body: {caseId})
+- `POST /api/servicing/compliance/:id/complete` — admin: mark requirement complete (body: {notes?})
+- `POST /api/servicing/compliance/:id/evidence` — admin: attach evidence file (body: {name, url})
+
+**UI:** TokenizerPostDashboard includes a "Compliance" panel listing requirements with cadence/status badges, due dates, evidence links, and completion tracking.
+
+**Seed:** `prisma/seed-issuance.ts` includes CompliancePackTemplate rows for all 4 tracks with varying requirements per regulatory framework.
