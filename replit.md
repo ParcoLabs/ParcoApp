@@ -42,6 +42,10 @@ The frontend utilizes React, TailwindCSS for styling, and Recharts for data visu
 - **Admin Dashboard**: Dedicated interface for platform administration, including tokenizations, properties, investors, rent distribution, and demo tools.
 - **Mint & Activate**: Admin endpoint (`POST /api/issuance/case/:caseId/mint-and-activate`) that performs full issuance-to-chain gating: eligibility check (with override), approval verification, transfer policy creation (default from track), on-chain deployment, treasury allowlisting, token minting, status progression (MINTED → LIVE), property activation, and compliance pack application. Full demo mode simulation. UI button in AdminTokenizations drawer.
 - **KYC/Accreditation Scaffolding**: Provider-agnostic compliance routes (`/api/compliance`) for KYC start/webhook and accreditation start/webhook. Updates InvestorProfile kycStatus/accreditationStatus. Demo mode toggle endpoint. Verification section in Settings page with status badges and action buttons. `checkAccreditedInvestor()` helper exported for Reg D gating.
+- **Cap Table Snapshots**: `POST /api/servicing/property/:propertyId/captable/snapshot` captures holder positions from holdings (or on-chain). `GET .../captable/snapshots` lists recent. Stored in CapTableSnapshot model with JSON data.
+- **Investor Statements**: `POST /api/servicing/property/:propertyId/statements/generate` creates per-investor period statements from holdings + rent distributions. `GET .../statements` lists recent. Stored in InvestorStatement model.
+- **Investor Ops UI**: TokenizerPostDashboard includes "Investor Ops" panel with Take Snapshot and Generate Statements buttons, plus lists of recent snapshots and statements.
+- **REG_D Preset**: Setting `IssuanceCase.track=REG_D` auto-creates `TransferPolicy` with `type=REG_D_12M_LOCKUP` and 365-day lockup. Purchase flow gates non-accredited investors with warning banner and CTA linking to Settings verification. Demo mode allows bypass with message.
 
 #### System Design Choices
 - Client-side routing with React Router DOM.

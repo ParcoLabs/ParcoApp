@@ -38,6 +38,8 @@ interface ApiPropertyResponse {
   squareFeet?: number;
   bedrooms?: number;
   bathrooms?: number;
+  isRegD?: boolean;
+  transferPolicyType?: string | null;
   yearBuilt?: number;
   monthlyRent?: number;
   contractAddress?: string;
@@ -79,6 +81,8 @@ export const TokenDetails: React.FC = () => {
   const [activeTab, setActiveTab] = useState('Overview');
   const [tokenAmount, setTokenAmount] = useState<number>(1);
   const [tokensOwned, setTokensOwned] = useState<number>(0);
+  const [isRegD, setIsRegD] = useState(false);
+  const [accreditationStatus, setAccreditationStatus] = useState<string>('NOT_STARTED');
   
   const {
     state: buyState,
@@ -133,6 +137,7 @@ export const TokenDetails: React.FC = () => {
         
         if (result.success && result.data) {
           setProperty(mapApiToProperty(result.data));
+          setIsRegD(result.data.isRegD === true);
         } else {
           const mockData = getPropertyById(id);
           if (mockData) {
@@ -181,6 +186,26 @@ export const TokenDetails: React.FC = () => {
 
     fetchUserHoldings();
   }, [id, demoMode, purchaseSuccess]);
+
+  useEffect(() => {
+    const fetchAccreditation = async () => {
+      if (!isRegD) return;
+      try {
+        const response = await fetch('/api/compliance/status', { credentials: 'include' });
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            setAccreditationStatus(result.data.accreditationStatus || 'NOT_STARTED');
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch accreditation status:', err);
+      }
+    };
+    fetchAccreditation();
+  }, [isRegD]);
+
+  const regDBlocked = isRegD && accreditationStatus !== 'APPROVED';
 
   if (loading) {
     return (
@@ -533,19 +558,37 @@ export const TokenDetails: React.FC = () => {
                         </div>
                     </div>
 
+                    {regDBlocked && (
+                      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-lg p-3 mb-3">
+                        <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-sm font-semibold mb-1">
+                          <i className="fa-solid fa-shield-halved"></i>
+                          Reg D — Accredited Investors Only
+                        </div>
+                        <p className="text-xs text-amber-600 dark:text-amber-500">
+                          This offering is restricted to accredited investors under Regulation D.
+                        </p>
+                        <button
+                          onClick={() => navigate('/settings')}
+                          className="mt-2 w-full py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-all"
+                        >
+                          Verify Accreditation to Invest
+                        </button>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-2 gap-3">
                          <button 
                             onClick={() => handleBuy(property.id, tokenAmount, property.tokenPrice)}
                             className={`w-full py-3 rounded-lg font-bold text-white shadow-sm transition-all text-sm ${
-                                 property.tokensAvailable === 0 || buyState === 'checking' 
+                                 property.tokensAvailable === 0 || buyState === 'checking' || (regDBlocked && !demoMode)
                                    ? 'bg-brand-sage cursor-not-allowed' 
                                    : 'bg-brand-deep hover:bg-brand-dark'
                             }`}
-                            disabled={property.tokensAvailable === 0 || buyState === 'checking'}
+                            disabled={property.tokensAvailable === 0 || buyState === 'checking' || (regDBlocked && !demoMode)}
                         >
                              {buyState === 'checking' ? (
                                <><i className="fa-solid fa-spinner fa-spin mr-2"></i>Checking...</>
-                             ) : 'Buy'}
+                             ) : regDBlocked && !demoMode ? 'Accreditation Required' : 'Buy'}
                         </button>
                         <button 
                              className="w-full py-3 rounded-lg font-bold text-brand-deep border border-brand-deep hover:bg-brand-offWhite transition-all text-sm"

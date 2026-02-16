@@ -340,6 +340,32 @@ router.post(
         data: updateData,
       });
 
+      let transferPolicyResult = null;
+      if (track === 'REG_D') {
+        const caseWithSubmission = await prisma.issuanceCase.findUnique({
+          where: { id: caseId },
+          include: { submission: true },
+        });
+        const propId = (caseWithSubmission?.submission as any)?.propertyId;
+        if (propId) {
+          const existing = await (prisma as any).transferPolicy.findUnique({ where: { propertyId: propId } });
+          if (!existing) {
+            const lockupEndsAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+            await (prisma as any).transferPolicy.create({
+              data: {
+                propertyId: propId,
+                type: 'REG_D_12M_LOCKUP',
+                lockupEndsAt,
+              },
+            });
+            transferPolicyResult = { created: true, type: 'REG_D_12M_LOCKUP', lockupEndsAt: lockupEndsAt.toISOString() };
+            console.log(`[issuance] REG_D preset: Created TransferPolicy REG_D_12M_LOCKUP for property ${propId}`);
+          } else {
+            transferPolicyResult = { exists: true, type: existing.type };
+          }
+        }
+      }
+
       let seedResult = null;
       try {
         seedResult = await seedCaseFromTemplate(caseId);
@@ -363,6 +389,7 @@ router.post(
         success: true,
         data: { ...updatedCase, requiredDocTypes },
         seedResult,
+        transferPolicyResult,
       });
     } catch (error: any) {
       console.error('[issuance] Error updating track:', error);

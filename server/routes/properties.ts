@@ -62,10 +62,11 @@ router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
-    const property = await prisma.property.findUnique({
+    const property = await (prisma.property as any).findUnique({
       where: { id },
       include: {
         token: true,
+        transferPolicy: true,
       },
     });
 
@@ -97,6 +98,8 @@ router.get('/:id', async (req: Request, res: Response) => {
       monthlyRent: property.monthlyRent ? Number(property.monthlyRent) : null,
       contractAddress: property.token?.contractAddress || null,
       hasParcoStays: property.hasParcoStays,
+      isRegD: property.transferPolicy?.type === 'REG_D_12M_LOCKUP',
+      transferPolicyType: property.transferPolicy?.type || null,
     };
 
     try {

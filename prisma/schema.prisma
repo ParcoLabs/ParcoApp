@@ -37,6 +37,7 @@ model User {
   investorProfile         InvestorProfile?
   allowlistEntries        InvestorAllowlist[]        @relation("AllowlistUser")
   addedAllowlistEntries   InvestorAllowlist[]        @relation("AllowlistAddedBy")
+  investorStatements      InvestorStatement[]
 
   @@index([clerkId])
   @@index([email])
@@ -118,6 +119,8 @@ model Property {
   allowlistEntries      InvestorAllowlist[]
   transferPolicy        TransferPolicy?
   onchainDeployment     OnchainDeployment?
+  capTableSnapshots     CapTableSnapshot[]
+  investorStatements    InvestorStatement[]
 
   @@index([status])
   @@index([propertyType])
@@ -685,6 +688,36 @@ model ComplianceEvidence {
   requirement      ComplianceRequirement @relation(fields: [requirementId], references: [id], onDelete: Cascade)
 
   @@index([requirementId])
+}
+
+model CapTableSnapshot {
+  id           String   @id @default(cuid())
+  propertyId   String
+  asOf         DateTime
+  totalHolders Int
+  totalSupply  String
+  data         Json
+  createdAt    DateTime @default(now())
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+  @@index([asOf])
+}
+
+model InvestorStatement {
+  id            String   @id @default(cuid())
+  userId        String
+  propertyId    String
+  periodStart   DateTime
+  periodEnd     DateTime
+  statementText String
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property      Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([propertyId])
+  @@index([periodStart, periodEnd])
 }
 
 enum KYCLevel {

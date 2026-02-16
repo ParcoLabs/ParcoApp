@@ -94,6 +94,11 @@ export const TokenizerPostDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [complianceReqs, setComplianceReqs] = useState<ComplianceRequirement[]>([]);
   const [complianceLoading, setComplianceLoading] = useState(false);
+  const [snapshots, setSnapshots] = useState<any[]>([]);
+  const [statements, setStatements] = useState<any[]>([]);
+  const [snapshotLoading, setSnapshotLoading] = useState(false);
+  const [statementLoading, setStatementLoading] = useState(false);
+  const [opsMessage, setOpsMessage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSubmissions();
@@ -126,10 +131,11 @@ export const TokenizerPostDashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    if (activeSubmission?.propertyId) {
-      fetchCompliance(activeSubmission.propertyId);
-    } else if (activeSubmission?.id) {
-      fetchCompliance(activeSubmission.id);
+    const propId = activeSubmission?.propertyId || activeSubmission?.id;
+    if (propId) {
+      fetchCompliance(propId);
+      fetchSnapshots(propId);
+      fetchStatements(propId);
     }
   }, [activeSubmission]);
 
@@ -147,6 +153,86 @@ export const TokenizerPostDashboard: React.FC = () => {
       console.error('Error fetching compliance:', error);
     } finally {
       setComplianceLoading(false);
+    }
+  };
+
+  const fetchSnapshots = async (propertyId: string) => {
+    try {
+      const res = await fetch(`/api/servicing/property/${propertyId}/captable/snapshots`, {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setSnapshots(json.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching snapshots:', error);
+    }
+  };
+
+  const fetchStatements = async (propertyId: string) => {
+    try {
+      const res = await fetch(`/api/servicing/property/${propertyId}/statements`, {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setStatements(json.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching statements:', error);
+    }
+  };
+
+  const handleTakeSnapshot = async () => {
+    const propId = activeSubmission?.propertyId || activeSubmission?.id;
+    if (!propId) return;
+    setSnapshotLoading(true);
+    setOpsMessage(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/servicing/property/${propId}/captable/snapshot`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      const json = await res.json();
+      if (json.success) {
+        setOpsMessage(`Snapshot taken: ${json.data.totalHolders} holders, supply ${json.data.totalSupply}`);
+        fetchSnapshots(propId);
+      } else {
+        setOpsMessage(`Error: ${json.error}`);
+      }
+    } catch (error) {
+      setOpsMessage('Failed to take snapshot');
+    } finally {
+      setSnapshotLoading(false);
+    }
+  };
+
+  const handleGenerateStatements = async () => {
+    const propId = activeSubmission?.propertyId || activeSubmission?.id;
+    if (!propId) return;
+    setStatementLoading(true);
+    setOpsMessage(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/servicing/property/${propId}/statements/generate`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      const json = await res.json();
+      if (json.success) {
+        setOpsMessage(`Generated ${json.data.count} statement(s)`);
+        fetchStatements(propId);
+      } else {
+        setOpsMessage(`Error: ${json.error}`);
+      }
+    } catch (error) {
+      setOpsMessage('Failed to generate statements');
+    } finally {
+      setStatementLoading(false);
     }
   };
 
@@ -477,6 +563,99 @@ export const TokenizerPostDashboard: React.FC = () => {
                 ))}
               </div>
             )}
+          </div>
+
+          <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-brand-dark dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-users-gear text-brand-deep"></i>
+                Investor Ops
+              </h3>
+            </div>
+
+            {opsMessage && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-700 dark:text-blue-300">
+                {opsMessage}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <button
+                onClick={handleTakeSnapshot}
+                disabled={snapshotLoading}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-deep hover:bg-brand-dark text-white rounded-lg font-semibold text-sm transition-all disabled:opacity-50"
+              >
+                {snapshotLoading ? (
+                  <i className="fa-solid fa-spinner fa-spin"></i>
+                ) : (
+                  <i className="fa-solid fa-camera"></i>
+                )}
+                Take Snapshot
+              </button>
+              <button
+                onClick={handleGenerateStatements}
+                disabled={statementLoading}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-sage/20 hover:bg-brand-sage/30 text-brand-dark dark:text-white rounded-lg font-semibold text-sm transition-all border border-brand-sage/30 disabled:opacity-50"
+              >
+                {statementLoading ? (
+                  <i className="fa-solid fa-spinner fa-spin"></i>
+                ) : (
+                  <i className="fa-solid fa-file-invoice"></i>
+                )}
+                Generate Statements
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-xs font-semibold text-brand-sage dark:text-gray-400 uppercase mb-2">Recent Snapshots</h4>
+                {snapshots.length === 0 ? (
+                  <p className="text-xs text-brand-sage dark:text-gray-500">No snapshots yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {snapshots.slice(0, 5).map((snap: any) => (
+                      <div key={snap.id} className="flex items-center justify-between p-2 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-brand-deep/10 dark:bg-brand-deep/20 flex items-center justify-center">
+                            <i className="fa-solid fa-table-list text-brand-deep text-xs"></i>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-brand-dark dark:text-white">{snap.totalHolders} holders</p>
+                            <p className="text-[10px] text-brand-sage dark:text-gray-400">Supply: {snap.totalSupply}</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-brand-sage dark:text-gray-500">{new Date(snap.asOf).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <h4 className="text-xs font-semibold text-brand-sage dark:text-gray-400 uppercase mb-2">Recent Statements</h4>
+                {statements.length === 0 ? (
+                  <p className="text-xs text-brand-sage dark:text-gray-500">No statements generated yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {statements.slice(0, 5).map((stmt: any) => (
+                      <div key={stmt.id} className="flex items-center justify-between p-2 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                            <i className="fa-solid fa-file-lines text-green-600 dark:text-green-400 text-xs"></i>
+                          </div>
+                          <div>
+                            <p className="text-xs font-semibold text-brand-dark dark:text-white">
+                              {new Date(stmt.periodStart).toLocaleDateString()} – {new Date(stmt.periodEnd).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-brand-sage dark:text-gray-500">{new Date(stmt.createdAt).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </>
       )}
