@@ -15,10 +15,36 @@ export const Settings: React.FC = () => {
   const [resetSuccess, setResetSuccess] = useState(false);
   const [toggleLoading, setToggleLoading] = useState(false);
   const [localToggle, setLocalToggle] = useState(userDemoEnabled);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [walletSaving, setWalletSaving] = useState(false);
+  const [walletMessage, setWalletMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [walletLoaded, setWalletLoaded] = useState(false);
 
   React.useEffect(() => {
     setLocalToggle(userDemoEnabled);
   }, [userDemoEnabled]);
+
+  React.useEffect(() => {
+    const fetchWallet = async () => {
+      try {
+        const response = await fetch('/api/user/wallet', { credentials: 'include' });
+        if (response.ok) {
+          const data = await response.json();
+          setWalletAddress(data.data?.walletAddress || '');
+        }
+      } catch {
+      } finally {
+        setWalletLoaded(true);
+      }
+    };
+    fetchWallet();
+  }, []);
+
+  React.useEffect(() => {
+    if (walletLoaded && demoMode && !walletAddress) {
+      setWalletAddress('0x' + 'a1b2c3d4e5f6'.repeat(3).slice(0, 38) + 'D0');
+    }
+  }, [walletLoaded, demoMode]);
 
   const handleResetDemo = async () => {
     const result = await resetDemo();
@@ -40,6 +66,30 @@ export const Settings: React.FC = () => {
       setLocalToggle(!newValue);
     }
     setToggleLoading(false);
+  };
+
+  const handleSaveWallet = async () => {
+    setWalletSaving(true);
+    setWalletMessage(null);
+    try {
+      const response = await fetch('/api/user/wallet', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ walletAddress: walletAddress.trim() || null }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setWalletMessage({ text: 'Wallet address saved', type: 'success' });
+        setTimeout(() => setWalletMessage(null), 3000);
+      } else {
+        setWalletMessage({ text: data.error || 'Failed to save', type: 'error' });
+      }
+    } catch {
+      setWalletMessage({ text: 'Network error', type: 'error' });
+    } finally {
+      setWalletSaving(false);
+    }
   };
 
   const handleLogout = () => {
@@ -80,6 +130,37 @@ export const Settings: React.FC = () => {
                     <SettingRow label="Set primary profile" value="2" />
                     <SettingRow label="Manage notifications" />
                 </div>
+            </div>
+        </div>
+
+        {/* Wallet Section */}
+        <div className="mb-8">
+            <h2 className="font-bold text-brand-dark dark:text-white mb-2 text-lg px-2">Blockchain Wallet</h2>
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-brand-lightGray dark:border-[#3a3a3a] px-4 py-4 shadow-sm">
+                <p className="text-xs text-brand-sage dark:text-gray-400 mb-3">
+                  Your Ethereum-compatible wallet address for receiving property tokens and allowlist access.
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={walletAddress}
+                    onChange={(e) => setWalletAddress(e.target.value)}
+                    placeholder="0x..."
+                    className="flex-1 px-3 py-2 rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-gray-50 dark:bg-[#252525] text-sm text-brand-dark dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-deep font-mono"
+                  />
+                  <button
+                    onClick={handleSaveWallet}
+                    disabled={walletSaving}
+                    className="px-4 py-2 bg-brand-deep text-white text-sm font-bold rounded-lg hover:bg-brand-deep/90 transition-colors disabled:opacity-50"
+                  >
+                    {walletSaving ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+                {walletMessage && (
+                  <p className={`text-xs mt-2 ${walletMessage.type === 'success' ? 'text-green-500' : 'text-red-500'}`}>
+                    {walletMessage.text}
+                  </p>
+                )}
             </div>
         </div>
 

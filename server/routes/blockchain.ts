@@ -144,12 +144,12 @@ router.post(
       if (userId && !walletAddress) {
         const user = await prisma.user.findUnique({
           where: { id: userId },
-          include: { vaultAccount: true },
+          select: { id: true, walletAddress: true },
         });
         if (!user) {
           return res.status(404).json({ error: 'User not found' });
         }
-        resolvedWalletAddress = user.vaultAccount?.walletAddress ?? null;
+        resolvedWalletAddress = user.walletAddress ?? null;
       }
 
       if (targetUserId) {

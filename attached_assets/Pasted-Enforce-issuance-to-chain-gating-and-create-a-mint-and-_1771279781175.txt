@@ -1,0 +1,56 @@
+Enforce issuance-to-chain gating and create a “mint and activate” operation.
+
+Backend changes:
+- Add endpoint (admin):
+  POST /api/issuance/case/:caseId/mint-and-activate
+  Behavior:
+  1) Load case + submission + propertyId (must exist)
+  2) Ensure eligibility PASS (or allow explicit override with reason + audit)
+  3) Ensure approvals complete (if ApprovalTask exists from earlier batches)
+  4) Ensure TransferPolicy exists for property (create default if missing for track)
+  5) Ensure OnchainDeployment exists:
+     - if missing, deploy with name/symbol derived from property
+  6) Ensure treasury wallet is allowlisted (TREASURY_WALLET_ADDRESS)
+  7) Mint initial supply to treasury (INITIAL_SUPPLY_TOKENS env or a safe default for demo)
+  8) Set case.status => MINTED then LIVE
+  9) Apply compliance pack (if implemented), seed servicing schedule (if implemented)
+  10) Write audit events for each step
+
+Demo mode:
+- Simulate everything and set statuses.
+
+Frontend:
+- Add a button in AdminTokenizations detail view:
+  - “Mint & Activate”
+  - show success message and refresh submission/property.
+
+Do not build new pages; extend existing admin view.
+
+Add provider-agnostic KYC/accreditation scaffolding that updates InvestorProfile and can gate issuance track presets.
+
+Backend:
+- Create server/routes/compliance.ts mounted at /api/compliance
+Endpoints:
+1) POST /api/compliance/kyc/start (user)
+  - sets InvestorProfile.kycStatus = PENDING
+  - returns { redirectUrl or instructions } (stub)
+
+2) POST /api/compliance/kyc/webhook (provider callback)
+  - protect with COMPLIANCE_WEBHOOK_SECRET if set
+  - updates InvestorProfile.kycStatus to APPROVED/REJECTED
+
+3) POST /api/compliance/accreditation/start (user)
+  - sets accreditationStatus=PENDING
+  - returns stub instructions
+
+4) POST /api/compliance/accreditation/webhook
+  - updates accreditationStatus
+
+UI:
+- In investor settings page, add a “Verification” section:
+  - show KYC status, accreditation status
+  - buttons to start each flow (stub okay)
+- Demo mode: statuses can be toggled for demo users.
+
+Gating:
+- For REG_D track issuance in the future, add a helper that checks investor accreditation before allowing purchase (scaffold only; do not block marketplace yet unless you already have a place to do so cleanly).

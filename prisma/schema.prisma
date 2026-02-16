@@ -21,6 +21,7 @@ model User {
   isDemoUser              Boolean                  @default(false)
   role                    UserRole                 @default(USER)
   tokenizerViewMode       String                   @default("post")
+  walletAddress           String?                  @unique
   borrowPositions         BorrowPosition[]
   cryptoPayments          CryptoPayment[]
   holdings                Holding[]

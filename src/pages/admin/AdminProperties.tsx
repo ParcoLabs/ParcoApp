@@ -55,6 +55,17 @@ export const AdminProperties: React.FC = () => {
   });
   const [capLoading, setCapLoading] = useState(false);
   const [capSaving, setCapSaving] = useState(false);
+  const [showTransferPolicy, setShowTransferPolicy] = useState(false);
+  const [tpProperty, setTpProperty] = useState<Property | null>(null);
+  const [tpType, setTpType] = useState('ALLOWLIST_ONLY');
+  const [tpLockupDate, setTpLockupDate] = useState('');
+  const [tpMaxHolders, setTpMaxHolders] = useState('');
+  const [tpMaxPerInvestor, setTpMaxPerInvestor] = useState('');
+  const [tpNotes, setTpNotes] = useState('');
+  const [tpLoading, setTpLoading] = useState(false);
+  const [tpSaving, setTpSaving] = useState(false);
+  const [tpHasDeployment, setTpHasDeployment] = useState(false);
+  const [tpWarnings, setTpWarnings] = useState<string[]>([]);
 
   const fetchProperties = async () => {
     try {
@@ -180,6 +191,74 @@ export const AdminProperties: React.FC = () => {
       setCapSaving(false);
     }
   };
+
+  const openTransferPolicy = async (property: Property) => {
+    setTpProperty(property);
+    setShowTransferPolicy(true);
+    setTpLoading(true);
+    setTpWarnings([]);
+    try {
+      const res = await fetch(`/api/properties/${property.id}/transfer-policy`, {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.policy) {
+          setTpType(json.policy.type);
+          setTpLockupDate(json.policy.lockupEndsAt ? json.policy.lockupEndsAt.slice(0, 10) : '');
+          setTpMaxHolders(json.policy.maxHolders?.toString() || '');
+          setTpMaxPerInvestor(json.policy.maxPerInvestorCents?.toString() || '');
+          setTpNotes(json.policy.notes || '');
+        } else {
+          setTpType('ALLOWLIST_ONLY');
+          setTpLockupDate('');
+          setTpMaxHolders('');
+          setTpMaxPerInvestor('');
+          setTpNotes('');
+        }
+        setTpHasDeployment(json.hasOnchainDeployment);
+      }
+    } catch (err) {
+      console.error('Error fetching transfer policy:', err);
+    } finally {
+      setTpLoading(false);
+    }
+  };
+
+  const saveTransferPolicy = async () => {
+    if (!tpProperty) return;
+    setTpSaving(true);
+    setTpWarnings([]);
+    try {
+      const body: any = { type: tpType };
+      if (tpLockupDate) body.lockupEndsAt = tpLockupDate;
+      if (tpMaxHolders) body.maxHolders = parseInt(tpMaxHolders);
+      if (tpMaxPerInvestor) body.maxPerInvestorCents = parseInt(tpMaxPerInvestor);
+      if (tpNotes) body.notes = tpNotes;
+
+      const res = await fetch(`/api/properties/${tpProperty.id}/transfer-policy`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to save');
+      if (json.warnings) {
+        setTpWarnings(json.warnings);
+      } else {
+        showToast('Transfer policy saved' + (json.onchainSynced ? ' and synced on-chain' : ''), 'success');
+        setShowTransferPolicy(false);
+        setTpProperty(null);
+      }
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Failed to save transfer policy', 'error');
+    } finally {
+      setTpSaving(false);
+    }
+  };
+
+  const needsLockup = ['ALLOWLIST_AND_LOCKUP', 'REG_D_12M_LOCKUP'].includes(tpType);
 
   const canMint = (property: Property) => {
     return !property.isMinted && 
@@ -307,6 +386,12 @@ export const AdminProperties: React.FC = () => {
                         className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 text-xs"
                       >
                         <i className="fa-solid fa-sliders mr-1"></i>Capabilities
+                      </button>
+                      <button
+                        onClick={() => openTransferPolicy(property)}
+                        className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 text-xs"
+                      >
+                        <i className="fa-solid fa-shield-halved mr-1"></i>Policy
                       </button>
                       {canMint(property) && (
                         <button
@@ -450,6 +535,140 @@ export const AdminProperties: React.FC = () => {
                     disabled={capSaving}
                   >
                     {capSaving ? 'Saving...' : 'Save Capabilities'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showTransferPolicy && tpProperty && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-6 max-w-lg w-full mx-4 border border-gray-200 dark:border-[#2a2a2a]">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-shield-halved text-purple-600"></i>
+                Transfer Policy
+              </h3>
+              <button
+                onClick={() => { setShowTransferPolicy(false); setTpProperty(null); setTpWarnings([]); }}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <i className="fa-solid fa-times"></i>
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+              {tpProperty.name} &mdash; {tpProperty.city}, {tpProperty.state}
+            </p>
+
+            {!tpHasDeployment && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3 mb-4">
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  <i className="fa-solid fa-triangle-exclamation mr-1"></i>
+                  No on-chain deployment. Policy will be stored in the database only.
+                </p>
+              </div>
+            )}
+
+            {tpWarnings.length > 0 && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-3 mb-4">
+                {tpWarnings.map((w, i) => (
+                  <p key={i} className="text-xs text-amber-700 dark:text-amber-300">
+                    <i className="fa-solid fa-circle-info mr-1"></i>{w}
+                  </p>
+                ))}
+                <button
+                  onClick={() => { setShowTransferPolicy(false); setTpProperty(null); setTpWarnings([]); }}
+                  className="mt-2 text-xs text-amber-800 dark:text-amber-200 underline"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+
+            {tpLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-3 bg-gray-50 dark:bg-[#222] rounded-lg">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">Policy Type</label>
+                  <select
+                    value={tpType}
+                    onChange={(e) => setTpType(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-[#3a3a3a] rounded-lg text-sm bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white"
+                  >
+                    <option value="UNRESTRICTED">Unrestricted</option>
+                    <option value="ALLOWLIST_ONLY">Allowlist Only</option>
+                    <option value="ALLOWLIST_AND_LOCKUP">Allowlist + Lockup</option>
+                    <option value="REG_D_12M_LOCKUP">Reg D 12-Month Lockup</option>
+                    <option value="CUSTOM">Custom</option>
+                  </select>
+                </div>
+
+                {needsLockup && (
+                  <div className="p-3 bg-gray-50 dark:bg-[#222] rounded-lg">
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">Lockup Ends At</label>
+                    <input
+                      type="date"
+                      value={tpLockupDate}
+                      onChange={(e) => setTpLockupDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-[#3a3a3a] rounded-lg text-sm bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white"
+                    />
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-gray-50 dark:bg-[#222] rounded-lg">
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">Max Holders</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={tpMaxHolders}
+                      onChange={(e) => setTpMaxHolders(e.target.value)}
+                      placeholder="No limit"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-[#3a3a3a] rounded-lg text-sm bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div className="p-3 bg-gray-50 dark:bg-[#222] rounded-lg">
+                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">Max Per Investor (cents)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={tpMaxPerInvestor}
+                      onChange={(e) => setTpMaxPerInvestor(e.target.value)}
+                      placeholder="No limit"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-[#3a3a3a] rounded-lg text-sm bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="p-3 bg-gray-50 dark:bg-[#222] rounded-lg">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">Notes</label>
+                  <textarea
+                    value={tpNotes}
+                    onChange={(e) => setTpNotes(e.target.value)}
+                    rows={2}
+                    placeholder="Optional notes..."
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-[#3a3a3a] rounded-lg text-sm bg-white dark:bg-[#1a1a1a] text-gray-900 dark:text-white resize-none"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => { setShowTransferPolicy(false); setTpProperty(null); setTpWarnings([]); }}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-[#3a3a3a] rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#222]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={saveTransferPolicy}
+                    className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                    disabled={tpSaving || (needsLockup && !tpLockupDate)}
+                  >
+                    {tpSaving ? 'Saving...' : 'Save Policy'}
                   </button>
                 </div>
               </div>

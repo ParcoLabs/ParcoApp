@@ -156,4 +156,81 @@ router.post('/tokenizer-view', validateAuth, async (req, res) => {
   }
 });
 
+router.get('/wallet', validateAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { walletAddress: true },
+    });
+
+    res.json({
+      success: true,
+      data: { walletAddress: user?.walletAddress || null },
+    });
+  } catch (error: any) {
+    console.error('Error fetching wallet address:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch wallet address' });
+  }
+});
+
+router.post('/wallet', validateAuth, async (req, res) => {
+  try {
+    const clerkId = (req as any).auth?.userId;
+    if (!clerkId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const { walletAddress } = req.body;
+
+    if (walletAddress !== null && walletAddress !== undefined) {
+      if (typeof walletAddress !== 'string') {
+        return res.status(400).json({ success: false, error: 'walletAddress must be a string' });
+      }
+
+      const trimmed = walletAddress.trim();
+      if (trimmed && !/^0x[a-fA-F0-9]{40}$/.test(trimmed)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid Ethereum wallet address. Must be a 42-character hex string starting with 0x.',
+        });
+      }
+
+      const addressToSave = trimmed || null;
+
+      if (addressToSave) {
+        const existing = await prisma.user.findFirst({
+          where: { walletAddress: addressToSave, NOT: { clerkId } },
+        });
+        if (existing) {
+          return res.status(409).json({
+            success: false,
+            error: 'This wallet address is already linked to another account.',
+          });
+        }
+      }
+
+      const user = await prisma.user.update({
+        where: { clerkId },
+        data: { walletAddress: addressToSave },
+        select: { walletAddress: true },
+      });
+
+      return res.json({
+        success: true,
+        data: { walletAddress: user.walletAddress },
+      });
+    }
+
+    return res.status(400).json({ success: false, error: 'walletAddress is required' });
+  } catch (error: any) {
+    console.error('Error saving wallet address:', error);
+    res.status(500).json({ success: false, error: 'Failed to save wallet address' });
+  }
+});
+
 export default router;
