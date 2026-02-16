@@ -5,6 +5,8 @@ import { isDemoMode } from '../utils/demoMode';
 
 const router = Router();
 
+const demoSubmissionOverrides = new Map<string, Record<string, any>>();
+
 interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
@@ -160,25 +162,24 @@ router.get('/:id', simpleAuth, tokenizerOrAdmin, async (req: Request, res: Respo
     const user = (req as AuthenticatedRequest).user!;
     const { id } = req.params;
     
-    const submission = await prisma.tokenizationSubmission.findFirst({
-      where: { 
-        id,
-        tokenizerId: user.id 
-      }
-    });
+    const where = user.role === 'ADMIN' ? { id } : { id, tokenizerId: user.id };
+    const submission = await prisma.tokenizationSubmission.findFirst({ where });
 
     if (!submission) {
       return res.status(404).json({ error: 'Submission not found' });
     }
 
+    const demoOverrides = isDemoMode(req) ? (demoSubmissionOverrides.get(id) || {}) : {};
+    const merged = { ...submission, ...demoOverrides };
+
     return res.json({ 
       submission: {
-        ...submission,
-        totalValue: submission.totalValue ? Number(submission.totalValue) : null,
-        tokenPrice: submission.tokenPrice ? Number(submission.tokenPrice) : null,
-        annualYield: submission.annualYield ? Number(submission.annualYield) : null,
-        monthlyRent: submission.monthlyRent ? Number(submission.monthlyRent) : null,
-        bathrooms: submission.bathrooms ? Number(submission.bathrooms) : null,
+        ...merged,
+        totalValue: merged.totalValue ? Number(merged.totalValue) : null,
+        tokenPrice: merged.tokenPrice ? Number(merged.tokenPrice) : null,
+        annualYield: merged.annualYield ? Number(merged.annualYield) : null,
+        monthlyRent: merged.monthlyRent ? Number(merged.monthlyRent) : null,
+        bathrooms: merged.bathrooms ? Number(merged.bathrooms) : null,
       }
     });
   } catch (error) {
@@ -192,13 +193,10 @@ router.patch('/:id', simpleAuth, tokenizerOrAdmin, async (req: Request, res: Res
     const user = (req as AuthenticatedRequest).user!;
     const { id } = req.params;
     
-    const existing = await prisma.tokenizationSubmission.findFirst({
-      where: { 
-        id,
-        tokenizerId: user.id,
-        status: 'DRAFT'
-      }
-    });
+    const where = user.role === 'ADMIN'
+      ? { id, status: 'DRAFT' as const }
+      : { id, tokenizerId: user.id, status: 'DRAFT' as const };
+    const existing = await prisma.tokenizationSubmission.findFirst({ where });
 
     if (!existing) {
       return res.status(404).json({ error: 'Draft submission not found or not editable' });
@@ -217,6 +215,23 @@ router.patch('/:id', simpleAuth, tokenizerOrAdmin, async (req: Request, res: Res
       if (req.body[field] !== undefined) {
         updateData[field] = req.body[field];
       }
+    }
+
+    if (isDemoMode(req)) {
+      const prev = demoSubmissionOverrides.get(id) || {};
+      demoSubmissionOverrides.set(id, { ...prev, ...updateData });
+      const merged = { ...existing, ...prev, ...updateData };
+      return res.json({
+        success: true,
+        submission: {
+          ...merged,
+          totalValue: merged.totalValue ? Number(merged.totalValue) : null,
+          tokenPrice: merged.tokenPrice ? Number(merged.tokenPrice) : null,
+          annualYield: merged.annualYield ? Number(merged.annualYield) : null,
+          monthlyRent: merged.monthlyRent ? Number(merged.monthlyRent) : null,
+          bathrooms: merged.bathrooms ? Number(merged.bathrooms) : null,
+        }
+      });
     }
 
     const updated = await prisma.tokenizationSubmission.update({
