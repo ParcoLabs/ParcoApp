@@ -438,8 +438,16 @@ export const TokenizerPreDashboard: React.FC = () => {
                   </div>
                   <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 md:p-4">
                     <p className="text-[10px] md:text-xs text-brand-sage mb-1">Eligibility</p>
-                    <p className="text-sm font-bold text-brand-dark dark:text-white">
-                      {(issuanceCase.eligibilityStatus || 'PENDING').replace(/_/g, ' ')}
+                    <p className={`text-sm font-bold ${
+                      issuanceCase.eligibilityStatus === 'PASS' ? 'text-green-600 dark:text-green-400' :
+                      issuanceCase.eligibilityStatus === 'FAIL' ? 'text-red-600 dark:text-red-400' :
+                      issuanceCase.eligibilityStatus === 'NEEDS_REVIEW' ? 'text-amber-600 dark:text-amber-400' :
+                      'text-brand-dark dark:text-white'
+                    }`}>
+                      {issuanceCase.eligibilityStatus === 'PASS' ? 'Eligible to proceed' :
+                       issuanceCase.eligibilityStatus === 'FAIL' ? 'Not eligible (see notes)' :
+                       issuanceCase.eligibilityStatus === 'NEEDS_REVIEW' ? 'Needs review' :
+                       'Pending'}
                     </p>
                   </div>
                   <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 md:p-4">

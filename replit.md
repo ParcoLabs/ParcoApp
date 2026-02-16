@@ -1,7 +1,7 @@
 # Parco - RWA Investment Platform
 
 ### Overview
-Parco is a Real-World Asset (RWA) investment platform that connects traditional finance with blockchain technology. Built with React, TypeScript, and Vite, it allows users to invest in tokenized real estate and other real-world assets through a modern web interface. The platform's vision is to offer a new avenue for asset ownership and investment, focusing on tokenization, robust portfolio management, and comprehensive financial tools. Key capabilities include a property marketplace, DeFi integrations, and a simulated demo mode for testing all features.
+Parco is a Real-World Asset (RWA) investment platform bridging traditional finance with blockchain technology. It enables investment in tokenized real estate and other real-world assets through a modern web interface. The platform aims to revolutionize asset ownership and investment via tokenization, robust portfolio management, and comprehensive financial tools, including a property marketplace, DeFi integrations, and a simulated demo mode.
 
 ### User Preferences
 None documented yet.
@@ -9,155 +9,56 @@ None documented yet.
 ### System Architecture
 
 #### UI/UX Decisions
-The frontend is built with React, styled using TailwindCSS for utility-first styling, and incorporates Recharts for interactive data visualization. Typography is standardized with Google Fonts (Inter, Bungee), and iconography is provided by Font Awesome. The platform ensures full mobile responsiveness across all dashboard types (Investor, Tokenizer, Admin), adapting layouts from multi-column desktop views to single-column mobile interfaces with optimized navigation elements like bottom tab bars.
+The frontend utilizes React, TailwindCSS for styling, and Recharts for data visualization. Typography is based on Google Fonts (Inter, Bungee), and iconography uses Font Awesome. The platform is fully mobile-responsive, adapting layouts for Investor, Tokenizer, and Admin dashboards from multi-column desktop views to single-column mobile interfaces with optimized navigation.
 
 #### Technical Implementations
-- **Frontend**: React 19.2.0, TypeScript, Vite 6.2.0, React Router DOM 7.9.6.
+- **Frontend**: React, TypeScript, Vite, React Router DOM.
 - **Backend**: Express.js with TypeScript.
-- **Database**: PostgreSQL managed with Prisma ORM 7.
-- **Blockchain Integration**: Utilizes smart contracts (PropertyToken.sol, PropertyVault.sol) on the Polygon network, interacting via Ethers.js v6, adhering to OpenZeppelin standards.
-- **Authentication**: Clerk for user identity and authentication.
-- **KYC**: Integrated with Sumsub WebSDK for identity verification.
-- **Payments**: Stripe handles fiat transactions, and Coinbase Commerce manages cryptocurrency payments.
+- **Database**: PostgreSQL with Prisma ORM.
+- **Blockchain Integration**: Smart contracts (PropertyToken.sol, PropertyVault.sol) on Polygon, interacting via Ethers.js, adhering to OpenZeppelin standards.
+- **Authentication**: Clerk for user identity.
+- **KYC**: Sumsub WebSDK for identity verification.
+- **Payments**: Stripe for fiat, Coinbase Commerce for crypto.
 
 #### Feature Specifications
-- **Authentication**: Secure user login/registration with Clerk and protected routes.
+- **Authentication**: Secure login/registration and protected routes.
 - **Marketplace**: Browse and purchase tokenized properties.
-- **Portfolio Management**: Comprehensive tracking of assets, performance, and transaction history.
-- **Holding Details**: Detailed view for individual token holdings, including price charts, balance overviews, insights, and governance participation.
-- **Payment Processing**: Supports credit/debit cards, ACH, and cryptocurrency payments.
-- **Blockchain Features**: Facilitates USDC deposits, ERC-1155 token minting for ownership, and role-based access control.
-- **Collateral Lending**: Allows users to borrow USDC against locked property tokens via a BorrowVault smart contract with defined LTV, interest, and liquidation thresholds.
+- **Portfolio Management**: Asset tracking, performance, and transaction history.
+- **Holding Details**: Detailed views for individual token holdings, including charts, balances, and governance.
+- **Payment Processing**: Supports credit/debit cards, ACH, and cryptocurrency.
+- **Blockchain Features**: USDC deposits, ERC-1155 token minting, role-based access control.
+- **Collateral Lending**: Borrow USDC against locked property tokens via a BorrowVault smart contract.
 - **Rent Distribution Engine**: Automates monthly rent distributions, including loan interest deductions.
-- **Demo Mode**: A comprehensive simulation environment for testing all platform functionalities without real-world financial or blockchain interactions. This includes simulated crypto wallets, property purchases, borrowing, DeFi lending, governance voting, and rent cycles. All demo data is isolated to prevent contamination of production data.
-- **Admin Role System**: Database-driven role-based access control (USER, TOKENIZER, ADMIN) with middleware for secure administrative access.
-- **Tokenization Review System**: Manages the workflow for property tokenization submissions through defined statuses (DRAFT, SUBMITTED, IN_REVIEW, APPROVED, REJECTED, PUBLISHED).
+- **Demo Mode**: A comprehensive simulation environment for testing all platform functionalities without real-world financial or blockchain interactions, including simulated crypto wallets, property purchases, borrowing, DeFi lending, governance voting, and rent cycles.
+- **Admin Role System**: Database-driven role-based access control (USER, TOKENIZER, ADMIN).
+- **Tokenization Review System**: Manages property tokenization submission workflow through defined statuses.
 - **Property Management**: Admin tools for minting, listing, pausing, and unpausing properties.
 - **Investor Operations**: Admin tools to manage investors, view profiles, holdings, and loan positions.
-- **Tokenizer Dashboard**: A dual-view interface for tokenizers, offering pre-tokenization progress tracking (application, documents, valuation) and post-tokenization property overview with detailed statistics.
-- **Admin Dashboard**: A dedicated interface for administrators with navigation for managing tokenizations, properties, investors, rent distribution, and demo tools, providing platform statistics and quick actions.
+- **Tokenizer Dashboard**: Dual-view interface for pre-tokenization progress tracking and post-tokenization property overview.
+- **Admin Dashboard**: Dedicated interface for platform administration, including tokenizations, properties, investors, rent distribution, and demo tools.
 
 #### System Design Choices
-- Employs client-side routing with React Router DOM.
-- Utilizes a custom Express.js backend for API services.
-- Leverages Prisma ORM for robust database operations and atomic transactions.
-- Implements role-based access control both in smart contracts and backend middleware for enhanced security.
-- Adheres to environment-based configuration for managing sensitive data.
-- Follows a standard Vite + React project structure.
-- **Document Upload**: Tokenizer dashboard supports real file uploads via `POST /api/uploads/tokenization/:submissionId/:docKey`. Files are stored locally under `attached_assets/uploads/{submissionId}/{docKey}/` and URLs are persisted to the TokenizationSubmission model fields (ownershipProof, legalDocuments, financialStatements, documents). Uses multer for multipart handling with 15MB limit and PDF/PNG/JPEG validation. In demo mode, fake URLs are generated and stored without actual file I/O. This is MVP local storage; will migrate to R2 signed uploads later.
+- Client-side routing with React Router DOM.
+- Custom Express.js backend for API services.
+- Prisma ORM for database operations and atomic transactions.
+- Role-based access control implemented in smart contracts and backend middleware.
+- Environment-based configuration for sensitive data.
+- Standard Vite + React project structure.
+- Document uploads handled via `multer` for local storage, with a future migration planned to R2 signed uploads. Demo mode simulates file uploads without actual I/O.
+- Issuance roadmap framework supporting multiple regulatory tracks (e.g., SERIES_LLC, REG_CF, REG_A, REG_D) with dedicated models for templates, state-specific rules, eligibility checks, and approval tasks.
+- Eligibility Engine (`server/services/eligibilityEngine.ts`) performs checks on state enablement, price caps, document completeness, and critical fields for tokenization submissions.
 
 ### External Dependencies
 - **Clerk**: User authentication and authorization.
-- **Stripe**: Fiat payment processing, including credit/debit cards and ACH.
+- **Stripe**: Fiat payment processing.
 - **Coinbase Commerce**: Cryptocurrency payment processing.
-- **Sumsub**: KYC (Know Your Customer) identity verification.
-- **Alchemy RPC**: Blockchain interactions, specifically on the Polygon network.
-- **PostgreSQL (Replit Neon)**: Primary database solution.
+- **Sumsub**: KYC identity verification.
+- **Alchemy RPC**: Blockchain interactions on the Polygon network.
+- **PostgreSQL (Replit Neon)**: Primary database.
 - **Vite**: Frontend build tool.
-- **React Router DOM**: Client-side routing library.
-- **Recharts**: Data visualization library.
+- **React Router DOM**: Client-side routing.
+- **Recharts**: Data visualization.
 - **Font Awesome**: Icon library.
 - **Google Fonts**: Custom typography.
 - **OpenZeppelin Contracts**: Standardized smart contract libraries.
 - **Ethers.js**: Ethereum blockchain interaction library.
-
----
-
-## SYSTEM MAP
-
-### Demo Mode Detection Points
-
-Demo mode is detected at multiple layers. Here is every location where it is checked:
-
-| File | Function / Export | Detection Logic |
-|------|-------------------|-----------------|
-| `server/lib/demoMode.ts` | `isDemoMode()` | `process.env.DEMO_MODE === 'true'` — original helper, used by existing routes (`buy`, `borrow`, `rent`, `kyc`, `admin`, `system`, `userSettings`, `demo`) |
-| `server/utils/demoMode.ts` | `isDemoMode(req?)` | Unified check: returns `true` if `process.env.DEMO_MODE === 'true'` OR `server/lib/demoMode.isDemoMode()` returns true OR `req.user.isDemoUser` is truthy. New helper for issuance/servicing engine integration. |
-| `server/routes/demo.ts` | `requireDemoMode` middleware | Calls `server/lib/demoMode.isDemoMode()`; returns 403 if false. Gates all `/api/demo/*` routes. |
-| `server/index.ts` | Startup log | Logs whether demo mode is enabled via `isDemoMode()` |
-| `src/context/DemoModeContext.tsx` | `DemoModeProvider` | Fetches `/api/system/config` for `serverDemoEnabled` and `/api/user/demo-mode` for `userDemoEnabled`. Demo is active only when both are true. |
-| `src/hooks/useDemo.ts` | `useDemoMode()` | Consumes `DemoModeContext` |
-
-### Demo Response Utilities
-
-| File | Exports | Purpose |
-|------|---------|---------|
-| `server/utils/demoResponses.ts` | `mockIssuanceCase(overrides?)` | Returns a stable mock `DemoIssuanceCase` payload (id, propertyId, status, tokenSymbol, totalTokens, tokenPrice, totalValue, timestamps). |
-| `server/utils/demoResponses.ts` | `mockEligibilityCheck(userId, overrides?)` | Returns a stable mock `DemoEligibilityResult` (eligible, kycLevel, accreditationStatus, maxInvestment, reasons). |
-| `server/utils/demoResponses.ts` | `mockExtractionRunStatus(runId?, overrides?)` | Returns a stable mock `DemoExtractionRunStatus` (runId, status, documentsProcessed/Total, extractedFields, errors, timestamps). |
-
-All three accept optional `overrides` to customize individual fields while keeping defaults stable.
-
-### Issuance Case Lifecycle Triggers
-
-| Trigger Point | File | Behavior |
-|---------------|------|----------|
-| Tokenization submission (`POST /api/tokenization/:id/submit`) | `server/routes/tokenization.ts` | After status is set to SUBMITTED, creates an `IssuanceCase` with status `INTAKE_COMPLETE` if one doesn't already exist. Skipped in demo mode. |
-| Explicit creation (`POST /api/issuance/by-submission/:submissionId/create`) | `server/routes/issuance.ts` | Creates an `IssuanceCase` on demand. Returns existing case if already present. Returns mock in demo mode. |
-| Frontend auto-fetch (TokenizerPreDashboard) | `src/pages/tokenizer/TokenizerPreDashboard.tsx` | On load, fetches issuance case via GET; if 404, calls POST create. Displays case status, eligibility, and extraction score in an "Issuance Status" card. |
-| Document upload (`POST /api/uploads/tokenization/:submissionId/:docKey`) | `server/routes/uploads.ts` | After successful upload, auto-creates `IssuanceCase` if missing, then creates `IssuanceDocument` row with mapped doc type (OWNERSHIP, LEGAL, FINANCIAL, PROPERTY, OTHER). |
-
-### IssuanceDocument Tracking
-
-Documents uploaded through the tokenizer dashboard are persisted in two locations:
-1. **TokenizationSubmission fields** (legacy): `ownershipProof`, `legalDocuments[]`, `financialStatements[]`, `documents[]`
-2. **IssuanceDocument model** (new): Linked to `IssuanceCase` via `caseId`, with typed categorization via `IssuanceDocType` enum
-
-The `GET /api/issuance/case/:caseId/documents` endpoint returns all IssuanceDocuments for a case. The tokenizer dashboard prefers IssuanceDocument data when available, falling back to submission fields.
-
-### Demo Tokenizer Flow
-
-The tokenizer demo flow operates entirely in-memory when demo mode is enabled:
-
-| Component | Behavior |
-|-----------|----------|
-| `GET /api/tokenization/my-properties` | Returns DB submissions + 4 seeded demo submissions (Sunset Ridge/Austin SUBMITTED, Harbor View/San Diego IN_REVIEW, Maple St/Nashville DRAFT 63%, blank DRAFT 0%). All merged with demo overrides. |
-| `POST /api/tokenization/create` | In demo mode, creates in-memory submission (no DB write) with `demo-new-{timestamp}` ID and pushes to seed array. |
-| `GET /api/tokenization/:id` | Falls back to demo seeds when DB lookup fails in demo mode. Merges all demo overrides. |
-| `PATCH /api/tokenization/:id` | Allows editing demo seed submissions (DRAFT only) via in-memory overrides. |
-| `POST /api/demo/tokenization/:id/populate` | Demo-only endpoint. Fills submission with realistic Malibu beachfront property data, fake documents, and financials. Optional `submit: true` sets status to SUBMITTED. Stores in demo.ts in-memory map. Awards 75 PARCO tokens. |
-
-**Demo Override Architecture**: Two in-memory Maps store overrides:
-1. `demoSubmissionOverrides` in `tokenization.ts` — written by PATCH
-2. `demoTokenizationOverrides` in `demo.ts` — written by populate endpoint
-
-Both are merged via `getAllDemoOverrides(id)` in tokenization.ts for all reads.
-
-**Frontend**: `TokenizerDashboard.tsx` shows a "Populate Demo Application" banner (amber) when `demoMode && isDraft`, with two actions: "Populate" (fills data only) and "Populate & Submit" (fills + sets SUBMITTED with confirmation).
-
-### Issuance Roadmap Framework
-
-The issuance engine now supports multiple regulatory tracks via first-class Prisma models:
-
-**Enums:**
-- `IssuanceTrack`: SERIES_LLC, REG_CF, REG_A, REG_D
-- `USState`: NV, FL, WY, OTHER (expandable)
-
-**Extended IssuanceCase fields:**
-- `track` (IssuanceTrack, default SERIES_LLC) — which regulatory pathway
-- `targetState` (USState, default OTHER) — target jurisdiction
-- `maxPropertyPriceCents` (Int?) — price cap gating per track
-- `eligibilityNotes` (String?) — separate from general notes
-
-**New Models:**
-- `IssuanceTemplate` — one per track (unique), holds rules JSON with requiredDocTypes, criticalKeys, approvals, defaultPriceCapCents, maxInvestors, accreditationRequired
-- `StateSeriesLlcProfile` — one per state (unique), holds state-specific LLC formation rules (fees, agent requirements, tax rates). NV/FL/WY enabled by default.
-- `EligibilityCheck` — per-case key-value checks (@@unique([caseId, key])), tracks individual eligibility criteria with status and details
-
-**New Models:**
-- `ChecklistItem` — per-case key-value checklist items (@@unique([caseId, key])), tracks critical steps with label, ownerRole (ApprovalRole), and status (ChecklistStatus)
-- `ApprovalTask` — per-case role-based approval tasks (@@unique([caseId, role])), tracks OPS/LEGAL/ACCOUNTING/COMPLIANCE sign-offs
-
-**Template Seeder:** `server/services/templateSeeder.ts` — `seedCaseFromTemplate(caseId)` loads the IssuanceTemplate for a case's track, then idempotently creates ChecklistItem and ApprovalTask rows from the template's `criticalKeys` and `approvals` rules. Skips existing completed items. Also sets `maxPropertyPriceCents` from template defaults if not already set. `mockSeedResult(caseId, track)` provides stable mock output for demo mode.
-
-**Admin Track Endpoint:** `POST /api/issuance/case/:caseId/track` — admin-only endpoint to change a case's regulatory track, target state, and price cap. Calls `seedCaseFromTemplate` after updating to provision checklist/approval items for the new track.
-
-**Seed script:** `prisma/seed-issuance.ts` — run with `npx tsx prisma/seed-issuance.ts`. Uses upsert so it's idempotent.
-
-### Engine Health (Admin)
-
-The admin tokenization detail drawer includes an "Engine Health" panel that shows:
-- Submission status
-- Issuance case existence and status
-- Number of IssuanceDocuments attached
-- Overall linkage health indicator

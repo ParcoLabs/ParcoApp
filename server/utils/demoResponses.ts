@@ -1,3 +1,9 @@
+export interface DemoEligibilityCheck {
+  key: string;
+  status: 'PASS' | 'FAIL' | 'NEEDS_REVIEW';
+  details: string | null;
+}
+
 export interface DemoIssuanceCase {
   id: string;
   propertyId: string;
@@ -15,6 +21,7 @@ export interface DemoIssuanceCase {
   checklistItems: Array<{ id: string; key: string; label: string; ownerRole: string; status: string }>;
   approvalTasks: Array<{ id: string; role: string; status: string }>;
   requiredDocTypes: string[];
+  eligibilityChecks: DemoEligibilityCheck[];
   createdAt: string;
   updatedAt: string;
 }
@@ -59,6 +66,7 @@ export function mockIssuanceCase(overrides?: Partial<DemoIssuanceCase>): DemoIss
     checklistItems: getMockChecklistItems(track),
     approvalTasks: getMockApprovalTasks(),
     requiredDocTypes: getMockRequiredDocTypes(track),
+    eligibilityChecks: [],
     createdAt: now,
     updatedAt: now,
     ...overrides,

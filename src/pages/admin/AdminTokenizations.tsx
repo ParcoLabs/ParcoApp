@@ -44,6 +44,12 @@ interface TokenizationSubmission {
   createdAt: string;
 }
 
+interface EligibilityCheckData {
+  key: string;
+  status: 'PASS' | 'FAIL' | 'NEEDS_REVIEW';
+  details: string | null;
+}
+
 interface IssuanceCaseData {
   id: string;
   status: string;
@@ -94,6 +100,7 @@ export const AdminTokenizations: React.FC = () => {
   const [editTargetState, setEditTargetState] = useState('OTHER');
   const [editPriceCap, setEditPriceCap] = useState('');
   const [trackSaving, setTrackSaving] = useState(false);
+  const [eligibilityChecks, setEligibilityChecks] = useState<EligibilityCheckData[]>([]);
 
   const fetchSubmissions = async (page = 1) => {
     try {
@@ -139,6 +146,9 @@ export const AdminTokenizations: React.FC = () => {
       if (res.ok) {
         const json = await res.json();
         setIssuanceCase(json.data);
+        if (json.data?.eligibilityChecks) {
+          setEligibilityChecks(json.data.eligibilityChecks.map((c: any) => ({ key: c.key, status: c.status, details: c.details })));
+        }
         if (json.data?.id) fetchIssuanceDocCount(json.data.id);
       } else if (res.status === 404) {
         const createRes = await fetch(`/api/issuance/by-submission/${submissionId}/create`, {
@@ -182,7 +192,9 @@ export const AdminTokenizations: React.FC = () => {
       });
       if (res.ok) {
         const json = await res.json();
-        setIssuanceCase(prev => prev ? { ...prev, eligibilityStatus: json.data?.eligibilityStatus || json.data?.result?.accreditationStatus || 'PASS' } : null);
+        const data = json.data;
+        setIssuanceCase(prev => prev ? { ...prev, eligibilityStatus: data.eligibilityStatus || 'PENDING' } : null);
+        setEligibilityChecks(data.checks || []);
         showToast('Eligibility check completed', 'success');
       } else {
         showToast('Failed to run eligibility check', 'error');
@@ -265,6 +277,7 @@ export const AdminTokenizations: React.FC = () => {
         setDrawerOpen(true);
         fetchIssuanceCase(submission.id);
         setIssuanceDocCount(0);
+        setEligibilityChecks([]);
       }
     } catch (error) {
       console.error('Error fetching submission details:', error);
@@ -822,6 +835,36 @@ export const AdminTokenizations: React.FC = () => {
                         {issuanceActionLoading === 'extraction' ? 'Running...' : 'Run Extraction'}
                       </button>
                     </div>
+
+                    {eligibilityChecks.length > 0 && (
+                      <div className="border-t border-gray-200 dark:border-[#444] pt-3">
+                        <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Eligibility Checks</p>
+                        <div className="space-y-2">
+                          {eligibilityChecks.map((check) => (
+                            <div key={check.key} className="flex items-start gap-2 text-xs">
+                              <span className={`mt-0.5 flex-shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                                check.status === 'PASS' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                                check.status === 'FAIL' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
+                                'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                              }`}>
+                                {check.status === 'PASS' ? '✓' : check.status === 'FAIL' ? '✗' : '?'}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-gray-900 dark:text-white">{check.key.replace(/_/g, ' ')}</p>
+                                {check.details && <p className="text-gray-500 dark:text-gray-400 text-[10px] mt-0.5">{check.details}</p>}
+                              </div>
+                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${
+                                check.status === 'PASS' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                                check.status === 'FAIL' ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' :
+                                'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                              }`}>
+                                {check.status.replace(/_/g, ' ')}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-sm text-gray-400 text-center py-2">No issuance case yet</p>

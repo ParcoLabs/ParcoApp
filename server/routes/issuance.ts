@@ -5,6 +5,7 @@ import { isDemoMode } from '../utils/demoMode';
 import { mockIssuanceCase, mockEligibilityCheck, mockExtractionRunStatus } from '../utils/demoResponses';
 import { loadUserWithRole, adminOnly, AuthenticatedRequest } from '../middleware/admin';
 import { seedCaseFromTemplate, mockSeedResult } from '../services/templateSeeder';
+import { runEligibility, mockRunEligibility } from '../services/eligibilityEngine';
 
 const router = Router();
 
@@ -57,7 +58,7 @@ router.get(
 
       const issuanceCase = await prisma.issuanceCase.findUnique({
         where: { submissionId },
-        include: { submission: true, checklistItems: true, approvalTasks: true },
+        include: { submission: true, checklistItems: true, approvalTasks: true, eligibilityChecks: true },
       });
 
       if (!issuanceCase) {
@@ -209,43 +210,14 @@ router.post(
       }
 
       if (isDemoMode(req)) {
-        return res.json({
-          success: true,
-          data: mockEligibilityCheck(user.id, {
-            eligible: true,
-            kycLevel: 'VERIFIED',
-            accreditationStatus: 'APPROVED',
-          }),
-        });
+        const issuanceCase = await prisma.issuanceCase.findUnique({ where: { id: caseId } }).catch(() => null);
+        const targetState = issuanceCase?.targetState || 'NV';
+        const result = mockRunEligibility(caseId, targetState);
+        return res.json({ success: true, data: result });
       }
 
-      const issuanceCase = await prisma.issuanceCase.findUnique({
-        where: { id: caseId },
-      });
-
-      if (!issuanceCase) {
-        return res.status(404).json({ success: false, error: 'Issuance case not found' });
-      }
-
-      const updated = await prisma.issuanceCase.update({
-        where: { id: caseId },
-        data: { eligibilityStatus: 'PASS' },
-      });
-
-      return res.json({
-        success: true,
-        data: {
-          caseId: updated.id,
-          eligibilityStatus: updated.eligibilityStatus,
-          result: {
-            eligible: true,
-            kycLevel: 'VERIFIED',
-            accreditationStatus: 'APPROVED',
-            maxInvestment: 500000,
-            reasons: [],
-          },
-        },
-      });
+      const result = await runEligibility(caseId);
+      return res.json({ success: true, data: result });
     } catch (error: any) {
       console.error('[issuance] Error running eligibility:', error);
       return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
