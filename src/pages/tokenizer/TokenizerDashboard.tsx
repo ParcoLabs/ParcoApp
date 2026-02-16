@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth as useClerkAuth } from '@clerk/clerk-react';
+import { useDemoMode } from '../../context/DemoModeContext';
 
 interface TokenizationSubmission {
   id: string;
@@ -104,7 +105,10 @@ export const TokenizerDashboard: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [dirty, setDirty] = useState(false);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+  const [populating, setPopulating] = useState(false);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const { demoMode } = useDemoMode();
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -281,6 +285,30 @@ export const TokenizerDashboard: React.FC = () => {
   const statusInfo = STATUS_LABELS[submission.status] || STATUS_LABELS.DRAFT;
   const isDraft = submission.status === 'DRAFT';
 
+  const handlePopulateDemo = async (submit: boolean = false) => {
+    if (!id) return;
+    try {
+      setPopulating(true);
+      const token = await getToken();
+      const response = await fetch(`/api/demo/tokenization/${id}/populate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ submit }),
+      });
+      if (!response.ok) throw new Error('Failed to populate');
+      await fetchSubmission();
+      showToast(submit ? 'Application populated and submitted!' : 'Application populated with demo data!', 'success');
+      setShowSubmitConfirm(false);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to populate demo data', 'error');
+    } finally {
+      setPopulating(false);
+    }
+  };
+
   const inputCls = "w-full px-3 py-2 rounded-lg border border-brand-sage/30 dark:border-[#444] bg-white dark:bg-[#222] text-brand-black dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-deep/40 focus:border-brand-deep placeholder:text-gray-400 dark:placeholder:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed";
   const labelCls = "block text-xs font-medium text-brand-sage uppercase tracking-wide mb-1";
 
@@ -316,6 +344,63 @@ export const TokenizerDashboard: React.FC = () => {
           {statusInfo.label}
         </span>
       </div>
+
+      {demoMode && isDraft && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <i className="fa-solid fa-flask text-amber-500 mt-0.5"></i>
+              <div>
+                <h4 className="font-bold text-amber-700 dark:text-amber-400 text-sm">Demo Mode</h4>
+                <p className="text-amber-600 dark:text-amber-300 text-xs mt-0.5">
+                  Auto-fill this application with realistic property data, documents, and financials.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2 ml-8 sm:ml-0">
+              {!showSubmitConfirm ? (
+                <button
+                  onClick={() => handlePopulateDemo(false)}
+                  disabled={populating}
+                  className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
+                >
+                  {populating ? (
+                    <><div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div> Populating...</>
+                  ) : (
+                    <><i className="fa-solid fa-wand-magic-sparkles"></i> Populate Demo Application</>
+                  )}
+                </button>
+              ) : null}
+              {!showSubmitConfirm ? (
+                <button
+                  onClick={() => setShowSubmitConfirm(true)}
+                  disabled={populating}
+                  className="bg-brand-deep hover:bg-brand-dark text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors disabled:opacity-50 flex items-center gap-2 whitespace-nowrap"
+                >
+                  <i className="fa-solid fa-paper-plane"></i> Populate & Submit
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-amber-700 dark:text-amber-300">Submit after populating?</span>
+                  <button
+                    onClick={() => handlePopulateDemo(true)}
+                    disabled={populating}
+                    className="bg-brand-deep hover:bg-brand-dark text-white px-3 py-1.5 rounded text-xs font-bold transition-colors disabled:opacity-50"
+                  >
+                    {populating ? 'Submitting...' : 'Yes, Submit'}
+                  </button>
+                  <button
+                    onClick={() => setShowSubmitConfirm(false)}
+                    className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {submission.rejectionReason && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">

@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { Prisma } from '@prisma/client';
 
-type DemoActionType = 'SIGN_UP' | 'BUY_TOKEN' | 'SELL_TOKEN' | 'BORROW_USDC' | 'REPAY_LOAN' | 'DEPOSIT_LENDING' | 'WITHDRAW_LENDING' | 'VOTE_GOVERNANCE' | 'BOOK_STAY' | 'COMPLETE_KYC';
+type DemoActionType = 'SIGN_UP' | 'BUY_TOKEN' | 'SELL_TOKEN' | 'BORROW_USDC' | 'REPAY_LOAN' | 'DEPOSIT_LENDING' | 'WITHDRAW_LENDING' | 'VOTE_GOVERNANCE' | 'BOOK_STAY' | 'COMPLETE_KYC' | 'TOKENIZATION_POPULATE';
 
 const REWARD_AMOUNTS: Record<DemoActionType, number> = {
   SIGN_UP: 100,
@@ -14,6 +14,7 @@ const REWARD_AMOUNTS: Record<DemoActionType, number> = {
   VOTE_GOVERNANCE: 30,
   BOOK_STAY: 100,
   COMPLETE_KYC: 50,
+  TOKENIZATION_POPULATE: 75,
 };
 
 interface ActionData {

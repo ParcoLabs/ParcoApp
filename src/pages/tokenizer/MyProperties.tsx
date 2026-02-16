@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth as useClerkAuth } from '@clerk/clerk-react';
+import { useDemoMode } from '../../context/DemoModeContext';
 import { BrandColors } from '../../brand';
 
 interface TokenizationSubmission {
@@ -29,6 +30,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string; bg: string }
 export const MyProperties: React.FC = () => {
   const navigate = useNavigate();
   const { getToken } = useClerkAuth();
+  const { demoMode } = useDemoMode();
   const [submissions, setSubmissions] = useState<TokenizationSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

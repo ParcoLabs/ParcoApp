@@ -105,6 +105,26 @@ Documents uploaded through the tokenizer dashboard are persisted in two location
 
 The `GET /api/issuance/case/:caseId/documents` endpoint returns all IssuanceDocuments for a case. The tokenizer dashboard prefers IssuanceDocument data when available, falling back to submission fields.
 
+### Demo Tokenizer Flow
+
+The tokenizer demo flow operates entirely in-memory when demo mode is enabled:
+
+| Component | Behavior |
+|-----------|----------|
+| `GET /api/tokenization/my-properties` | Returns DB submissions + 4 seeded demo submissions (Sunset Ridge/Austin SUBMITTED, Harbor View/San Diego IN_REVIEW, Maple St/Nashville DRAFT 63%, blank DRAFT 0%). All merged with demo overrides. |
+| `POST /api/tokenization/create` | In demo mode, creates in-memory submission (no DB write) with `demo-new-{timestamp}` ID and pushes to seed array. |
+| `GET /api/tokenization/:id` | Falls back to demo seeds when DB lookup fails in demo mode. Merges all demo overrides. |
+| `PATCH /api/tokenization/:id` | Allows editing demo seed submissions (DRAFT only) via in-memory overrides. |
+| `POST /api/demo/tokenization/:id/populate` | Demo-only endpoint. Fills submission with realistic Malibu beachfront property data, fake documents, and financials. Optional `submit: true` sets status to SUBMITTED. Stores in demo.ts in-memory map. Awards 75 PARCO tokens. |
+
+**Demo Override Architecture**: Two in-memory Maps store overrides:
+1. `demoSubmissionOverrides` in `tokenization.ts` — written by PATCH
+2. `demoTokenizationOverrides` in `demo.ts` — written by populate endpoint
+
+Both are merged via `getAllDemoOverrides(id)` in tokenization.ts for all reads.
+
+**Frontend**: `TokenizerDashboard.tsx` shows a "Populate Demo Application" banner (amber) when `demoMode && isDraft`, with two actions: "Populate" (fills data only) and "Populate & Submit" (fills + sets SUBMITTED with confirmation).
+
 ### Engine Health (Admin)
 
 The admin tokenization detail drawer includes an "Engine Health" panel that shows:

@@ -2413,5 +2413,83 @@ router.get('/rewards/leaderboard', requireDemoMode, async (req, res) => {
   }
 });
 
-export { logDemoAction };
+const demoTokenizationOverrides = new Map<string, Record<string, any>>();
+
+function getDemoTokenizationOverrides() {
+  return demoTokenizationOverrides;
+}
+
+router.post('/tokenization/:id/populate', requireDemoMode, apiAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { submit } = req.body;
+
+    const populatedData: Record<string, any> = {
+      propertyName: 'Oceanfront Residences',
+      propertyAddress: '2750 Pacific Coast Highway',
+      propertyCity: 'Malibu',
+      propertyState: 'CA',
+      propertyCountry: 'USA',
+      propertyZipCode: '90265',
+      propertyType: 'RESIDENTIAL',
+      totalValue: 2850000,
+      tokenPrice: 75,
+      totalTokens: 38000,
+      annualYield: 7.4,
+      monthlyRent: 17500,
+      description: 'Stunning beachfront property with panoramic ocean views. Features 6 luxury units, heated pool, and direct beach access. Strong year-round rental demand from both long-term tenants and vacation bookings.',
+      squareFeet: 8400,
+      bedrooms: 12,
+      bathrooms: 8,
+      yearBuilt: 2020,
+      ownershipProof: `/attached_assets/uploads/${id}/ownershipProof/deed-of-trust.pdf`,
+      legalDocuments: [
+        `/attached_assets/uploads/${id}/legalDocuments/title-insurance.pdf`,
+        `/attached_assets/uploads/${id}/legalDocuments/operating-agreement.pdf`,
+      ],
+      financialStatements: [
+        `/attached_assets/uploads/${id}/financialStatements/income-statement-2025.pdf`,
+        `/attached_assets/uploads/${id}/financialStatements/balance-sheet-2025.pdf`,
+      ],
+      images: [
+        `/attached_assets/uploads/${id}/images/exterior-front.jpg`,
+        `/attached_assets/uploads/${id}/images/pool-area.jpg`,
+        `/attached_assets/uploads/${id}/images/interior-unit.jpg`,
+      ],
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (submit) {
+      populatedData.status = 'SUBMITTED';
+      populatedData.submittedAt = new Date().toISOString();
+    }
+
+    demoTokenizationOverrides.set(id, {
+      ...(demoTokenizationOverrides.get(id) || {}),
+      ...populatedData,
+    });
+
+    const clerkId = (req as any).auth?.userId;
+    if (clerkId) {
+      await logDemoAction(clerkId, 'TOKENIZATION_POPULATE', { metadata: { submissionId: id, submit: !!submit } });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id,
+        ...populatedData,
+        progress: 100,
+      },
+    });
+  } catch (error: any) {
+    console.error('Error populating demo tokenization:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to populate demo tokenization',
+    });
+  }
+});
+
+export { logDemoAction, getDemoTokenizationOverrides };
 export default router;

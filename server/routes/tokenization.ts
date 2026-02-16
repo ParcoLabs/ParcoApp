@@ -2,10 +2,160 @@ import { Router, Request, Response } from 'express';
 import { getAuth } from '@clerk/express';
 import { prisma } from '../lib/prisma';
 import { isDemoMode } from '../utils/demoMode';
+import { getDemoTokenizationOverrides } from './demo';
 
 const router = Router();
 
 const demoSubmissionOverrides = new Map<string, Record<string, any>>();
+
+function getAllDemoOverrides(id: string): Record<string, any> {
+  const local = demoSubmissionOverrides.get(id) || {};
+  const fromDemo = getDemoTokenizationOverrides().get(id) || {};
+  return { ...local, ...fromDemo };
+}
+
+const DEMO_SEED_SUBMISSIONS = [
+  {
+    id: 'demo-sub-001',
+    propertyName: 'Sunset Ridge Apartments',
+    propertyAddress: '1420 Sunset Ridge Blvd',
+    propertyCity: 'Austin',
+    propertyState: 'TX',
+    propertyCountry: 'USA',
+    propertyZipCode: '78701',
+    propertyType: 'RESIDENTIAL',
+    status: 'SUBMITTED',
+    totalValue: 1250000,
+    tokenPrice: 50,
+    totalTokens: 25000,
+    annualYield: 8.2,
+    monthlyRent: 8500,
+    description: 'Modern 12-unit apartment complex near downtown Austin with strong rental demand.',
+    squareFeet: 9600,
+    bedrooms: 24,
+    bathrooms: 12,
+    yearBuilt: 2018,
+    ownershipProof: '/attached_assets/uploads/demo-sub-001/ownershipProof/deed.pdf',
+    legalDocuments: ['/attached_assets/uploads/demo-sub-001/legalDocuments/lease-master.pdf'],
+    financialStatements: ['/attached_assets/uploads/demo-sub-001/financialStatements/income-2024.pdf'],
+    images: ['/attached_assets/uploads/demo-sub-001/images/front.jpg', '/attached_assets/uploads/demo-sub-001/images/interior.jpg'],
+    documents: [],
+    imageUrl: null,
+    submittedAt: new Date('2026-02-10').toISOString(),
+    reviewedAt: null,
+    approvedAt: null,
+    publishedAt: null,
+    rejectionReason: null,
+    createdAt: new Date('2026-01-28').toISOString(),
+    updatedAt: new Date('2026-02-10').toISOString(),
+    progress: 100,
+  },
+  {
+    id: 'demo-sub-002',
+    propertyName: 'Harbor View Office Park',
+    propertyAddress: '88 Harbor View Dr',
+    propertyCity: 'San Diego',
+    propertyState: 'CA',
+    propertyCountry: 'USA',
+    propertyZipCode: '92101',
+    propertyType: 'COMMERCIAL',
+    status: 'IN_REVIEW',
+    totalValue: 3400000,
+    tokenPrice: 100,
+    totalTokens: 34000,
+    annualYield: 6.5,
+    monthlyRent: 22000,
+    description: 'Class A office space with ocean views. Fully leased to tech tenants.',
+    squareFeet: 18000,
+    bedrooms: null,
+    bathrooms: 4,
+    yearBuilt: 2015,
+    ownershipProof: '/attached_assets/uploads/demo-sub-002/ownershipProof/title.pdf',
+    legalDocuments: ['/attached_assets/uploads/demo-sub-002/legalDocuments/lease.pdf', '/attached_assets/uploads/demo-sub-002/legalDocuments/zoning.pdf'],
+    financialStatements: ['/attached_assets/uploads/demo-sub-002/financialStatements/pnl-2024.pdf'],
+    images: ['/attached_assets/uploads/demo-sub-002/images/exterior.jpg'],
+    documents: [],
+    imageUrl: null,
+    submittedAt: new Date('2026-02-05').toISOString(),
+    reviewedAt: new Date('2026-02-12').toISOString(),
+    approvedAt: null,
+    publishedAt: null,
+    rejectionReason: null,
+    createdAt: new Date('2026-01-20').toISOString(),
+    updatedAt: new Date('2026-02-12').toISOString(),
+    progress: 100,
+  },
+  {
+    id: 'demo-sub-003',
+    propertyName: 'Maple Street Duplex',
+    propertyAddress: '312 Maple St',
+    propertyCity: 'Nashville',
+    propertyState: 'TN',
+    propertyCountry: 'USA',
+    propertyZipCode: '37203',
+    propertyType: 'RESIDENTIAL',
+    status: 'DRAFT',
+    totalValue: 485000,
+    tokenPrice: 25,
+    totalTokens: 19400,
+    annualYield: 7.8,
+    monthlyRent: 3100,
+    description: 'Charming duplex in East Nashville. Both units rented with long-term tenants.',
+    squareFeet: 2200,
+    bedrooms: 4,
+    bathrooms: 2,
+    yearBuilt: 1995,
+    ownershipProof: null,
+    legalDocuments: [],
+    financialStatements: [],
+    images: [],
+    documents: [],
+    imageUrl: null,
+    submittedAt: null,
+    reviewedAt: null,
+    approvedAt: null,
+    publishedAt: null,
+    rejectionReason: null,
+    createdAt: new Date('2026-02-14').toISOString(),
+    updatedAt: new Date('2026-02-14').toISOString(),
+    progress: 63,
+  },
+  {
+    id: 'demo-sub-004',
+    propertyName: 'Untitled Property',
+    propertyAddress: '',
+    propertyCity: '',
+    propertyState: '',
+    propertyCountry: 'USA',
+    propertyZipCode: null,
+    propertyType: 'RESIDENTIAL',
+    status: 'DRAFT',
+    totalValue: 0,
+    tokenPrice: 0,
+    totalTokens: 0,
+    annualYield: 0,
+    monthlyRent: 0,
+    description: null,
+    squareFeet: null,
+    bedrooms: null,
+    bathrooms: null,
+    yearBuilt: null,
+    ownershipProof: null,
+    legalDocuments: [],
+    financialStatements: [],
+    images: [],
+    documents: [],
+    imageUrl: null,
+    submittedAt: null,
+    reviewedAt: null,
+    approvedAt: null,
+    publishedAt: null,
+    rejectionReason: null,
+    createdAt: new Date('2026-02-16').toISOString(),
+    updatedAt: new Date('2026-02-16').toISOString(),
+    progress: 0,
+  },
+];
 
 interface AuthenticatedRequest extends Request {
   user?: {
@@ -89,31 +239,46 @@ router.get('/my-properties', simpleAuth, tokenizerOrAdmin, async (req: Request, 
       }
     });
 
-    const submissionsWithProgress = submissions.map(sub => {
-      let progress = 0;
+    const computeProgress = (s: any): number => {
       let completedSteps = 0;
       const totalSteps = 8;
+      if (s.propertyAddress && s.propertyCity && s.propertyState) completedSteps++;
+      if (s.propertyType) completedSteps++;
+      if (s.totalValue && s.tokenPrice && s.totalTokens) completedSteps++;
+      if (s.annualYield) completedSteps++;
+      if (s.description) completedSteps++;
+      if (s.imageUrl || (s.images && s.images.length > 0)) completedSteps++;
+      if (s.ownershipProof) completedSteps++;
+      if (s.legalDocuments && s.legalDocuments.length > 0) completedSteps++;
+      return Math.round((completedSteps / totalSteps) * 100);
+    };
 
-      if (sub.propertyAddress && sub.propertyCity && sub.propertyState) completedSteps++;
-      if (sub.propertyType) completedSteps++;
-      if (sub.totalValue && sub.tokenPrice && sub.totalTokens) completedSteps++;
-      if (sub.annualYield) completedSteps++;
-      if (sub.description) completedSteps++;
-      if (sub.imageUrl || (sub.images && sub.images.length > 0)) completedSteps++;
-      if (sub.ownershipProof) completedSteps++;
-      if (sub.legalDocuments && sub.legalDocuments.length > 0) completedSteps++;
-
-      progress = Math.round((completedSteps / totalSteps) * 100);
-
-      return {
-        ...sub,
-        progress,
-        totalValue: sub.totalValue ? Number(sub.totalValue) : null,
-        tokenPrice: sub.tokenPrice ? Number(sub.tokenPrice) : null,
-        annualYield: sub.annualYield ? Number(sub.annualYield) : null,
-        bathrooms: sub.bathrooms ? Number(sub.bathrooms) : null,
-      };
+    const formatSubmission = (s: any) => ({
+      ...s,
+      progress: computeProgress(s),
+      totalValue: s.totalValue ? Number(s.totalValue) : null,
+      tokenPrice: s.tokenPrice ? Number(s.tokenPrice) : null,
+      annualYield: s.annualYield ? Number(s.annualYield) : null,
+      bathrooms: s.bathrooms ? Number(s.bathrooms) : null,
     });
+
+    const submissionsWithProgress = submissions.map(sub => {
+      const overrides = isDemoMode(req) ? getAllDemoOverrides(sub.id) : {};
+      const merged = { ...sub, ...overrides };
+      return formatSubmission(merged);
+    });
+
+    if (isDemoMode(req)) {
+      const realIds = new Set(submissionsWithProgress.map((s: any) => s.id));
+      const seeds = DEMO_SEED_SUBMISSIONS
+        .filter(s => !realIds.has(s.id))
+        .map(s => {
+          const overrides = getAllDemoOverrides(s.id);
+          const merged = { ...s, ...overrides };
+          return formatSubmission(merged);
+        });
+      return res.json({ submissions: [...submissionsWithProgress, ...seeds] });
+    }
 
     return res.json({ submissions: submissionsWithProgress });
   } catch (error) {
@@ -125,6 +290,51 @@ router.get('/my-properties', simpleAuth, tokenizerOrAdmin, async (req: Request, 
 router.post('/create', simpleAuth, tokenizerOrAdmin, async (req: Request, res: Response) => {
   try {
     const user = (req as AuthenticatedRequest).user!;
+
+    if (isDemoMode(req)) {
+      const demoId = `demo-new-${Date.now()}`;
+      const now = new Date().toISOString();
+      const demoSub = {
+        id: demoId,
+        propertyName: 'Untitled Property',
+        propertyAddress: '',
+        propertyCity: '',
+        propertyState: '',
+        propertyCountry: 'USA',
+        propertyZipCode: null,
+        propertyType: 'RESIDENTIAL',
+        status: 'DRAFT',
+        totalValue: 0,
+        tokenPrice: 0,
+        totalTokens: 0,
+        annualYield: 0,
+        monthlyRent: 0,
+        description: null,
+        squareFeet: null,
+        bedrooms: null,
+        bathrooms: null,
+        yearBuilt: null,
+        ownershipProof: null,
+        legalDocuments: [],
+        financialStatements: [],
+        images: [],
+        documents: [],
+        imageUrl: null,
+        submittedAt: null,
+        reviewedAt: null,
+        approvedAt: null,
+        publishedAt: null,
+        rejectionReason: null,
+        createdAt: now,
+        updatedAt: now,
+        progress: 0,
+      };
+      DEMO_SEED_SUBMISSIONS.push(demoSub);
+      return res.json({
+        success: true,
+        submission: { id: demoId, status: 'DRAFT', createdAt: now }
+      });
+    }
     
     const submission = await prisma.tokenizationSubmission.create({
       data: {
@@ -165,11 +375,20 @@ router.get('/:id', simpleAuth, tokenizerOrAdmin, async (req: Request, res: Respo
     const where = user.role === 'ADMIN' ? { id } : { id, tokenizerId: user.id };
     const submission = await prisma.tokenizationSubmission.findFirst({ where });
 
+    if (!submission && isDemoMode(req)) {
+      const seed = DEMO_SEED_SUBMISSIONS.find(s => s.id === id);
+      if (seed) {
+        const overrides = getAllDemoOverrides(id);
+        const merged = { ...seed, ...overrides };
+        return res.json({ submission: merged });
+      }
+    }
+
     if (!submission) {
       return res.status(404).json({ error: 'Submission not found' });
     }
 
-    const demoOverrides = isDemoMode(req) ? (demoSubmissionOverrides.get(id) || {}) : {};
+    const demoOverrides = isDemoMode(req) ? getAllDemoOverrides(id) : {};
     const merged = { ...submission, ...demoOverrides };
 
     return res.json({ 
@@ -198,7 +417,9 @@ router.patch('/:id', simpleAuth, tokenizerOrAdmin, async (req: Request, res: Res
       : { id, tokenizerId: user.id, status: 'DRAFT' as const };
     const existing = await prisma.tokenizationSubmission.findFirst({ where });
 
-    if (!existing) {
+    const demoSeed = isDemoMode(req) ? DEMO_SEED_SUBMISSIONS.find(s => s.id === id && s.status === 'DRAFT') : null;
+
+    if (!existing && !demoSeed) {
       return res.status(404).json({ error: 'Draft submission not found or not editable' });
     }
 
@@ -218,9 +439,10 @@ router.patch('/:id', simpleAuth, tokenizerOrAdmin, async (req: Request, res: Res
     }
 
     if (isDemoMode(req)) {
+      const base = existing || demoSeed!;
       const prev = demoSubmissionOverrides.get(id) || {};
       demoSubmissionOverrides.set(id, { ...prev, ...updateData });
-      const merged = { ...existing, ...prev, ...updateData };
+      const merged = { ...base, ...prev, ...updateData };
       return res.json({
         success: true,
         submission: {
