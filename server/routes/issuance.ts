@@ -8,6 +8,7 @@ import { seedCaseFromTemplate, mockSeedResult } from '../services/templateSeeder
 import { runEligibility, mockRunEligibility } from '../services/eligibilityEngine';
 import { extractTextFromIssuanceDocument } from '../services/docTextExtractor';
 import { extractFieldsFromText } from '../services/llmExtraction';
+import { getCriticalKeys, checkCriticalFieldsVerified } from '../services/criticalFields';
 
 const router = Router();
 
@@ -501,6 +502,119 @@ router.post(
   },
 );
 
+router.get(
+  '/case/:caseId/fields',
+  simpleAuth,
+  loadUserWithRole,
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { caseId } = req.params;
+
+      const issuanceCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+        select: { track: true },
+      });
+
+      if (!issuanceCase) {
+        return res.status(404).json({ success: false, error: 'Issuance case not found' });
+      }
+
+      const criticalKeys = getCriticalKeys(issuanceCase.track);
+
+      const extractedFields = await (prisma as any).extractedField.findMany({
+        where: { caseId },
+        orderBy: { confidence: 'desc' },
+      });
+
+      const verifiedFields = await (prisma as any).verifiedField.findMany({
+        where: { caseId },
+      });
+
+      return res.json({
+        success: true,
+        data: {
+          extractedFields,
+          verifiedFields,
+          criticalKeys,
+        },
+      });
+    } catch (error: any) {
+      console.error('[issuance] Error fetching fields:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.post(
+  '/case/:caseId/fields/:key/verify',
+  simpleAuth,
+  loadUserWithRole,
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { caseId, key } = req.params;
+      const { value } = req.body;
+      const user = (req as AuthenticatedRequest).user;
+
+      if (!user) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+      }
+
+      const issuanceCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+        select: { id: true },
+      });
+
+      if (!issuanceCase) {
+        return res.status(404).json({ success: false, error: 'Issuance case not found' });
+      }
+
+      const bestExtracted = await (prisma as any).extractedField.findFirst({
+        where: { caseId, key },
+        orderBy: { confidence: 'desc' },
+      });
+
+      const resolvedValue = (value !== undefined && value !== null && String(value).trim() !== '')
+        ? String(value).trim()
+        : bestExtracted?.value;
+
+      if (!resolvedValue) {
+        return res.status(400).json({
+          success: false,
+          error: 'No value provided and no extracted field found for this key',
+        });
+      }
+
+      const verified = await (prisma as any).verifiedField.upsert({
+        where: { caseId_key: { caseId, key } },
+        create: {
+          caseId,
+          key,
+          value: resolvedValue,
+          verifiedByUserId: user.id,
+          verifiedAt: new Date(),
+          sourceExtractedFieldId: bestExtracted?.id || null,
+        },
+        update: {
+          value: resolvedValue,
+          verifiedByUserId: user.id,
+          verifiedAt: new Date(),
+          sourceExtractedFieldId: bestExtracted?.id || null,
+        },
+      });
+
+      return res.json({
+        success: true,
+        data: verified,
+      });
+    } catch (error: any) {
+      console.error('[issuance] Error verifying field:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
 router.post(
   '/case/:caseId/track',
   simpleAuth,
@@ -796,7 +910,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const { caseId } = req.params;
-      const { overrideReason } = req.body;
+      const { overrideReason, criticalFieldsOverrideReason } = req.body;
       const user = (req as AuthenticatedRequest).user;
 
       if (!user) {
@@ -863,6 +977,33 @@ router.post(
         });
       }
       auditEvents.push({ type: 'APPROVALS_VERIFIED', details: `${issuanceCase.approvalTasks.length} tasks verified` });
+
+      const criticalCheck = await checkCriticalFieldsVerified(caseId, issuanceCase.track);
+      if (!criticalCheck.passed) {
+        if (criticalFieldsOverrideReason && typeof criticalFieldsOverrideReason === 'string' && criticalFieldsOverrideReason.trim().length > 0) {
+          await prisma.auditEvent.create({
+            data: {
+              type: 'CRITICAL_FIELDS_OVERRIDE',
+              entityId: caseId,
+              userId: user.id,
+              oldValue: { missingKeys: criticalCheck.missingKeys },
+              newValue: { action: 'MINT_AND_ACTIVATE', overrideReason: criticalFieldsOverrideReason.trim() },
+            },
+          });
+          auditEvents.push({ type: 'CRITICAL_FIELDS_OVERRIDE', details: criticalFieldsOverrideReason.trim() });
+        } else {
+          return res.status(400).json({
+            success: false,
+            error: `Critical fields not verified: ${criticalCheck.missingKeys.join(', ')}. Provide criticalFieldsOverrideReason to proceed.`,
+            missingCriticalFields: criticalCheck.missingKeys,
+            verifiedFields: criticalCheck.verifiedKeys,
+            totalRequired: criticalCheck.totalRequired,
+            requiresCriticalFieldsOverride: true,
+          });
+        }
+      } else {
+        auditEvents.push({ type: 'CRITICAL_FIELDS_VERIFIED', details: `${criticalCheck.totalRequired} fields verified` });
+      }
 
       if (!property.transferPolicy) {
         const defaultType = TRACK_DEFAULT_POLICY[issuanceCase.track] || 'ALLOWLIST_ONLY';
