@@ -31,11 +31,15 @@
     "coinbase-commerce-node": "^1.0.4",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
+    "drizzle-zod": "^0.8.3",
     "ethers": "^6.16.0",
     "express": "^5.1.0",
     "express-rate-limit": "^8.2.1",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
+    "openai": "^6.22.0",
+    "p-limit": "^7.3.0",
+    "p-retry": "^7.1.1",
     "pdf-parse": "^2.4.5",
     "pg": "^8.16.3",
     "prisma": "^7.0.1",
@@ -46,7 +50,9 @@
     "stripe": "^20.0.0",
     "stripe-replit-sync": "^1.0.0",
     "tailwindcss": "^4.1.18",
-    "tsx": "^4.21.0"
+    "tsx": "^4.21.0",
+    "zod": "^4.3.6",
+    "zod-validation-error": "^5.0.0"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

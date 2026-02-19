@@ -7,6 +7,7 @@ import { loadUserWithRole, adminOnly, AuthenticatedRequest } from '../middleware
 import { seedCaseFromTemplate, mockSeedResult } from '../services/templateSeeder';
 import { runEligibility, mockRunEligibility } from '../services/eligibilityEngine';
 import { extractTextFromIssuanceDocument } from '../services/docTextExtractor';
+import { extractFieldsFromText } from '../services/llmExtraction';
 
 const router = Router();
 
@@ -278,9 +279,44 @@ router.post(
           }
         }
 
+        const demoFields = [
+          { key: 'property_address', value: '742 Evergreen Terrace, Springfield, IL 62704', confidence: 0.95 },
+          { key: 'property_city', value: 'Springfield', confidence: 0.95 },
+          { key: 'property_state', value: 'IL', confidence: 0.95 },
+          { key: 'property_zip', value: '62704', confidence: 0.95 },
+          { key: 'entity_name', value: 'Parco Series 1 LLC', confidence: 0.90 },
+          { key: 'entity_state', value: 'Delaware', confidence: 0.85 },
+          { key: 'estimated_property_value', value: '475000', confidence: 0.90 },
+          { key: 'ownership_evidence_present', value: 'true', confidence: 0.85 },
+          { key: 'rent_estimate_monthly', value: '3200', confidence: 0.70 },
+          { key: 'expense_estimate_monthly', value: '1100', confidence: 0.65 },
+        ];
+
+        for (const field of demoFields) {
+          await (prisma as any).extractedField.create({
+            data: {
+              caseId,
+              key: field.key,
+              value: field.value,
+              confidence: field.confidence,
+              sourceDocumentId: documentResults[0]?.id?.startsWith('demo_doc_') ? null : (documentResults[0]?.id || null),
+              metadata: { sourceQuote: `Demo: ${field.key}` },
+            },
+          });
+        }
+
+        await (prisma as any).auditEvent.create({
+          data: {
+            type: 'FIELDS_EXTRACTED',
+            entityId: caseId,
+            userId: user.id,
+            newValue: { fieldsExtracted: demoFields.length, runId: run.id, demo: true },
+          },
+        });
+
         await (prisma as any).extractionRun.update({
           where: { id: run.id },
-          data: { status: 'SUCCEEDED', finishedAt: new Date() },
+          data: { status: 'SUCCEEDED', finishedAt: new Date(), modelName: 'demo-mode' },
         });
 
         await prisma.issuanceCase.update({
@@ -296,6 +332,7 @@ router.post(
             status: 'SUCCEEDED',
             documentsProcessed: documentResults.length,
             documentsTotal: documentResults.length,
+            fieldsExtracted: demoFields.length,
             documentResults,
             errors: [],
             startedAt: run.startedAt,
@@ -363,6 +400,63 @@ router.post(
       }
 
       const allFailed = docs.length === 0 || extractedCount === 0;
+
+      let totalFieldsExtracted = 0;
+      if (!allFailed) {
+        const extractedDocs = await (prisma as any).issuanceDocument.findMany({
+          where: { caseId, textStatus: 'EXTRACTED' },
+        });
+
+        await (prisma as any).extractedField.deleteMany({
+          where: { caseId },
+        });
+
+        let actualMethod: string = 'regex-fallback';
+
+        for (const doc of extractedDocs) {
+          const textContent = (doc as any).textContent;
+          if (!textContent) continue;
+
+          try {
+            const llmResult = await extractFieldsFromText({
+              docType: doc.type,
+              track: issuanceCase.track,
+              text: textContent,
+            });
+
+            if (llmResult.method === 'openai') actualMethod = 'gpt-4.1-mini';
+
+            for (const field of llmResult.fields) {
+              await (prisma as any).extractedField.create({
+                data: {
+                  caseId,
+                  key: field.key,
+                  value: field.value,
+                  confidence: field.confidence,
+                  sourceDocumentId: doc.id,
+                  extractionRunId: run.id,
+                  metadata: field.metadata || undefined,
+                },
+              });
+              totalFieldsExtracted++;
+            }
+          } catch (fieldErr: any) {
+            console.error(`[issuance] Field extraction error for doc ${doc.id}:`, fieldErr.message);
+          }
+        }
+
+        if (totalFieldsExtracted > 0) {
+          await (prisma as any).auditEvent.create({
+            data: {
+              type: 'FIELDS_EXTRACTED',
+              entityId: caseId,
+              userId: user.id,
+              newValue: { fieldsExtracted: totalFieldsExtracted, runId: run.id },
+            },
+          });
+        }
+      }
+
       const runStatus = allFailed ? 'FAILED' : 'SUCCEEDED';
       const lastError = allFailed
         ? (docs.length === 0 ? 'No documents to process' : 'All documents failed extraction')
@@ -374,6 +468,7 @@ router.post(
           status: runStatus,
           finishedAt: new Date(),
           lastError,
+          modelName: allFailed ? 'none' : (typeof actualMethod !== 'undefined' ? actualMethod : 'regex-fallback'),
         },
       });
 
@@ -392,6 +487,7 @@ router.post(
           status: runStatus,
           documentsProcessed: extractedCount,
           documentsTotal: docs.length,
+          fieldsExtracted: totalFieldsExtracted,
           documentResults: results,
           errors: results.filter(r => r.error).map(r => ({ docId: r.id, name: r.name, error: r.error })),
           startedAt: run.startedAt,

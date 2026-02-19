@@ -547,10 +547,12 @@ model ExtractedField {
   value            String
   confidence       Float?
   sourceDocumentId String?
+  extractionRunId  String?
   metadata         Json?
   createdAt        DateTime          @default(now())
   case             IssuanceCase      @relation(fields: [caseId], references: [id], onDelete: Cascade)
   sourceDocument   IssuanceDocument? @relation(fields: [sourceDocumentId], references: [id], onDelete: SetNull)
+  extractionRun    ExtractionRun?    @relation(fields: [extractionRunId], references: [id], onDelete: SetNull)
   verifiedFields   VerifiedField[]
 
   @@index([caseId, key])
@@ -572,16 +574,17 @@ model VerifiedField {
 }
 
 model ExtractionRun {
-  id         String       @id @default(cuid())
-  caseId     String
-  status     String
-  modelName  String?
-  tokenUsage Json?
-  lastError  String?
-  startedAt  DateTime
-  finishedAt DateTime?
-  createdAt  DateTime     @default(now())
-  case       IssuanceCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  id              String           @id @default(cuid())
+  caseId          String
+  status          String
+  modelName       String?
+  tokenUsage      Json?
+  lastError       String?
+  startedAt       DateTime
+  finishedAt      DateTime?
+  createdAt       DateTime         @default(now())
+  case            IssuanceCase     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  extractedFields ExtractedField[]
 
   @@index([caseId])
 }
