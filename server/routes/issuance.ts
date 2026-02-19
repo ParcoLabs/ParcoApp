@@ -6,6 +6,7 @@ import { mockIssuanceCase, mockEligibilityCheck, mockExtractionRunStatus } from 
 import { loadUserWithRole, adminOnly, AuthenticatedRequest } from '../middleware/admin';
 import { seedCaseFromTemplate, mockSeedResult } from '../services/templateSeeder';
 import { runEligibility, mockRunEligibility } from '../services/eligibilityEngine';
+import { extractTextFromIssuanceDocument } from '../services/docTextExtractor';
 
 const router = Router();
 
@@ -239,49 +240,162 @@ router.post(
       }
 
       if (isDemoMode(req)) {
+        const demoTexts: Record<string, string> = {
+          OPERATING_AGREEMENT: 'OPERATING AGREEMENT\nThis Operating Agreement is entered into as of January 15, 2025, by and among the Members listed herein.\nArticle I - Organization\nThe Company is organized as a Series LLC under the laws of Delaware.\nRegistered Agent: National Registered Agents, Inc.\nPrincipal Office: 1209 Orange Street, Wilmington, DE 19801\nArticle II - Purpose\nThe purpose of the Company is to acquire, hold, and manage real property.',
+          DEED: 'SPECIAL WARRANTY DEED\nGrant Date: March 1, 2025\nGrantor: Acme Properties LLC\nGrantee: Parco Series 1 LLC\nProperty Address: 742 Evergreen Terrace, Springfield, IL 62704\nLegal Description: LOT 12, BLOCK 3, SPRINGFIELD ESTATES SUBDIVISION\nConsideration: $450,000.00\nRecording Reference: Document No. 2025-00012345',
+          APPRAISAL: 'UNIFORM RESIDENTIAL APPRAISAL REPORT\nProperty Address: 742 Evergreen Terrace, Springfield, IL 62704\nAppraised Value: $475,000\nEffective Date: February 15, 2025\nAppraiser: Jane Smith, MAI\nLicense No: IL-553-001234\nGross Living Area: 2,400 sq ft\nSite Area: 0.35 acres\nYear Built: 1998\nCondition: Good\nApproach: Sales Comparison and Income',
+          TITLE_REPORT: 'PRELIMINARY TITLE REPORT\nOrder No: 2025-TR-98765\nEffective Date: February 20, 2025\nProperty: 742 Evergreen Terrace, Springfield, IL 62704\nVesting: Parco Series 1 LLC, a Delaware Series LLC\nEncumbrances: None\nTaxes: Current, no delinquencies\nEasements: Standard utility easement along east boundary',
+          INSURANCE: 'CERTIFICATE OF INSURANCE\nPolicy Number: HO-2025-445566\nInsured: Parco Series 1 LLC\nProperty: 742 Evergreen Terrace, Springfield, IL 62704\nCoverage A - Dwelling: $475,000\nCoverage B - Other Structures: $47,500\nCoverage C - Personal Property: $237,500\nLiability: $1,000,000\nEffective: March 1, 2025 to March 1, 2026',
+          TAX_RETURN: 'PROPERTY TAX STATEMENT\nTax Year: 2024\nParcel ID: 17-03-12-200-003\nOwner: Parco Series 1 LLC\nProperty: 742 Evergreen Terrace, Springfield, IL 62704\nAssessed Value: $380,000\nTax Rate: 2.15%\nTotal Tax: $8,170.00\nStatus: Paid in Full',
+        };
+
+        const now = new Date();
+        const demoDocs = await prisma.issuanceDocument.findMany({ where: { caseId } });
+
+        const run = await (prisma as any).extractionRun.create({
+          data: { caseId, status: 'RUNNING', startedAt: now },
+        });
+
+        const documentResults: Array<{ id: string; name: string; textStatus: string }> = [];
+
+        if (demoDocs.length > 0) {
+          for (const doc of demoDocs) {
+            const fakeText = demoTexts[doc.type] || `Demo extracted text for document: ${doc.name}`;
+            await (prisma as any).issuanceDocument.update({
+              where: { id: doc.id },
+              data: { textContent: fakeText, textStatus: 'EXTRACTED', lastProcessedAt: now, processingError: null },
+            });
+            documentResults.push({ id: doc.id, name: doc.name, textStatus: 'EXTRACTED' });
+          }
+        } else {
+          const demoDocTypes = ['OPERATING_AGREEMENT', 'DEED', 'APPRAISAL', 'TITLE_REPORT', 'INSURANCE', 'TAX_RETURN'];
+          for (const type of demoDocTypes) {
+            documentResults.push({
+              id: `demo_doc_${type}`,
+              name: `${type.toLowerCase().replace(/_/g, '-')}.pdf`,
+              textStatus: 'EXTRACTED',
+            });
+          }
+        }
+
+        await (prisma as any).extractionRun.update({
+          where: { id: run.id },
+          data: { status: 'SUCCEEDED', finishedAt: new Date() },
+        });
+
+        await prisma.issuanceCase.update({
+          where: { id: caseId },
+          data: { status: 'EXTRACTION_COMPLETE' },
+        });
+
         return res.json({
           success: true,
-          data: mockExtractionRunStatus(caseId, {
-            status: 'COMPLETED',
-            documentsProcessed: 6,
-            documentsTotal: 6,
-            extractedFields: 42,
-          }),
+          data: {
+            runId: run.id,
+            caseId,
+            status: 'SUCCEEDED',
+            documentsProcessed: documentResults.length,
+            documentsTotal: documentResults.length,
+            documentResults,
+            errors: [],
+            startedAt: run.startedAt,
+            finishedAt: new Date().toISOString(),
+          },
         });
       }
 
       const issuanceCase = await prisma.issuanceCase.findUnique({
         where: { id: caseId },
+        include: { documents: true },
       });
 
       if (!issuanceCase) {
         return res.status(404).json({ success: false, error: 'Issuance case not found' });
       }
 
-      const updated = await prisma.issuanceCase.update({
+      const docs = issuanceCase.documents;
+      const now = new Date();
+
+      await prisma.issuanceCase.update({
         where: { id: caseId },
+        data: { status: 'EXTRACTION_RUNNING' },
+      });
+
+      const run = await (prisma as any).extractionRun.create({
         data: {
-          extractionScore: 85,
-          status: 'EXTRACTION_COMPLETE',
+          caseId,
+          status: 'RUNNING',
+          startedAt: now,
         },
       });
+
+      const results: Array<{ id: string; name: string; textStatus: string; error?: string }> = [];
+      let extractedCount = 0;
+      let failedCount = 0;
+
+      for (const doc of docs) {
+        const extraction = await extractTextFromIssuanceDocument({
+          id: doc.id,
+          url: doc.url,
+          mimeType: (doc as any).mimeType || null,
+          name: doc.name,
+        });
+
+        await (prisma as any).issuanceDocument.update({
+          where: { id: doc.id },
+          data: {
+            textContent: extraction.text || null,
+            textStatus: extraction.status,
+            lastProcessedAt: now,
+            processingError: extraction.error || null,
+          },
+        });
+
+        results.push({
+          id: doc.id,
+          name: doc.name,
+          textStatus: extraction.status,
+          ...(extraction.error ? { error: extraction.error } : {}),
+        });
+
+        if (extraction.status === 'EXTRACTED') extractedCount++;
+        else failedCount++;
+      }
+
+      const allFailed = docs.length === 0 || extractedCount === 0;
+      const runStatus = allFailed ? 'FAILED' : 'SUCCEEDED';
+      const lastError = allFailed
+        ? (docs.length === 0 ? 'No documents to process' : 'All documents failed extraction')
+        : null;
+
+      await (prisma as any).extractionRun.update({
+        where: { id: run.id },
+        data: {
+          status: runStatus,
+          finishedAt: new Date(),
+          lastError,
+        },
+      });
+
+      if (!allFailed) {
+        await prisma.issuanceCase.update({
+          where: { id: caseId },
+          data: { status: 'EXTRACTION_COMPLETE' },
+        });
+      }
 
       return res.json({
         success: true,
         data: {
-          caseId: updated.id,
-          extractionScore: updated.extractionScore,
-          status: updated.status,
-          run: {
-            runId: `run_${Date.now()}`,
-            status: 'COMPLETED',
-            documentsProcessed: 6,
-            documentsTotal: 6,
-            extractedFields: 42,
-            errors: [],
-            startedAt: new Date().toISOString(),
-            completedAt: new Date().toISOString(),
-          },
+          runId: run.id,
+          caseId,
+          status: runStatus,
+          documentsProcessed: extractedCount,
+          documentsTotal: docs.length,
+          documentResults: results,
+          errors: results.filter(r => r.error).map(r => ({ docId: r.id, name: r.name, error: r.error })),
+          startedAt: run.startedAt,
+          finishedAt: new Date().toISOString(),
         },
       });
     } catch (error: any) {
