@@ -38,6 +38,7 @@ model User {
   allowlistEntries        InvestorAllowlist[]        @relation("AllowlistUser")
   addedAllowlistEntries   InvestorAllowlist[]        @relation("AllowlistAddedBy")
   investorStatements      InvestorStatement[]
+  verifiedFields          VerifiedField[]
 
   @@index([clerkId])
   @@index([email])
@@ -510,6 +511,9 @@ model IssuanceCase {
   checklistItems       ChecklistItem[]
   approvalTasks        ApprovalTask[]
   complianceRequirements ComplianceRequirement[]
+  extractedFields      ExtractedField[]
+  verifiedFields       VerifiedField[]
+  extractionRuns       ExtractionRun[]
 
   @@index([status])
   @@index([eligibilityStatus])
@@ -517,13 +521,67 @@ model IssuanceCase {
 }
 
 model IssuanceDocument {
-  id        String           @id @default(cuid())
-  caseId    String
-  type      IssuanceDocType
-  name      String
-  url       String
-  createdAt DateTime         @default(now())
-  case      IssuanceCase     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  id              String           @id @default(cuid())
+  caseId          String
+  type            IssuanceDocType
+  name            String
+  url             String
+  mimeType        String?
+  sizeBytes       Int?
+  sha256          String?
+  textContent     String?
+  textStatus      String           @default("PENDING")
+  lastProcessedAt DateTime?
+  processingError String?
+  createdAt       DateTime         @default(now())
+  case            IssuanceCase     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  extractedFields ExtractedField[]
+
+  @@index([caseId])
+}
+
+model ExtractedField {
+  id               String            @id @default(cuid())
+  caseId           String
+  key              String
+  value            String
+  confidence       Float?
+  sourceDocumentId String?
+  metadata         Json?
+  createdAt        DateTime          @default(now())
+  case             IssuanceCase      @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  sourceDocument   IssuanceDocument? @relation(fields: [sourceDocumentId], references: [id], onDelete: SetNull)
+  verifiedFields   VerifiedField[]
+
+  @@index([caseId, key])
+}
+
+model VerifiedField {
+  id                     String          @id @default(cuid())
+  caseId                 String
+  key                    String
+  value                  String
+  verifiedByUserId       String?
+  verifiedAt             DateTime?
+  sourceExtractedFieldId String?
+  case                   IssuanceCase    @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  verifiedByUser         User?           @relation(fields: [verifiedByUserId], references: [id], onDelete: SetNull)
+  sourceExtractedField   ExtractedField? @relation(fields: [sourceExtractedFieldId], references: [id], onDelete: SetNull)
+
+  @@unique([caseId, key])
+}
+
+model ExtractionRun {
+  id         String       @id @default(cuid())
+  caseId     String
+  status     String
+  modelName  String?
+  tokenUsage Json?
+  lastError  String?
+  startedAt  DateTime
+  finishedAt DateTime?
+  createdAt  DateTime     @default(now())
+  case       IssuanceCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
 
   @@index([caseId])
 }

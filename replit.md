@@ -46,6 +46,7 @@ The frontend utilizes React, TailwindCSS for styling, and Recharts for data visu
 - **Investor Statements**: `POST /api/servicing/property/:propertyId/statements/generate` creates per-investor period statements from holdings + rent distributions. `GET .../statements` lists recent. Stored in InvestorStatement model.
 - **Investor Ops UI**: TokenizerPostDashboard includes "Investor Ops" panel with Take Snapshot and Generate Statements buttons, plus lists of recent snapshots and statements.
 - **REG_D Preset**: Setting `IssuanceCase.track=REG_D` auto-creates `TransferPolicy` with `type=REG_D_12M_LOCKUP` and 365-day lockup. Purchase flow gates non-accredited investors with warning banner and CTA linking to Settings verification. Demo mode allows bypass with message.
+- **AI Doc Engine Data Models**: IssuanceDocument extended with mimeType, sizeBytes, sha256, textContent, textStatus (PENDING|EXTRACTED|FAILED), lastProcessedAt, processingError. New models: ExtractedField (AI-extracted key-value pairs with confidence scores, linked to source document), VerifiedField (human-verified fields with @@unique([caseId, key])), ExtractionRun (tracks AI extraction job status, model name, token usage).
 
 #### System Design Choices
 - Client-side routing with React Router DOM.
