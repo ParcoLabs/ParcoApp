@@ -106,6 +106,11 @@ export const AdminTokenizations: React.FC = () => {
   const [advanceLoading, setAdvanceLoading] = useState(false);
   const [mintActivateLoading, setMintActivateLoading] = useState(false);
   const [mintActivateResult, setMintActivateResult] = useState<any>(null);
+  const [fieldsData, setFieldsData] = useState<{ extractedFields: any[]; verifiedFields: any[]; criticalKeys: string[] } | null>(null);
+  const [fieldsLoading, setFieldsLoading] = useState(false);
+  const [verifyModal, setVerifyModal] = useState<{ key: string; extractedValue: string; confidence: number | null } | null>(null);
+  const [verifyValue, setVerifyValue] = useState('');
+  const [verifyLoading, setVerifyLoading] = useState(false);
 
   const fetchSubmissions = async (page = 1) => {
     try {
@@ -154,7 +159,10 @@ export const AdminTokenizations: React.FC = () => {
         if (json.data?.eligibilityChecks) {
           setEligibilityChecks(json.data.eligibilityChecks.map((c: any) => ({ key: c.key, status: c.status, details: c.details })));
         }
-        if (json.data?.id) fetchIssuanceDocCount(json.data.id);
+        if (json.data?.id) {
+          fetchIssuanceDocCount(json.data.id);
+          fetchFields(json.data.id);
+        }
       } else if (res.status === 404) {
         const createRes = await fetch(`/api/issuance/by-submission/${submissionId}/create`, {
           method: 'POST',
@@ -353,6 +361,70 @@ export const AdminTokenizations: React.FC = () => {
     }
   };
 
+  const fetchFields = async (caseId: string) => {
+    setFieldsLoading(true);
+    try {
+      const res = await fetch(`/api/issuance/case/${caseId}/fields`, { credentials: 'include' });
+      if (res.ok) {
+        const json = await res.json();
+        setFieldsData(json.data);
+      }
+    } catch (err) {
+      console.error('Error fetching fields:', err);
+    } finally {
+      setFieldsLoading(false);
+    }
+  };
+
+  const handleVerifyField = async () => {
+    if (!issuanceCase || !verifyModal) return;
+    setVerifyLoading(true);
+    try {
+      const res = await fetch(`/api/issuance/case/${issuanceCase.id}/fields/${verifyModal.key}/verify`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: verifyValue || undefined }),
+      });
+      if (res.ok) {
+        showToast(`Field "${verifyModal.key.replace(/_/g, ' ')}" verified`, 'success');
+        setVerifyModal(null);
+        setVerifyValue('');
+        fetchFields(issuanceCase.id);
+      } else {
+        const err = await res.json();
+        showToast(err.error || 'Failed to verify field', 'error');
+      }
+    } catch (err) {
+      showToast('Error verifying field', 'error');
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
+  const handleRunExtractionAndRefreshFields = async () => {
+    if (!issuanceCase) return;
+    setIssuanceActionLoading('extraction');
+    try {
+      const res = await fetch(`/api/issuance/case/${issuanceCase.id}/extract`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setIssuanceCase(prev => prev ? { ...prev, extractionScore: json.data?.extractionScore ?? 85, status: json.data?.status || prev.status } : null);
+        showToast(`Extraction completed — ${json.data?.fieldsExtracted || 0} fields extracted`, 'success');
+        fetchFields(issuanceCase.id);
+      } else {
+        showToast('Failed to run extraction', 'error');
+      }
+    } catch (err) {
+      showToast('Error running extraction', 'error');
+    } finally {
+      setIssuanceActionLoading(null);
+    }
+  };
+
   const startTrackEdit = () => {
     if (issuanceCase) {
       setEditTrack(issuanceCase.track || 'SERIES_LLC');
@@ -375,6 +447,7 @@ export const AdminTokenizations: React.FC = () => {
         fetchIssuanceCase(submission.id);
         setIssuanceDocCount(0);
         setEligibilityChecks([]);
+        setFieldsData(null);
       }
     } catch (error) {
       console.error('Error fetching submission details:', error);
@@ -1027,6 +1100,98 @@ export const AdminTokenizations: React.FC = () => {
                         </div>
                       </div>
                     )}
+
+                    {fieldsData && (
+                      <div className="border-t border-gray-200 dark:border-[#444] pt-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-semibold text-gray-500 uppercase">Critical Fields</p>
+                          <button
+                            onClick={handleRunExtractionAndRefreshFields}
+                            disabled={issuanceActionLoading !== null}
+                            className="px-2 py-1 bg-indigo-600 text-white rounded text-[10px] font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                          >
+                            {issuanceActionLoading === 'extraction' ? 'Extracting...' : 'Run Extraction'}
+                          </button>
+                        </div>
+                        <div className="space-y-1.5">
+                          {fieldsData.criticalKeys.map((key) => {
+                            const extracted = fieldsData.extractedFields.find((f: any) => f.key === key);
+                            const verified = fieldsData.verifiedFields.find((f: any) => f.key === key);
+                            return (
+                              <div key={key} className="flex items-center gap-2 text-xs bg-gray-50 dark:bg-[#222] rounded-lg px-3 py-2">
+                                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${verified ? 'bg-green-500' : extracted ? 'bg-amber-400' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-gray-900 dark:text-white truncate">{key.replace(/_/g, ' ')}</p>
+                                  {extracted && !verified && (
+                                    <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
+                                      Extracted: {extracted.value}
+                                      {extracted.confidence != null && (
+                                        <span className={`ml-1 ${extracted.confidence >= 0.8 ? 'text-green-600 dark:text-green-400' : extracted.confidence >= 0.5 ? 'text-amber-600 dark:text-amber-400' : 'text-red-500'}`}>
+                                          ({Math.round(extracted.confidence * 100)}%)
+                                        </span>
+                                      )}
+                                    </p>
+                                  )}
+                                  {verified && (
+                                    <p className="text-[10px] text-green-600 dark:text-green-400 truncate">
+                                      Verified: {verified.value}
+                                    </p>
+                                  )}
+                                </div>
+                                {!verified ? (
+                                  <button
+                                    onClick={() => {
+                                      setVerifyModal({ key, extractedValue: extracted?.value || '', confidence: extracted?.confidence ?? null });
+                                      setVerifyValue(extracted?.value || '');
+                                    }}
+                                    className="px-2 py-0.5 bg-brand-deep text-white rounded text-[10px] font-medium hover:bg-brand-dark transition-colors flex-shrink-0"
+                                  >
+                                    Verify
+                                  </button>
+                                ) : (
+                                  <span className="text-[10px] text-green-600 dark:text-green-400 font-medium flex-shrink-0">
+                                    <i className="fa-solid fa-check mr-0.5"></i>Done
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {fieldsData.extractedFields.filter((f: any) => !fieldsData.criticalKeys.includes(f.key)).length > 0 && (
+                          <div className="mt-2">
+                            <p className="text-[10px] text-gray-400 mb-1">Other Extracted Fields</p>
+                            <div className="space-y-1">
+                              {fieldsData.extractedFields
+                                .filter((f: any) => !fieldsData.criticalKeys.includes(f.key))
+                                .map((f: any) => (
+                                  <div key={f.id} className="flex items-center gap-2 text-[10px] text-gray-500 dark:text-gray-400 px-3 py-1">
+                                    <span className="font-medium">{f.key.replace(/_/g, ' ')}:</span>
+                                    <span className="truncate">{f.value}</span>
+                                    {f.confidence != null && <span className="text-gray-400">({Math.round(f.confidence * 100)}%)</span>}
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+                        <div className="mt-2 flex items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            <span className="text-[10px] text-gray-500">Verified</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-amber-400"></div>
+                            <span className="text-[10px] text-gray-500">Extracted</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+                            <span className="text-[10px] text-gray-500">Missing</span>
+                          </div>
+                          <span className="text-[10px] text-gray-400 ml-auto">
+                            {fieldsData.verifiedFields.length}/{fieldsData.criticalKeys.length} verified
+                          </span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-sm text-gray-400 text-center py-2">No issuance case yet</p>
@@ -1163,6 +1328,63 @@ export const AdminTokenizations: React.FC = () => {
                 className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50 text-sm"
               >
                 {advanceLoading ? 'Overriding...' : 'Override & Advance'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {verifyModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                <i className="fa-solid fa-check-double text-blue-600 dark:text-blue-400"></i>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Verify Field</h3>
+                <p className="text-sm text-gray-500">{verifyModal.key.replace(/_/g, ' ')}</p>
+              </div>
+            </div>
+            {verifyModal.extractedValue && (
+              <div className="bg-gray-50 dark:bg-[#222] rounded-lg p-3 mb-4">
+                <p className="text-[10px] text-gray-500 uppercase mb-1">Extracted Value</p>
+                <p className="text-sm text-gray-900 dark:text-white">{verifyModal.extractedValue}</p>
+                {verifyModal.confidence != null && (
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    Confidence: {Math.round(verifyModal.confidence * 100)}%
+                  </p>
+                )}
+              </div>
+            )}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Verified Value
+              </label>
+              <input
+                type="text"
+                value={verifyValue}
+                onChange={(e) => setVerifyValue(e.target.value)}
+                placeholder="Enter or confirm value..."
+                className="w-full border border-gray-300 dark:border-[#444] bg-white dark:bg-[#222] text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-deep"
+              />
+              <p className="text-[10px] text-gray-400 mt-1">
+                Leave as-is to accept the extracted value, or edit to correct it.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setVerifyModal(null); setVerifyValue(''); }}
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-[#444] rounded-lg text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-[#222] text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleVerifyField}
+                disabled={verifyLoading}
+                className="flex-1 px-4 py-2 bg-brand-deep text-white rounded-lg font-medium hover:bg-brand-dark disabled:opacity-50 text-sm"
+              >
+                {verifyLoading ? 'Verifying...' : 'Confirm & Verify'}
               </button>
             </div>
           </div>

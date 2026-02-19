@@ -73,6 +73,10 @@ export const TokenizerPreDashboard: React.FC = () => {
   const [issuanceDocs, setIssuanceDocs] = useState<IssuanceDocumentData[]>([]);
   const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const totalPages = 14;
+  const [extractedFields, setExtractedFields] = useState<any[]>([]);
+  const [showFlagModal, setShowFlagModal] = useState(false);
+  const [flagMessage, setFlagMessage] = useState('');
+  const [flagLoading, setFlagLoading] = useState(false);
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -189,7 +193,10 @@ export const TokenizerPreDashboard: React.FC = () => {
       if (res.ok) {
         const json = await res.json();
         setIssuanceCase(json.data);
-        if (json.data?.id) fetchIssuanceDocs(json.data.id);
+        if (json.data?.id) {
+          fetchIssuanceDocs(json.data.id);
+          fetchExtractedFields(json.data.id);
+        }
       } else if (res.status === 404) {
         const createRes = await fetch(`/api/issuance/by-submission/${submissionId}/create`, {
           method: 'POST',
@@ -205,6 +212,49 @@ export const TokenizerPreDashboard: React.FC = () => {
       console.error('Error fetching issuance case:', err);
     } finally {
       setIssuanceLoading(false);
+    }
+  };
+
+  const fetchExtractedFields = async (caseId: string) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/issuance/case/${caseId}/fields`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setExtractedFields(json.data?.extractedFields || []);
+      }
+    } catch (err) {
+      console.error('Error fetching extracted fields:', err);
+    }
+  };
+
+  const handleFlagIssue = async () => {
+    if (!issuanceCase || !flagMessage.trim()) return;
+    setFlagLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/issuance/case/${issuanceCase.id}/flag`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: flagMessage.trim() }),
+      });
+      if (res.ok) {
+        showToast('Issue flagged successfully', 'success');
+        setShowFlagModal(false);
+        setFlagMessage('');
+      } else {
+        const err = await res.json();
+        showToast(err.error || 'Failed to flag issue', 'error');
+      }
+    } catch (err) {
+      showToast('Error flagging issue', 'error');
+    } finally {
+      setFlagLoading(false);
     }
   };
 
@@ -477,6 +527,46 @@ export const TokenizerPreDashboard: React.FC = () => {
             )}
           </div>
 
+          {issuanceCase && extractedFields.length > 0 && (
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-4 md:p-6">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base font-bold text-brand-dark dark:text-white">Extracted Property Data</h2>
+                <button
+                  onClick={() => setShowFlagModal(true)}
+                  className="px-3 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg text-xs font-medium hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors"
+                >
+                  <i className="fa-solid fa-flag mr-1"></i>Flag Issue
+                </button>
+              </div>
+              <p className="text-xs text-brand-sage mb-3">Key information extracted from your uploaded documents. Review for accuracy.</p>
+              <div className="space-y-2">
+                {extractedFields
+                  .filter((f: any) => ['property_address', 'property_state', 'property_city', 'property_zip', 'entity_name', 'estimated_property_value'].includes(f.key))
+                  .reduce((acc: any[], f: any) => {
+                    if (!acc.find((a: any) => a.key === f.key)) acc.push(f);
+                    return acc;
+                  }, [])
+                  .map((field: any) => (
+                    <div key={field.id} className="flex items-center justify-between bg-brand-offWhite dark:bg-[#222] rounded-lg px-3 py-2.5">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] text-brand-sage uppercase">{field.key.replace(/_/g, ' ')}</p>
+                        <p className="text-sm font-medium text-brand-dark dark:text-white truncate">{field.value}</p>
+                      </div>
+                      {field.confidence != null && (
+                        <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ml-2 flex-shrink-0 ${
+                          field.confidence >= 0.8 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                          field.confidence >= 0.5 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' :
+                          'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400'
+                        }`}>
+                          {Math.round(field.confidence * 100)}%
+                        </span>
+                      )}
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+
           {/* Document Checklist */}
           <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-brand-lightGray dark:border-[#2a2a2a] p-4 md:p-6">
             <h2 className="text-lg font-bold text-brand-dark mb-4 md:mb-6">Document Checklist</h2>
@@ -688,6 +778,43 @@ export const TokenizerPreDashboard: React.FC = () => {
             </div>
           </div>
         </>
+      )}
+
+      {showFlagModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-[#1a1a1a] rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+                <i className="fa-solid fa-flag text-amber-600 dark:text-amber-400"></i>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-brand-dark dark:text-white">Flag an Issue</h3>
+                <p className="text-xs text-brand-sage">Report incorrect data or a concern with your submission</p>
+              </div>
+            </div>
+            <textarea
+              value={flagMessage}
+              onChange={(e) => setFlagMessage(e.target.value)}
+              placeholder="Describe the issue..."
+              className="w-full border border-brand-lightGray dark:border-[#444] bg-white dark:bg-[#222] text-brand-dark dark:text-white rounded-lg px-3 py-2 h-28 resize-none text-sm focus:outline-none focus:ring-2 focus:ring-brand-deep"
+            />
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => { setShowFlagModal(false); setFlagMessage(''); }}
+                className="flex-1 px-4 py-2 border border-brand-lightGray dark:border-[#444] rounded-lg text-brand-dark dark:text-gray-300 font-medium hover:bg-brand-offWhite dark:hover:bg-[#222] text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleFlagIssue}
+                disabled={flagLoading || !flagMessage.trim()}
+                className="flex-1 px-4 py-2 bg-amber-500 text-white rounded-lg font-medium hover:bg-amber-600 disabled:opacity-50 text-sm"
+              >
+                {flagLoading ? 'Submitting...' : 'Submit Flag'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

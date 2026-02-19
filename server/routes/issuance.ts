@@ -511,13 +511,18 @@ router.get(
     try {
       const { caseId } = req.params;
 
+      const user = (req as AuthenticatedRequest).user;
       const issuanceCase = await prisma.issuanceCase.findUnique({
         where: { id: caseId },
-        select: { track: true },
+        select: { track: true, submission: { select: { tokenizerId: true } } },
       });
 
       if (!issuanceCase) {
         return res.status(404).json({ success: false, error: 'Issuance case not found' });
+      }
+
+      if (user && user.role !== 'ADMIN' && issuanceCase.submission.tokenizerId !== user.clerkId) {
+        return res.status(403).json({ success: false, error: 'Forbidden' });
       }
 
       const criticalKeys = getCriticalKeys(issuanceCase.track);
@@ -610,6 +615,65 @@ router.post(
       });
     } catch (error: any) {
       console.error('[issuance] Error verifying field:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.post(
+  '/case/:caseId/flag',
+  simpleAuth,
+  loadUserWithRole,
+  async (req: Request, res: Response) => {
+    try {
+      const { caseId } = req.params;
+      const { message } = req.body;
+      const user = (req as AuthenticatedRequest).user;
+
+      if (!user) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+      }
+
+      if (!message || typeof message !== 'string' || !message.trim()) {
+        return res.status(400).json({ success: false, error: 'Message is required' });
+      }
+
+      const issuanceCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+        select: { id: true, notes: true, submission: { select: { tokenizerId: true } } },
+      });
+
+      if (issuanceCase && user.role !== 'ADMIN' && issuanceCase.submission.tokenizerId !== user.clerkId) {
+        return res.status(403).json({ success: false, error: 'Forbidden' });
+      }
+
+      if (!issuanceCase) {
+        return res.status(404).json({ success: false, error: 'Issuance case not found' });
+      }
+
+      const timestamp = new Date().toISOString();
+      const flagEntry = `[FLAG ${timestamp}] ${message.trim()}`;
+      const updatedNotes = issuanceCase.notes
+        ? `${issuanceCase.notes}\n${flagEntry}`
+        : flagEntry;
+
+      await prisma.issuanceCase.update({
+        where: { id: caseId },
+        data: { notes: updatedNotes },
+      });
+
+      await prisma.auditEvent.create({
+        data: {
+          type: 'ISSUE_FLAGGED',
+          entityId: caseId,
+          userId: user.id,
+          newValue: { message: message.trim() },
+        },
+      });
+
+      return res.json({ success: true, data: { notes: updatedNotes } });
+    } catch (error: any) {
+      console.error('[issuance] Error flagging issue:', error);
       return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
     }
   },
