@@ -94,3 +94,19 @@ The frontend utilizes React, TailwindCSS for styling, and Recharts for data visu
 **UI:** TokenizerPostDashboard includes a "Compliance" panel listing requirements with cadence/status badges, due dates, evidence links, and completion tracking.
 
 **Seed:** `prisma/seed-issuance.ts` includes CompliancePackTemplate rows for all 4 tracks with varying requirements per regulatory framework.
+
+### Offering Packet Generator
+
+`server/services/offeringPacket.ts` — `generateOfferingPacket(caseId)` compiles verified + extracted field data into a structured markdown offering packet draft. Uses VerifiedFields first with ExtractedFields fallback. Includes: overview, property details, entity structure, investor rights & restrictions (from TransferPolicy + capabilities), servicing/reporting cadence (from CompliancePackTemplate), and risk factors. If OpenAI key exists, optionally rewrites into investor-friendly language (grounded in provided fields only).
+
+**Model:**
+- `OfferingPacket` — `id`, `caseId` (unique FK to IssuanceCase), `status` (DRAFT|READY|PUBLISHED), `markdown`, timestamps
+
+**Routes (server/routes/issuance.ts):**
+- `POST /api/issuance/case/:caseId/offering-packet/generate` — admin: generate/regenerate packet from case data
+- `GET /api/issuance/case/:caseId/offering-packet` — get packet (tokenizers see only READY/PUBLISHED; admins see all)
+- `POST /api/issuance/case/:caseId/offering-packet/status` — admin: update packet status (DRAFT/READY/PUBLISHED)
+
+**UI:**
+- AdminTokenizations detail drawer: "Offering Packet" panel with generate/regenerate button, markdown preview, status badges, and status transition buttons (Mark Ready, Publish, Revert to Draft)
+- TokenizerPostDashboard: read-only offering packet display when packet status is READY or PUBLISHED

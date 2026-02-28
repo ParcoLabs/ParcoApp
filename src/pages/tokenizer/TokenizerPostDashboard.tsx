@@ -99,6 +99,8 @@ export const TokenizerPostDashboard: React.FC = () => {
   const [snapshotLoading, setSnapshotLoading] = useState(false);
   const [statementLoading, setStatementLoading] = useState(false);
   const [opsMessage, setOpsMessage] = useState<string | null>(null);
+  const [offeringPacket, setOfferingPacket] = useState<any>(null);
+  const [packetLoading, setPacketLoading] = useState(false);
 
   useEffect(() => {
     fetchSubmissions();
@@ -136,6 +138,9 @@ export const TokenizerPostDashboard: React.FC = () => {
       fetchCompliance(propId);
       fetchSnapshots(propId);
       fetchStatements(propId);
+    }
+    if (activeSubmission?.id) {
+      fetchOfferingPacket(activeSubmission.id);
     }
   }, [activeSubmission]);
 
@@ -181,6 +186,34 @@ export const TokenizerPostDashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error fetching statements:', error);
+    }
+  };
+
+  const fetchOfferingPacket = async (submissionId: string) => {
+    setPacketLoading(true);
+    try {
+      const token = await getToken();
+      const caseRes = await fetch(`/api/issuance/by-submission/${submissionId}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+        credentials: 'include',
+      });
+      if (caseRes.ok) {
+        const caseJson = await caseRes.json();
+        if (caseJson.data?.id) {
+          const packetRes = await fetch(`/api/issuance/case/${caseJson.data.id}/offering-packet`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+            credentials: 'include',
+          });
+          if (packetRes.ok) {
+            const packetJson = await packetRes.json();
+            setOfferingPacket(packetJson.data);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching offering packet:', err);
+    } finally {
+      setPacketLoading(false);
     }
   };
 
@@ -657,6 +690,52 @@ export const TokenizerPostDashboard: React.FC = () => {
               </div>
             </div>
           </div>
+          {offeringPacket && (
+            <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-brand-dark dark:text-white flex items-center gap-2">
+                  <i className="fa-solid fa-file-lines text-brand-deep"></i>
+                  Offering Packet
+                </h3>
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                  offeringPacket.status === 'PUBLISHED' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                  offeringPacket.status === 'READY' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                  'bg-gray-100 dark:bg-[#333] text-gray-600 dark:text-gray-400'
+                }`}>
+                  {offeringPacket.status}
+                </span>
+              </div>
+              <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-4 max-h-96 overflow-y-auto">
+                <div className="text-xs leading-relaxed text-brand-dark dark:text-gray-300">
+                  {offeringPacket.markdown.split('\n').map((line: string, i: number) => {
+                    if (line.startsWith('# ')) return <h1 key={i} className="text-base font-bold text-brand-dark dark:text-white mb-2">{line.slice(2)}</h1>;
+                    if (line.startsWith('## ')) return <h2 key={i} className="text-sm font-bold text-brand-dark dark:text-white mb-1 mt-3">{line.slice(3)}</h2>;
+                    if (line.startsWith('### ')) return <h3 key={i} className="text-xs font-semibold text-brand-dark dark:text-white mb-1 mt-2">{line.slice(4)}</h3>;
+                    if (line.startsWith('> ')) return <blockquote key={i} className="border-l-2 border-brand-sage/40 pl-2 text-[10px] text-brand-sage my-1">{line.slice(2)}</blockquote>;
+                    if (line.startsWith('---')) return <hr key={i} className="border-brand-lightGray dark:border-[#444] my-2" />;
+                    if (line.startsWith('- ')) return <li key={i} className="ml-4 text-xs">{line.slice(2)}</li>;
+                    if (line.startsWith('| ') && line.includes('---')) return null;
+                    if (line.startsWith('| ')) {
+                      const cells = line.split('|').filter(Boolean).map(c => c.trim());
+                      return (
+                        <div key={i} className="flex gap-2 px-1 text-xs">
+                          {cells.map((cell, j) => (
+                            <span key={j} className={j === 0 ? 'font-medium min-w-[120px]' : 'flex-1'}>{cell.replace(/\*\*/g, '')}</span>
+                          ))}
+                        </div>
+                      );
+                    }
+                    if (line.startsWith('*') && line.endsWith('*')) return <p key={i} className="italic text-brand-sage text-[10px]">{line.replace(/\*/g, '')}</p>;
+                    if (line.trim() === '') return <div key={i} className="h-1" />;
+                    return <p key={i}>{line}</p>;
+                  })}
+                </div>
+              </div>
+              <p className="text-[10px] text-brand-sage mt-2 text-right">
+                Last updated: {new Date(offeringPacket.updatedAt).toLocaleDateString()}
+              </p>
+            </div>
+          )}
         </>
       )}
     </div>

@@ -111,6 +111,10 @@ export const AdminTokenizations: React.FC = () => {
   const [verifyModal, setVerifyModal] = useState<{ key: string; extractedValue: string; confidence: number | null } | null>(null);
   const [verifyValue, setVerifyValue] = useState('');
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const [offeringPacket, setOfferingPacket] = useState<any>(null);
+  const [packetLoading, setPacketLoading] = useState(false);
+  const [packetGenerating, setPacketGenerating] = useState(false);
+  const [packetStatusLoading, setPacketStatusLoading] = useState(false);
 
   const fetchSubmissions = async (page = 1) => {
     try {
@@ -162,6 +166,7 @@ export const AdminTokenizations: React.FC = () => {
         if (json.data?.id) {
           fetchIssuanceDocCount(json.data.id);
           fetchFields(json.data.id);
+          fetchOfferingPacket(json.data.id);
         }
       } else if (res.status === 404) {
         const createRes = await fetch(`/api/issuance/by-submission/${submissionId}/create`, {
@@ -422,6 +427,69 @@ export const AdminTokenizations: React.FC = () => {
       showToast('Error running extraction', 'error');
     } finally {
       setIssuanceActionLoading(null);
+    }
+  };
+
+  const fetchOfferingPacket = async (caseId: string) => {
+    setPacketLoading(true);
+    try {
+      const res = await fetch(`/api/issuance/case/${caseId}/offering-packet`, { credentials: 'include' });
+      if (res.ok) {
+        const json = await res.json();
+        setOfferingPacket(json.data);
+      }
+    } catch (err) {
+      console.error('Error fetching offering packet:', err);
+    } finally {
+      setPacketLoading(false);
+    }
+  };
+
+  const handleGeneratePacket = async () => {
+    if (!issuanceCase) return;
+    setPacketGenerating(true);
+    try {
+      const res = await fetch(`/api/issuance/case/${issuanceCase.id}/offering-packet/generate`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setOfferingPacket(json.data);
+        showToast('Offering packet generated', 'success');
+      } else {
+        const err = await res.json();
+        showToast(err.error || 'Failed to generate packet', 'error');
+      }
+    } catch (err) {
+      showToast('Error generating offering packet', 'error');
+    } finally {
+      setPacketGenerating(false);
+    }
+  };
+
+  const handlePacketStatus = async (status: string) => {
+    if (!issuanceCase) return;
+    setPacketStatusLoading(true);
+    try {
+      const res = await fetch(`/api/issuance/case/${issuanceCase.id}/offering-packet/status`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setOfferingPacket(json.data);
+        showToast(`Packet status updated to ${status}`, 'success');
+      } else {
+        const err = await res.json();
+        showToast(err.error || 'Failed to update status', 'error');
+      }
+    } catch (err) {
+      showToast('Error updating packet status', 'error');
+    } finally {
+      setPacketStatusLoading(false);
     }
   };
 
@@ -1192,6 +1260,97 @@ export const AdminTokenizations: React.FC = () => {
                         </div>
                       </div>
                     )}
+
+                    <div className="border-t border-gray-200 dark:border-[#444] pt-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold text-gray-500 uppercase">Offering Packet</p>
+                        <div className="flex items-center gap-2">
+                          {offeringPacket && (
+                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                              offeringPacket.status === 'PUBLISHED' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                              offeringPacket.status === 'READY' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' :
+                              'bg-gray-100 dark:bg-[#333] text-gray-600 dark:text-gray-400'
+                            }`}>
+                              {offeringPacket.status}
+                            </span>
+                          )}
+                          <button
+                            onClick={handleGeneratePacket}
+                            disabled={packetGenerating}
+                            className="px-2 py-1 bg-indigo-600 text-white rounded text-[10px] font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                          >
+                            {packetGenerating ? 'Generating...' : offeringPacket ? 'Regenerate' : 'Generate'}
+                          </button>
+                        </div>
+                      </div>
+
+                      {packetLoading ? (
+                        <p className="text-xs text-gray-400 text-center py-2">Loading...</p>
+                      ) : offeringPacket ? (
+                        <div>
+                          <div className="bg-gray-50 dark:bg-[#222] rounded-lg p-3 max-h-64 overflow-y-auto mb-2">
+                            <div className="prose prose-xs dark:prose-invert max-w-none text-[11px] leading-relaxed [&_h1]:text-sm [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-xs [&_h2]:font-bold [&_h2]:mb-1 [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:mb-1 [&_table]:text-[10px] [&_table]:w-full [&_th]:text-left [&_th]:px-2 [&_th]:py-1 [&_td]:px-2 [&_td]:py-1 [&_blockquote]:text-[10px] [&_blockquote]:border-l-2 [&_blockquote]:pl-2 [&_blockquote]:text-gray-500 [&_li]:ml-3 [&_hr]:my-2">
+                              {offeringPacket.markdown.split('\n').map((line: string, i: number) => {
+                                if (line.startsWith('# ')) return <h1 key={i} className="text-gray-900 dark:text-white">{line.slice(2)}</h1>;
+                                if (line.startsWith('## ')) return <h2 key={i} className="text-gray-900 dark:text-white">{line.slice(3)}</h2>;
+                                if (line.startsWith('### ')) return <h3 key={i} className="text-gray-900 dark:text-white">{line.slice(4)}</h3>;
+                                if (line.startsWith('> ')) return <blockquote key={i}>{line.slice(2)}</blockquote>;
+                                if (line.startsWith('---')) return <hr key={i} />;
+                                if (line.startsWith('- ')) return <li key={i} className="text-gray-700 dark:text-gray-300">{line.slice(2)}</li>;
+                                if (line.startsWith('| ') && line.includes('---')) return null;
+                                if (line.startsWith('| ')) {
+                                  const cells = line.split('|').filter(Boolean).map(c => c.trim());
+                                  return (
+                                    <div key={i} className="flex gap-2 text-gray-700 dark:text-gray-300 px-1">
+                                      {cells.map((cell, j) => (
+                                        <span key={j} className={j === 0 ? 'font-medium min-w-[120px]' : 'flex-1'}>{cell.replace(/\*\*/g, '')}</span>
+                                      ))}
+                                    </div>
+                                  );
+                                }
+                                if (line.startsWith('*') && line.endsWith('*')) return <p key={i} className="italic text-gray-500 dark:text-gray-400 text-[10px]">{line.replace(/\*/g, '')}</p>;
+                                if (line.trim() === '') return <div key={i} className="h-1" />;
+                                return <p key={i} className="text-gray-700 dark:text-gray-300">{line}</p>;
+                              })}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {offeringPacket.status === 'DRAFT' && (
+                              <button
+                                onClick={() => handlePacketStatus('READY')}
+                                disabled={packetStatusLoading}
+                                className="px-2 py-1 bg-blue-600 text-white rounded text-[10px] font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                              >
+                                Mark Ready
+                              </button>
+                            )}
+                            {(offeringPacket.status === 'DRAFT' || offeringPacket.status === 'READY') && (
+                              <button
+                                onClick={() => handlePacketStatus('PUBLISHED')}
+                                disabled={packetStatusLoading}
+                                className="px-2 py-1 bg-green-600 text-white rounded text-[10px] font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+                              >
+                                Publish
+                              </button>
+                            )}
+                            {offeringPacket.status !== 'DRAFT' && (
+                              <button
+                                onClick={() => handlePacketStatus('DRAFT')}
+                                disabled={packetStatusLoading}
+                                className="px-2 py-1 bg-gray-500 text-white rounded text-[10px] font-medium hover:bg-gray-600 disabled:opacity-50 transition-colors"
+                              >
+                                Revert to Draft
+                              </button>
+                            )}
+                            <span className="text-[10px] text-gray-400 ml-auto">
+                              Updated {new Date(offeringPacket.updatedAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-400 text-center py-2">No packet generated yet. Click Generate to create one from verified fields.</p>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <p className="text-sm text-gray-400 text-center py-2">No issuance case yet</p>

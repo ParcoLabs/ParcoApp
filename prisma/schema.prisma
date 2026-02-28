@@ -514,6 +514,7 @@ model IssuanceCase {
   extractedFields      ExtractedField[]
   verifiedFields       VerifiedField[]
   extractionRuns       ExtractionRun[]
+  offeringPacket       OfferingPacket?
 
   @@index([status])
   @@index([eligibilityStatus])
@@ -1164,4 +1165,14 @@ model OnchainDeployment {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   property         Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model OfferingPacket {
+  id        String   @id @default(cuid())
+  caseId    String   @unique
+  status    String   @default("DRAFT")
+  markdown  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  case      IssuanceCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
 }

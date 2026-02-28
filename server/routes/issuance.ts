@@ -9,6 +9,7 @@ import { runEligibility, mockRunEligibility } from '../services/eligibilityEngin
 import { extractTextFromIssuanceDocument } from '../services/docTextExtractor';
 import { extractFieldsFromText } from '../services/llmExtraction';
 import { getCriticalKeys, checkCriticalFieldsVerified } from '../services/criticalFields';
+import { generateOfferingPacket } from '../services/offeringPacket';
 
 const router = Router();
 
@@ -521,7 +522,7 @@ router.get(
         return res.status(404).json({ success: false, error: 'Issuance case not found' });
       }
 
-      if (user && user.role !== 'ADMIN' && issuanceCase.submission.tokenizerId !== user.clerkId) {
+      if (user && user.role !== 'ADMIN' && issuanceCase.submission.tokenizerId !== user.id) {
         return res.status(403).json({ success: false, error: 'Forbidden' });
       }
 
@@ -643,7 +644,7 @@ router.post(
         select: { id: true, notes: true, submission: { select: { tokenizerId: true } } },
       });
 
-      if (issuanceCase && user.role !== 'ADMIN' && issuanceCase.submission.tokenizerId !== user.clerkId) {
+      if (issuanceCase && user.role !== 'ADMIN' && issuanceCase.submission.tokenizerId !== user.id) {
         return res.status(403).json({ success: false, error: 'Forbidden' });
       }
 
@@ -1263,6 +1264,129 @@ router.post(
       });
     } catch (error: any) {
       console.error('[issuance] Error in mint-and-activate:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.post(
+  '/case/:caseId/offering-packet/generate',
+  simpleAuth,
+  loadUserWithRole,
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { caseId } = req.params;
+
+      const issuanceCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+        select: { id: true },
+      });
+
+      if (!issuanceCase) {
+        return res.status(404).json({ success: false, error: 'Issuance case not found' });
+      }
+
+      if (isDemoMode()) {
+        const demoMarkdown = `# Offering Packet — Demo Property LLC\n\n> **Status:** DRAFT — For internal review only.\n\n---\n\n## 1. Overview\n\nThis offering packet summarizes the tokenized real estate investment opportunity structured as a **Series LLC** offering on the Parco platform.\n\n## 2. Property Details\n\n| Field | Value |\n|-------|-------|\n| **Address** | 123 Demo Street, Austin, TX 78701 |\n| **Estimated Value** | $450,000 |\n| **Est. Monthly Rent** | $2,800 |\n\n## 3. Entity Structure\n\n| Field | Value |\n|-------|-------|\n| **Entity Name** | Demo Property LLC |\n| **Jurisdiction** | Nevada |\n| **Offering Type** | Series LLC |\n\n## 4. Investor Rights & Restrictions\n\n- Membership interest in the Series LLC corresponding to the property\n- Pro-rata share of net rental income distributions\n- Voting rights on major property decisions\n- Right to transfer tokens subject to platform transfer policies\n\n## 5. Risk Factors\n\n- Real estate investments are illiquid and subject to market fluctuations\n- Rental income is not guaranteed\n- Token transfers may be restricted by applicable securities regulations\n\n---\n\n*Auto-generated draft by Parco platform.*\n`;
+
+        const existing = await (prisma as any).offeringPacket.findUnique({ where: { caseId } });
+        let packet;
+        if (existing) {
+          packet = await (prisma as any).offeringPacket.update({
+            where: { caseId },
+            data: { markdown: demoMarkdown, status: 'DRAFT', updatedAt: new Date() },
+          });
+        } else {
+          packet = await (prisma as any).offeringPacket.create({
+            data: { caseId, markdown: demoMarkdown, status: 'DRAFT' },
+          });
+        }
+
+        return res.json({ success: true, data: packet });
+      }
+
+      const result = await generateOfferingPacket(caseId);
+
+      const packet = await (prisma as any).offeringPacket.findUnique({ where: { caseId } });
+
+      return res.json({ success: true, data: packet });
+    } catch (error: any) {
+      console.error('[issuance] Error generating offering packet:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.get(
+  '/case/:caseId/offering-packet',
+  simpleAuth,
+  loadUserWithRole,
+  async (req: Request, res: Response) => {
+    try {
+      const { caseId } = req.params;
+      const user = (req as AuthenticatedRequest).user;
+
+      const issuanceCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+        select: { id: true, submission: { select: { tokenizerId: true } } },
+      });
+
+      if (!issuanceCase) {
+        return res.status(404).json({ success: false, error: 'Issuance case not found' });
+      }
+
+      if (user && user.role !== 'ADMIN' && issuanceCase.submission.tokenizerId !== user.id) {
+        return res.status(403).json({ success: false, error: 'Forbidden' });
+      }
+
+      const packet = await (prisma as any).offeringPacket.findUnique({
+        where: { caseId },
+      });
+
+      if (!packet) {
+        return res.json({ success: true, data: null });
+      }
+
+      if (user && user.role !== 'ADMIN' && packet.status === 'DRAFT') {
+        return res.json({ success: true, data: null });
+      }
+
+      return res.json({ success: true, data: packet });
+    } catch (error: any) {
+      console.error('[issuance] Error fetching offering packet:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.post(
+  '/case/:caseId/offering-packet/status',
+  simpleAuth,
+  loadUserWithRole,
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { caseId } = req.params;
+      const { status } = req.body;
+
+      if (!['DRAFT', 'READY', 'PUBLISHED'].includes(status)) {
+        return res.status(400).json({ success: false, error: 'Invalid status. Must be DRAFT, READY, or PUBLISHED.' });
+      }
+
+      const packet = await (prisma as any).offeringPacket.findUnique({ where: { caseId } });
+      if (!packet) {
+        return res.status(404).json({ success: false, error: 'Offering packet not found. Generate one first.' });
+      }
+
+      const updated = await (prisma as any).offeringPacket.update({
+        where: { caseId },
+        data: { status },
+      });
+
+      return res.json({ success: true, data: updated });
+    } catch (error: any) {
+      console.error('[issuance] Error updating offering packet status:', error);
       return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
     }
   },
