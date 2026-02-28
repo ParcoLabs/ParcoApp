@@ -28,11 +28,14 @@ import uploadsRoutes from './routes/uploads';
 import blockchainRoutes from './routes/blockchain';
 import transferPolicyRoutes from './routes/transferPolicy';
 import complianceRoutes from './routes/compliance';
+import storageRoutes from './routes/storage';
+import systemStatusRoutes from './routes/systemStatus';
 import { isDemoMode } from './lib/demoMode';
 import { getStripeSync } from './lib/stripeClient';
 import { WebhookHandlers } from './lib/webhookHandlers';
 import { scheduler } from './services/scheduler';
 import { generalLimiter, authLimiter, transactionLimiter, demoActionLimiter } from './middleware/rateLimit';
+import { logger, requestIdMiddleware, errorHandler, notFoundHandler } from './observability';
 
 dotenv.config();
 
@@ -40,6 +43,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.set('trust proxy', 1);
+app.use(requestIdMiddleware);
 
 app.use(generalLimiter);
 
@@ -182,9 +186,11 @@ app.use('/api/tokenization', tokenizationRoutes);
 app.use('/api/issuance', issuanceRoutes);
 app.use('/api/servicing', servicingRoutes);
 app.use('/api/uploads', uploadsRoutes);
+app.use('/api/storage', storageRoutes);
 app.use('/api/blockchain', blockchainRoutes);
 app.use('/api/properties', transferPolicyRoutes);
 app.use('/api/compliance', complianceRoutes);
+app.use('/api/admin', systemStatusRoutes);
 
 app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets')));
 
@@ -255,12 +261,14 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+app.use(notFoundHandler);
+app.use(errorHandler);
+
 initStripe().then(() => {
   app.listen(PORT, () => {
-    console.log(`Backend server running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info({ port: PORT, env: process.env.NODE_ENV || 'development' }, 'Backend server started');
     if (isDemoMode()) {
-      console.log('[Demo Mode] Demo mode is ENABLED - blockchain/payment operations will be simulated');
+      logger.info('[Demo Mode] Demo mode is ENABLED - blockchain/payment operations will be simulated');
     }
     
     scheduler.initialize();

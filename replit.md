@@ -70,7 +70,9 @@ The frontend uses React, TailwindCSS for styling, and Recharts for data visualiz
 - Role-based access control implemented across smart contracts and backend.
 - Environment-based configuration for sensitive data.
 - Standard Vite + React project structure.
-- Document uploads handled via `multer` (local storage, with future R2 integration).
+- Document storage: Cloudflare R2 via AWS SDK v3 (`server/storage/storage.ts`) with signed upload/download URLs. Legacy `multer` uploads still supported for backward compatibility. Env vars: `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`.
+- Observability: `pino` structured logger (`server/observability/logger.ts`), request ID middleware (`server/observability/requestId.ts`), centralized error handler (`server/observability/errorHandler.ts`). Admin system status at `GET /api/admin/system/status`.
+- Storage routes: `POST /api/storage/issuance-docs/upload-url` (signed PUT URL), `GET /api/storage/issuance-docs/:docId/download-url` (signed GET URL).
 - Issuance roadmap framework supporting multiple regulatory tracks (e.g., SERIES_LLC, REG_CF, REG_A, REG_D).
 - Eligibility Engine performs checks based on state enablement, price caps, and document completeness.
 - npm scripts: `build` (vite + prisma generate), `start:api` (production API), `start:worker` (production worker), `migrate` (prisma migrate deploy).
