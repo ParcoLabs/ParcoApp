@@ -10,6 +10,7 @@ export interface DemoIssuanceCase {
   status: 'DRAFT' | 'INTAKE_COMPLETE' | 'EXTRACTION_RUNNING' | 'EXTRACTION_COMPLETE' | 'REVIEW_READY' | 'APPROVED' | 'MINT_READY' | 'MINTED' | 'LIVE' | 'REJECTED';
   eligibilityStatus: 'PENDING' | 'PASS' | 'FAIL' | 'NEEDS_REVIEW';
   extractionScore: number;
+  extractionQualityStatus: 'PASS' | 'NEEDS_REVIEW' | 'FAIL' | 'PENDING';
   tokenSymbol: string;
   totalTokens: number;
   tokenPrice: number;
@@ -55,6 +56,7 @@ export function mockIssuanceCase(overrides?: Partial<DemoIssuanceCase>): DemoIss
     status: 'DRAFT',
     eligibilityStatus: 'PENDING',
     extractionScore: 0,
+    extractionQualityStatus: 'PENDING',
     tokenSymbol: 'PRCO-001',
     totalTokens: 1000,
     tokenPrice: 50,

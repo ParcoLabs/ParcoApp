@@ -1,0 +1,67 @@
+Implement a real “Monthly Close” workflow per property: draft report -> review approvals -> publish.
+
+Prisma:
+1) Add enum ReportStatus: DRAFT, IN_REVIEW, PUBLISHED
+
+2) Update or create ServicingReportRun model:
+- id cuid
+- propertyId FK
+- periodStart DateTime
+- periodEnd DateTime
+- status ReportStatus @default(DRAFT)
+- draftText String?
+- publishedAt DateTime?
+- createdAt, updatedAt
+
+3) Add model ReportApproval:
+- id cuid
+- reportRunId FK ServicingReportRun
+- role ApprovalRole (OPS/ACCOUNTING/COMPLIANCE)
+- status String @default("PENDING") (PENDING|APPROVED|REJECTED)
+- approvedByUserId String?
+- notes String?
+- createdAt, updatedAt
+
+Backend routes (mount /api/servicing if not already):
+- POST /api/servicing/property/:propertyId/monthly-close/start
+- creates report run for current month (or given period)
+- seeds ReportApproval tasks
+- generates draftText using KPIs + template/LLM if configured
+- POST /api/servicing/report-run/:id/submit -> status IN_REVIEW
+- POST /api/servicing/report-run/:id/approve/:approvalId (admin)
+- POST /api/servicing/report-run/:id/publish (admin)
+- only if all approvals approved
+
+UI:
+- Extend your existing post-tokenization property management dashboard page (admin/tokenizer post dashboard) with a “Monthly Close” section:
+- Start close, view draft, submit, approvals checklist, publish
+- Demo mode: deterministic drafts + approvals.
+
+Audit:
+- Write audit events for start/submit/approve/publish if AuditEvent exists.
+
+Next, add an investor-facing Reporting Center for each property, ideally embedded into the existing investor Property Detail page.
+
+Backend:
+- Add GET /api/investor/property/:propertyId/reporting-center
+returns:
+- latest KPI snapshot
+- published servicing reports (ServicingReportRun status=PUBLISHED)
+- distribution history for the user
+- investor statements for the user
+- governance notices (published)
+- open governance votes
+
+Access control:
+- Only allow if user is an investor who has a Holding for the property OR is admin.
+- Demo mode: allow and return deterministic data.
+
+Frontend:
+- In investor property detail page:
+- Add a “Reporting” tab/section:
+- Latest Monthly Update (published report)
+- Past reports list
+- Distributions list
+- Statements list
+- Notices + Votes
+- Keep copy non-jargony: “Monthly Update”, “Statement”, “Distribution”, “Notice”, “Vote”.

@@ -55,6 +55,7 @@ interface IssuanceCaseData {
   status: string;
   eligibilityStatus: string;
   extractionScore: number;
+  extractionQualityStatus: string;
   track: string;
   targetState: string;
   maxPropertyPriceCents: number | null;
@@ -239,7 +240,7 @@ export const AdminTokenizations: React.FC = () => {
       });
       if (res.ok) {
         const json = await res.json();
-        setIssuanceCase(prev => prev ? { ...prev, extractionScore: json.data?.extractionScore ?? 85, status: json.data?.status || prev.status } : null);
+        setIssuanceCase(prev => prev ? { ...prev, extractionScore: json.data?.extractionScore ?? 85, extractionQualityStatus: json.data?.extractionQualityStatus ?? prev.extractionQualityStatus, status: json.data?.status || prev.status } : null);
         showToast('Extraction completed', 'success');
       } else {
         showToast('Failed to run extraction', 'error');
@@ -281,7 +282,8 @@ export const AdminTokenizations: React.FC = () => {
 
   const handleAdvanceToReview = async (forceOverride = false) => {
     if (!issuanceCase) return;
-    if (issuanceCase.eligibilityStatus !== 'PASS' && !forceOverride) {
+    const needsOverride = issuanceCase.eligibilityStatus !== 'PASS' || issuanceCase.extractionQualityStatus !== 'PASS';
+    if (needsOverride && !forceOverride) {
       setShowOverrideModal(true);
       return;
     }
@@ -422,7 +424,7 @@ export const AdminTokenizations: React.FC = () => {
       });
       if (res.ok) {
         const json = await res.json();
-        setIssuanceCase(prev => prev ? { ...prev, extractionScore: json.data?.extractionScore ?? 85, status: json.data?.status || prev.status } : null);
+        setIssuanceCase(prev => prev ? { ...prev, extractionScore: json.data?.extractionScore ?? 85, extractionQualityStatus: json.data?.extractionQualityStatus ?? prev.extractionQualityStatus, status: json.data?.status || prev.status } : null);
         showToast(`Extraction completed — ${json.data?.fieldsExtracted || 0} fields extracted`, 'success');
         fetchFields(issuanceCase.id);
       } else {
@@ -969,8 +971,21 @@ export const AdminTokenizations: React.FC = () => {
                         <p className="font-medium text-gray-900 dark:text-white">{(issuanceCase.eligibilityStatus || 'PENDING').replace(/_/g, ' ')}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Extraction Score</p>
-                        <p className="font-medium text-gray-900 dark:text-white">{issuanceCase.extractionScore ?? 0}</p>
+                        <p className="text-gray-500">Extraction Quality</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-gray-900 dark:text-white">{issuanceCase.extractionScore ?? 0}/100</p>
+                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold ${
+                            issuanceCase.extractionQualityStatus === 'PASS' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' :
+                            issuanceCase.extractionQualityStatus === 'NEEDS_REVIEW' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' :
+                            issuanceCase.extractionQualityStatus === 'FAIL' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' :
+                            'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+                          }`}>
+                            {issuanceCase.extractionQualityStatus === 'PASS' && <i className="fa-solid fa-check mr-1"></i>}
+                            {issuanceCase.extractionQualityStatus === 'NEEDS_REVIEW' && <i className="fa-solid fa-eye mr-1"></i>}
+                            {issuanceCase.extractionQualityStatus === 'FAIL' && <i className="fa-solid fa-xmark mr-1"></i>}
+                            {(issuanceCase.extractionQualityStatus || 'PENDING').replace(/_/g, ' ')}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -1495,14 +1510,19 @@ export const AdminTokenizations: React.FC = () => {
                 <i className="fa-solid fa-triangle-exclamation text-amber-600 dark:text-amber-400"></i>
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Eligibility Override Required</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Eligibility status is <span className="font-semibold text-red-600 dark:text-red-400">{issuanceCase?.eligibilityStatus || 'NOT PASS'}</span>
-                </p>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Override Required</h3>
+                <div className="text-xs text-gray-500 dark:text-gray-400 space-y-0.5">
+                  {issuanceCase?.eligibilityStatus !== 'PASS' && (
+                    <p>Eligibility: <span className="font-semibold text-red-600 dark:text-red-400">{issuanceCase?.eligibilityStatus || 'NOT PASS'}</span></p>
+                  )}
+                  {issuanceCase?.extractionQualityStatus !== 'PASS' && (
+                    <p>Extraction quality: <span className="font-semibold text-red-600 dark:text-red-400">{issuanceCase?.extractionQualityStatus || 'PENDING'}</span> ({issuanceCase?.extractionScore ?? 0}/100)</p>
+                  )}
+                </div>
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              This case has not passed eligibility checks. To proceed to review, provide a reason for the override. This action will be logged in the audit trail.
+              This case has not passed all required checks. To proceed to review, provide a reason for the override. This action will be logged in the audit trail.
             </p>
             <textarea
               value={overrideReason}

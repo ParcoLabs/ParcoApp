@@ -10,6 +10,7 @@ import { extractTextFromIssuanceDocument } from '../services/docTextExtractor';
 import { extractFieldsFromText } from '../services/llmExtraction';
 import { getCriticalKeys, checkCriticalFieldsVerified } from '../services/criticalFields';
 import { generateOfferingPacket } from '../services/offeringPacket';
+import { computeExtractionQuality } from '../services/extractionQuality';
 
 const router = Router();
 
@@ -326,6 +327,8 @@ router.post(
           data: { status: 'EXTRACTION_COMPLETE' },
         });
 
+        const qualityResult = await computeExtractionQuality(caseId);
+
         return res.json({
           success: true,
           data: {
@@ -339,6 +342,9 @@ router.post(
             errors: [],
             startedAt: run.startedAt,
             finishedAt: new Date().toISOString(),
+            extractionScore: qualityResult.extractionScore,
+            extractionQualityStatus: qualityResult.extractionQualityStatus,
+            qualityDetails: qualityResult.details,
           },
         });
       }
@@ -481,6 +487,8 @@ router.post(
         });
       }
 
+      const qualityResult = !allFailed ? await computeExtractionQuality(caseId) : null;
+
       return res.json({
         success: true,
         data: {
@@ -494,6 +502,9 @@ router.post(
           errors: results.filter(r => r.error).map(r => ({ docId: r.id, name: r.name, error: r.error })),
           startedAt: run.startedAt,
           finishedAt: new Date().toISOString(),
+          extractionScore: qualityResult?.extractionScore ?? 0,
+          extractionQualityStatus: qualityResult?.extractionQualityStatus ?? 'PENDING',
+          qualityDetails: qualityResult?.details ?? null,
         },
       });
     } catch (error: any) {
@@ -886,7 +897,7 @@ router.post(
         const mockCase = mockIssuanceCase({ id: caseId, status: newStatus });
         let warning = 'Demo mode: status transitions are simulated without real enforcement';
         if (newStatus === 'REVIEW_READY') {
-          warning = 'Demo mode: eligibility gating bypassed — would normally require PASS status';
+          warning = 'Demo mode: eligibility and extraction quality gating bypassed — would normally require PASS status';
         }
         return res.json({ success: true, data: mockCase, warning });
       }
@@ -907,25 +918,49 @@ router.post(
         });
       }
 
-      if (newStatus === 'REVIEW_READY' && issuanceCase.eligibilityStatus !== 'PASS') {
-        if (override === true && reason && typeof reason === 'string' && reason.trim().length > 0) {
-          await prisma.auditEvent.create({
-            data: {
-              type: 'ELIGIBILITY_OVERRIDE',
-              entityId: caseId,
-              userId: user.id,
-              oldValue: { eligibilityStatus: issuanceCase.eligibilityStatus },
-              newValue: { status: newStatus, overrideReason: reason.trim() },
-            },
-          });
-          console.log(`[issuance] Admin ${user.id} overrode eligibility for case ${caseId}: ${reason.trim()}`);
-        } else {
-          return res.status(400).json({
-            success: false,
-            error: 'Cannot advance to REVIEW_READY: eligibility status is not PASS. Provide { override: true, reason: "..." } to override.',
-            eligibilityStatus: issuanceCase.eligibilityStatus,
-            requiresOverride: true,
-          });
+      if (newStatus === 'REVIEW_READY') {
+        const needsEligibilityOverride = issuanceCase.eligibilityStatus !== 'PASS';
+        const needsExtractionOverride = (issuanceCase as any).extractionQualityStatus !== 'PASS';
+        const needsOverride = needsEligibilityOverride || needsExtractionOverride;
+
+        if (needsOverride) {
+          if (override === true && reason && typeof reason === 'string' && reason.trim().length > 0) {
+            if (needsEligibilityOverride) {
+              await prisma.auditEvent.create({
+                data: {
+                  type: 'ELIGIBILITY_OVERRIDE',
+                  entityId: caseId,
+                  userId: user.id,
+                  oldValue: { eligibilityStatus: issuanceCase.eligibilityStatus },
+                  newValue: { status: newStatus, overrideReason: reason.trim() },
+                },
+              });
+              console.log(`[issuance] Admin ${user.id} overrode eligibility for case ${caseId}: ${reason.trim()}`);
+            }
+            if (needsExtractionOverride) {
+              await prisma.auditEvent.create({
+                data: {
+                  type: 'EXTRACTION_OVERRIDE',
+                  entityId: caseId,
+                  userId: user.id,
+                  oldValue: { extractionQualityStatus: (issuanceCase as any).extractionQualityStatus, extractionScore: issuanceCase.extractionScore },
+                  newValue: { status: newStatus, overrideReason: reason.trim() },
+                },
+              });
+              console.log(`[issuance] Admin ${user.id} overrode extraction quality for case ${caseId}: ${reason.trim()}`);
+            }
+          } else {
+            const issues: string[] = [];
+            if (needsEligibilityOverride) issues.push(`eligibility status is ${issuanceCase.eligibilityStatus}`);
+            if (needsExtractionOverride) issues.push(`extraction quality is ${(issuanceCase as any).extractionQualityStatus}`);
+            return res.status(400).json({
+              success: false,
+              error: `Cannot advance to REVIEW_READY: ${issues.join(' and ')}. Provide { override: true, reason: "..." } to override.`,
+              eligibilityStatus: issuanceCase.eligibilityStatus,
+              extractionQualityStatus: (issuanceCase as any).extractionQualityStatus,
+              requiresOverride: true,
+            });
+          }
         }
       }
 
@@ -962,6 +997,7 @@ router.get(
             status: s as any,
             eligibilityStatus: s === 'REVIEW_READY' || s === 'APPROVED' || s === 'MINTED' || s === 'LIVE' ? 'PASS' : 'PENDING',
             extractionScore: s === 'DRAFT' || s === 'INTAKE_COMPLETE' ? 0 : 85,
+            extractionQualityStatus: s === 'DRAFT' || s === 'INTAKE_COMPLETE' ? 'PENDING' : (s === 'REVIEW_READY' || s === 'APPROVED' || s === 'MINTED' || s === 'LIVE' ? 'PASS' : 'NEEDS_REVIEW') as any,
           }),
           submission: {
             id: `demo_sub_${i}`,

@@ -498,6 +498,7 @@ model IssuanceCase {
   status               IssuanceCaseStatus  @default(DRAFT)
   eligibilityStatus    EligibilityStatus   @default(PENDING)
   extractionScore      Int                 @default(0)
+  extractionQualityStatus String           @default("PENDING")
   notes                String?
   track                IssuanceTrack       @default(SERIES_LLC)
   targetState          USState             @default(OTHER)
