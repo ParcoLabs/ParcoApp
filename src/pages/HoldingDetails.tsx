@@ -23,6 +23,44 @@ interface HoldingData {
   tokenPrice: number;
 }
 
+interface ReportingData {
+  latestKPI: {
+    propertyValue: number;
+    occupancy: number;
+    rentalIncome: number;
+    expenses: number;
+  };
+  publishedReports: Array<{
+    id: string;
+    propertyId: string;
+    periodStart: string;
+    periodEnd: string;
+    status: string;
+    draftText: string;
+    publishedAt: string;
+    createdAt: string;
+  }>;
+  distributionHistory: Array<{
+    id: string;
+    propertyId: string;
+    grossAmount: string;
+    netAmount: string;
+    distributedAt: string;
+    tokensHeld: number;
+    totalTokens: number;
+  }>;
+  investorStatements: Array<{
+    id: string;
+    propertyId: string;
+    periodStart: string;
+    periodEnd: string;
+    statementText: string;
+    createdAt: string;
+  }>;
+  governanceNotices: any[];
+  openGovernanceVotes: any[];
+}
+
 interface GovernanceProposal {
   id: string;
   title: string;
@@ -155,6 +193,8 @@ export const HoldingDetails: React.FC = () => {
   const [chartPeriod, setChartPeriod] = useState('1M');
   const [chartData, setChartData] = useState<any[]>([]);
   const [proposals, setProposals] = useState<GovernanceProposal[]>([]);
+  const [reportingData, setReportingData] = useState<ReportingData | null>(null);
+  const [reportingLoading, setReportingLoading] = useState(false);
 
   useEffect(() => {
     const fetchHolding = async () => {
@@ -217,6 +257,24 @@ export const HoldingDetails: React.FC = () => {
       setChartData(generatePriceData(holding.currentValue, chartPeriod));
     }
   }, [holding, chartPeriod]);
+
+  useEffect(() => {
+    if (activeTab === 'Reporting' && id && !reportingData && !reportingLoading) {
+      setReportingLoading(true);
+      fetch(`/api/servicing/investor/property/${id}/reporting-center`, {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setReportingData(data.data);
+          }
+        })
+        .catch(err => console.error('Error fetching reporting data:', err))
+        .finally(() => setReportingLoading(false));
+    }
+  }, [activeTab, id, reportingData, reportingLoading]);
 
   if (loading) {
     return (
@@ -335,7 +393,7 @@ export const HoldingDetails: React.FC = () => {
 
           {/* Tabs */}
           <div className="flex border-b border-brand-lightGray dark:border-[#3a3a3a] mb-4">
-            {[...['Balance', 'Insights', 'Governance'], ...(property?.hasParcoStays ? ['Parco Stays'] : [])].map(tab => (
+            {[...['Balance', 'Insights', 'Governance', 'Reporting'], ...(property?.hasParcoStays ? ['Parco Stays'] : [])].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -502,6 +560,87 @@ export const HoldingDetails: React.FC = () => {
             </div>
           )}
 
+          {activeTab === 'Reporting' && (
+            <div className="space-y-4">
+              {reportingLoading ? (
+                <div className="animate-pulse space-y-4">
+                  <div className="h-24 bg-brand-lightGray dark:bg-[#2a2a2a] rounded-xl"></div>
+                  <div className="h-32 bg-brand-lightGray dark:bg-[#2a2a2a] rounded-xl"></div>
+                </div>
+              ) : reportingData ? (
+                <>
+                  <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-4 border border-brand-lightGray dark:border-[#3a3a3a]">
+                    <h3 className="font-bold text-brand-dark dark:text-white mb-3">Latest Monthly Update</h3>
+                    {reportingData.publishedReports.length > 0 ? (
+                      <pre className="text-sm text-brand-sage dark:text-gray-400 whitespace-pre-wrap font-sans leading-relaxed">
+                        {reportingData.publishedReports[0].draftText}
+                      </pre>
+                    ) : (
+                      <p className="text-sm text-brand-sage dark:text-gray-400">No published reports yet.</p>
+                    )}
+                  </div>
+
+                  {reportingData.publishedReports.length > 1 && (
+                    <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-4 border border-brand-lightGray dark:border-[#3a3a3a]">
+                      <h3 className="font-bold text-brand-dark dark:text-white mb-3">Past Reports</h3>
+                      <div className="space-y-2">
+                        {reportingData.publishedReports.slice(1).map(report => (
+                          <div key={report.id} className="flex justify-between items-center py-2 border-b border-brand-lightGray dark:border-[#3a3a3a] last:border-0">
+                            <span className="text-sm text-brand-dark dark:text-white">
+                              {new Date(report.periodStart).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                            </span>
+                            <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold">PUBLISHED</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {reportingData.distributionHistory.length > 0 && (
+                    <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-4 border border-brand-lightGray dark:border-[#3a3a3a]">
+                      <h3 className="font-bold text-brand-dark dark:text-white mb-3">Distributions</h3>
+                      <div className="space-y-2">
+                        {reportingData.distributionHistory.map(dist => (
+                          <div key={dist.id} className="flex justify-between items-center py-2 border-b border-brand-lightGray dark:border-[#3a3a3a] last:border-0">
+                            <span className="text-sm text-brand-sage dark:text-gray-400">
+                              {new Date(dist.distributedAt).toLocaleDateString()}
+                            </span>
+                            <span className="text-sm font-bold text-brand-medium dark:text-brand-mint">${Number(dist.netAmount).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {reportingData.investorStatements.length > 0 && (
+                    <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-4 border border-brand-lightGray dark:border-[#3a3a3a]">
+                      <h3 className="font-bold text-brand-dark dark:text-white mb-3">Statements</h3>
+                      <div className="space-y-2">
+                        {reportingData.investorStatements.map(stmt => (
+                          <div key={stmt.id} className="flex justify-between items-center py-2 border-b border-brand-lightGray dark:border-[#3a3a3a] last:border-0">
+                            <span className="text-sm text-brand-dark dark:text-white">
+                              {new Date(stmt.periodStart).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                            </span>
+                            <span className="text-xs bg-brand-mint text-brand-deep px-2 py-1 rounded-full font-bold">VIEW</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-4 border border-brand-lightGray dark:border-[#3a3a3a]">
+                    <h3 className="font-bold text-brand-dark dark:text-white mb-3">Notices & Votes</h3>
+                    <p className="text-sm text-brand-sage dark:text-gray-400">No notices or votes at this time.</p>
+                  </div>
+                </>
+              ) : (
+                <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-4 border border-brand-lightGray dark:border-[#3a3a3a]">
+                  <p className="text-sm text-brand-sage dark:text-gray-400">Unable to load reporting data.</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {activeTab === 'Parco Stays' && property?.hasParcoStays && (
             <ParcoStaysTab 
               property={property}
@@ -624,7 +763,7 @@ export const HoldingDetails: React.FC = () => {
             {/* Tabs */}
             <div>
               <div className="flex border-b border-brand-lightGray dark:border-[#3a3a3a] mb-6">
-                {[...['Balance', 'Insights', 'Governance'], ...(property?.hasParcoStays ? ['Parco Stays'] : [])].map(tab => (
+                {[...['Balance', 'Insights', 'Governance', 'Reporting'], ...(property?.hasParcoStays ? ['Parco Stays'] : [])].map(tab => (
                   <button
                     key={tab}
                     onClick={() => setActiveTab(tab)}
@@ -818,6 +957,117 @@ export const HoldingDetails: React.FC = () => {
                       ))}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {activeTab === 'Reporting' && (
+                <div className="space-y-6">
+                  {reportingLoading ? (
+                    <div className="animate-pulse space-y-6">
+                      <div className="h-32 bg-brand-lightGray dark:bg-[#2a2a2a] rounded-xl"></div>
+                      <div className="h-48 bg-brand-lightGray dark:bg-[#2a2a2a] rounded-xl"></div>
+                    </div>
+                  ) : reportingData ? (
+                    <>
+                      <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-xl p-6">
+                        <h3 className="font-bold text-brand-dark dark:text-white mb-4">
+                          <i className="fa-solid fa-file-lines text-brand-medium dark:text-brand-mint mr-2"></i>
+                          Latest Monthly Update
+                        </h3>
+                        {reportingData.publishedReports.length > 0 ? (
+                          <pre className="text-sm text-brand-sage dark:text-gray-400 whitespace-pre-wrap font-sans leading-relaxed">
+                            {reportingData.publishedReports[0].draftText}
+                          </pre>
+                        ) : (
+                          <p className="text-sm text-brand-sage dark:text-gray-400">No published reports yet.</p>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-xl p-6">
+                          <h3 className="font-bold text-brand-dark dark:text-white mb-4">
+                            <i className="fa-solid fa-clock-rotate-left text-brand-medium dark:text-brand-mint mr-2"></i>
+                            Past Reports
+                          </h3>
+                          {reportingData.publishedReports.length > 1 ? (
+                            <div className="space-y-3">
+                              {reportingData.publishedReports.slice(1).map(report => (
+                                <div key={report.id} className="flex justify-between items-center py-2 border-b border-brand-lightGray dark:border-[#3a3a3a] last:border-0">
+                                  <span className="text-sm text-brand-dark dark:text-white">
+                                    {new Date(report.periodStart).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                  </span>
+                                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold">PUBLISHED</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-brand-sage dark:text-gray-400">No past reports available.</p>
+                          )}
+                        </div>
+
+                        <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-xl p-6">
+                          <h3 className="font-bold text-brand-dark dark:text-white mb-4">
+                            <i className="fa-solid fa-money-bill-transfer text-brand-medium dark:text-brand-mint mr-2"></i>
+                            Distributions
+                          </h3>
+                          {reportingData.distributionHistory.length > 0 ? (
+                            <div className="space-y-3">
+                              {reportingData.distributionHistory.map(dist => (
+                                <div key={dist.id} className="flex justify-between items-center py-2 border-b border-brand-lightGray dark:border-[#3a3a3a] last:border-0">
+                                  <div>
+                                    <span className="text-sm text-brand-dark dark:text-white block">
+                                      {new Date(dist.distributedAt).toLocaleDateString()}
+                                    </span>
+                                    <span className="text-xs text-brand-sage dark:text-gray-400">
+                                      {dist.tokensHeld} / {dist.totalTokens} tokens
+                                    </span>
+                                  </div>
+                                  <span className="text-sm font-bold text-brand-medium dark:text-brand-mint">${Number(dist.netAmount).toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-brand-sage dark:text-gray-400">No distributions yet.</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-6">
+                        <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-xl p-6">
+                          <h3 className="font-bold text-brand-dark dark:text-white mb-4">
+                            <i className="fa-solid fa-file-invoice text-brand-medium dark:text-brand-mint mr-2"></i>
+                            Statements
+                          </h3>
+                          {reportingData.investorStatements.length > 0 ? (
+                            <div className="space-y-3">
+                              {reportingData.investorStatements.map(stmt => (
+                                <div key={stmt.id} className="flex justify-between items-center py-2 border-b border-brand-lightGray dark:border-[#3a3a3a] last:border-0">
+                                  <span className="text-sm text-brand-dark dark:text-white">
+                                    {new Date(stmt.periodStart).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                                  </span>
+                                  <span className="text-xs bg-brand-mint text-brand-deep px-2 py-1 rounded-full font-bold cursor-pointer hover:bg-brand-deep hover:text-white transition-colors">VIEW</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-brand-sage dark:text-gray-400">No statements available.</p>
+                          )}
+                        </div>
+
+                        <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-xl p-6">
+                          <h3 className="font-bold text-brand-dark dark:text-white mb-4">
+                            <i className="fa-solid fa-bell text-brand-medium dark:text-brand-mint mr-2"></i>
+                            Notices & Votes
+                          </h3>
+                          <p className="text-sm text-brand-sage dark:text-gray-400">No notices or votes at this time.</p>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-xl p-6">
+                      <p className="text-sm text-brand-sage dark:text-gray-400">Unable to load reporting data.</p>
+                    </div>
+                  )}
                 </div>
               )}
 

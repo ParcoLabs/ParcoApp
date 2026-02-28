@@ -122,6 +122,7 @@ model Property {
   onchainDeployment     OnchainDeployment?
   capTableSnapshots     CapTableSnapshot[]
   investorStatements    InvestorStatement[]
+  servicingReportRuns   ServicingReportRun[]
 
   @@index([status])
   @@index([propertyType])
@@ -1176,4 +1177,42 @@ model OfferingPacket {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   case      IssuanceCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+}
+
+enum ReportStatus {
+  DRAFT
+  IN_REVIEW
+  PUBLISHED
+}
+
+model ServicingReportRun {
+  id          String       @id @default(cuid())
+  propertyId  String
+  periodStart DateTime
+  periodEnd   DateTime
+  status      ReportStatus @default(DRAFT)
+  draftText   String?
+  publishedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  property    Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  approvals   ReportApproval[]
+
+  @@index([propertyId])
+  @@index([status])
+  @@index([periodEnd])
+}
+
+model ReportApproval {
+  id               String            @id @default(cuid())
+  reportRunId      String
+  role             ApprovalRole
+  status           String            @default("PENDING")
+  approvedByUserId String?
+  notes            String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  reportRun        ServicingReportRun @relation(fields: [reportRunId], references: [id], onDelete: Cascade)
+
+  @@index([reportRunId])
 }

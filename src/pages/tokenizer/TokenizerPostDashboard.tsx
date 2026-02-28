@@ -101,6 +101,9 @@ export const TokenizerPostDashboard: React.FC = () => {
   const [opsMessage, setOpsMessage] = useState<string | null>(null);
   const [offeringPacket, setOfferingPacket] = useState<any>(null);
   const [packetLoading, setPacketLoading] = useState(false);
+  const [monthlyCloseRuns, setMonthlyCloseRuns] = useState<any[]>([]);
+  const [monthlyCloseLoading, setMonthlyCloseLoading] = useState(false);
+  const [monthlyCloseActionLoading, setMonthlyCloseActionLoading] = useState(false);
 
   useEffect(() => {
     fetchSubmissions();
@@ -138,6 +141,7 @@ export const TokenizerPostDashboard: React.FC = () => {
       fetchCompliance(propId);
       fetchSnapshots(propId);
       fetchStatements(propId);
+      fetchMonthlyClose(propId);
     }
     if (activeSubmission?.id) {
       fetchOfferingPacket(activeSubmission.id);
@@ -268,6 +272,132 @@ export const TokenizerPostDashboard: React.FC = () => {
       setStatementLoading(false);
     }
   };
+
+  const fetchMonthlyClose = async (propertyId: string) => {
+    setMonthlyCloseLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/servicing/property/${propertyId}/monthly-close`, {
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setMonthlyCloseRuns(json.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching monthly close:', error);
+    } finally {
+      setMonthlyCloseLoading(false);
+    }
+  };
+
+  const handleStartMonthlyClose = async () => {
+    const propId = activeSubmission?.propertyId || activeSubmission?.id;
+    if (!propId) return;
+    setMonthlyCloseActionLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/servicing/property/${propId}/monthly-close/start`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        fetchMonthlyClose(propId);
+      }
+    } catch (error) {
+      console.error('Error starting monthly close:', error);
+    } finally {
+      setMonthlyCloseActionLoading(false);
+    }
+  };
+
+  const handleSubmitForReview = async (reportId: string) => {
+    setMonthlyCloseActionLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/servicing/report-run/${reportId}/submit`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        const propId = activeSubmission?.propertyId || activeSubmission?.id;
+        if (propId) fetchMonthlyClose(propId);
+      }
+    } catch (error) {
+      console.error('Error submitting for review:', error);
+    } finally {
+      setMonthlyCloseActionLoading(false);
+    }
+  };
+
+  const handleApproveApproval = async (reportId: string, approvalId: string) => {
+    setMonthlyCloseActionLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/servicing/report-run/${reportId}/approve/${approvalId}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        const propId = activeSubmission?.propertyId || activeSubmission?.id;
+        if (propId) fetchMonthlyClose(propId);
+      }
+    } catch (error) {
+      console.error('Error approving:', error);
+    } finally {
+      setMonthlyCloseActionLoading(false);
+    }
+  };
+
+  const handlePublishReport = async (reportId: string) => {
+    setMonthlyCloseActionLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/servicing/report-run/${reportId}/publish`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        const propId = activeSubmission?.propertyId || activeSubmission?.id;
+        if (propId) fetchMonthlyClose(propId);
+      }
+    } catch (error) {
+      console.error('Error publishing:', error);
+    } finally {
+      setMonthlyCloseActionLoading(false);
+    }
+  };
+
+  const getMonthlyCloseStatusColor = (status: string) => {
+    switch (status) {
+      case 'DRAFT': return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300';
+      case 'IN_REVIEW': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300';
+      case 'PUBLISHED': return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300';
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300';
+    }
+  };
+
+  const getApprovalStatusIcon = (status: string) => {
+    if (status === 'APPROVED') return 'fa-solid fa-circle-check text-green-500';
+    return 'fa-regular fa-circle text-gray-400 dark:text-gray-600';
+  };
+
+  const hasActiveReport = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    return monthlyCloseRuns.some((run: any) => {
+      const runStart = new Date(run.periodStart);
+      return runStart.getMonth() === currentMonth && runStart.getFullYear() === currentYear && (run.status === 'DRAFT' || run.status === 'IN_REVIEW');
+    });
+  };
+
+  const activeReport = monthlyCloseRuns.find((run: any) => run.status === 'DRAFT' || run.status === 'IN_REVIEW');
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -594,6 +724,146 @@ export const TokenizerPostDashboard: React.FC = () => {
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-brand-dark dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-calendar-check text-brand-deep"></i>
+                Monthly Close
+              </h3>
+              {activeReport && (
+                <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${getMonthlyCloseStatusColor(activeReport.status)}`}>
+                  {activeReport.status === 'IN_REVIEW' ? 'In Review' : activeReport.status}
+                </span>
+              )}
+            </div>
+
+            {monthlyCloseLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-deep"></div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {!hasActiveReport() && (
+                  <button
+                    onClick={handleStartMonthlyClose}
+                    disabled={monthlyCloseActionLoading}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-brand-deep hover:bg-brand-dark text-white rounded-lg font-semibold text-sm transition-all disabled:opacity-50"
+                  >
+                    {monthlyCloseActionLoading ? (
+                      <i className="fa-solid fa-spinner fa-spin"></i>
+                    ) : (
+                      <i className="fa-solid fa-play"></i>
+                    )}
+                    Start Monthly Close
+                  </button>
+                )}
+
+                {activeReport && (
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-xs font-semibold text-brand-sage dark:text-gray-400 uppercase mb-2">Draft Report</h4>
+                      <div className="bg-brand-offWhite dark:bg-[#222] rounded-lg p-3 max-h-48 overflow-y-auto">
+                        <pre className="text-xs leading-relaxed text-brand-dark dark:text-gray-300 whitespace-pre-wrap font-sans">
+                          {activeReport.draftText}
+                        </pre>
+                      </div>
+                    </div>
+
+                    {activeReport.status === 'DRAFT' && (
+                      <button
+                        onClick={() => handleSubmitForReview(activeReport.id)}
+                        disabled={monthlyCloseActionLoading}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-all disabled:opacity-50"
+                      >
+                        {monthlyCloseActionLoading ? (
+                          <i className="fa-solid fa-spinner fa-spin"></i>
+                        ) : (
+                          <i className="fa-solid fa-paper-plane"></i>
+                        )}
+                        Submit for Review
+                      </button>
+                    )}
+
+                    <div>
+                      <h4 className="text-xs font-semibold text-brand-sage dark:text-gray-400 uppercase mb-2">Approvals</h4>
+                      <div className="space-y-2">
+                        {(activeReport.approvals || []).map((approval: any) => (
+                          <div key={approval.id} className="flex items-center justify-between p-2.5 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg">
+                            <div className="flex items-center gap-2.5">
+                              <i className={`${getApprovalStatusIcon(approval.status)} text-base`}></i>
+                              <span className="text-sm font-medium text-brand-dark dark:text-white">{approval.role}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                                approval.status === 'APPROVED'
+                                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                  : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                              }`}>
+                                {approval.status}
+                              </span>
+                              {activeReport.status === 'IN_REVIEW' && approval.status !== 'APPROVED' && (
+                                <button
+                                  onClick={() => handleApproveApproval(activeReport.id, approval.id)}
+                                  disabled={monthlyCloseActionLoading}
+                                  className="text-xs font-medium text-brand-deep dark:text-brand-mint hover:underline disabled:opacity-50"
+                                >
+                                  Approve
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {activeReport.status === 'IN_REVIEW' && (activeReport.approvals || []).every((a: any) => a.status === 'APPROVED') && (
+                      <button
+                        onClick={() => handlePublishReport(activeReport.id)}
+                        disabled={monthlyCloseActionLoading}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-sm transition-all disabled:opacity-50"
+                      >
+                        {monthlyCloseActionLoading ? (
+                          <i className="fa-solid fa-spinner fa-spin"></i>
+                        ) : (
+                          <i className="fa-solid fa-check-double"></i>
+                        )}
+                        Publish Report
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {monthlyCloseRuns.filter((r: any) => r.status === 'PUBLISHED').length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-brand-sage dark:text-gray-400 uppercase mb-2">Past Reports</h4>
+                    <div className="space-y-2">
+                      {monthlyCloseRuns.filter((r: any) => r.status === 'PUBLISHED').slice(0, 5).map((run: any) => (
+                        <div key={run.id} className="flex items-center justify-between p-2 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                              <i className="fa-solid fa-file-circle-check text-green-600 dark:text-green-400 text-xs"></i>
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-brand-dark dark:text-white">
+                                {new Date(run.periodStart).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                              </p>
+                              <p className="text-[10px] text-brand-sage dark:text-gray-400">
+                                Published {run.publishedAt ? new Date(run.publishedAt).toLocaleDateString() : ''}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                            PUBLISHED
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
