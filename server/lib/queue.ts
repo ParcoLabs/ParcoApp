@@ -1,13 +1,6 @@
-import { Queue, QueueEvents } from 'bullmq';
+import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
-
-const REDIS_URL = process.env.REDIS_URL || 'redis://127.0.0.1:6379';
-
-export const connection = new IORedis(REDIS_URL, {
-  maxRetriesPerRequest: null,
-  enableReadyCheck: false,
-  lazyConnect: true,
-});
+import logger from '../observability/logger';
 
 export const JOB_NAMES = {
   DOC_EXTRACT: 'DOC_EXTRACT',
@@ -30,11 +23,32 @@ export const DEFAULT_JOB_OPTIONS = {
   removeOnFail: { count: 5000 },
 };
 
+let _connection: IORedis | null = null;
+
+export function hasRedis(): boolean {
+  return !!process.env.REDIS_URL;
+}
+
+export function getConnection(): IORedis {
+  if (!_connection) {
+    const redisUrl = process.env.REDIS_URL;
+    if (!redisUrl) {
+      throw new Error('REDIS_URL is not configured');
+    }
+    _connection = new IORedis(redisUrl, {
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+      lazyConnect: true,
+    });
+  }
+  return _connection;
+}
+
 let _parcoQueue: Queue | null = null;
 
 export function getQueue(): Queue {
   if (!_parcoQueue) {
-    _parcoQueue = new Queue('parco', { connection });
+    _parcoQueue = new Queue('parco', { connection: getConnection() });
   }
   return _parcoQueue;
 }
@@ -44,6 +58,19 @@ export async function enqueue(
   data: Record<string, unknown>,
   opts?: Partial<typeof DEFAULT_JOB_OPTIONS>,
 ) {
+  if (!hasRedis()) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new QueueUnavailableError();
+    }
+
+    logger.warn(
+      { jobName: name },
+      'REDIS_URL not set — processing job inline (dev mode)',
+    );
+    await processInline(name, data);
+    return { id: `inline-${Date.now()}`, name, data };
+  }
+
   const queue = getQueue();
   const jobId = data.idempotencyKey as string | undefined;
   return queue.add(name, data, {
@@ -53,10 +80,34 @@ export async function enqueue(
   });
 }
 
+export class QueueUnavailableError extends Error {
+  public statusCode = 412;
+  constructor() {
+    super(
+      'Job queue is unavailable. REDIS_URL environment variable is not configured. ' +
+        'Set REDIS_URL to an Upstash Redis or compatible Redis URL to enable async job processing.',
+    );
+    this.name = 'QueueUnavailableError';
+  }
+}
+
+async function processInline(name: JobName, data: Record<string, unknown>) {
+  const { getInlineProcessor } = await import('./inlineProcessor');
+  const processor = getInlineProcessor(name);
+  if (processor) {
+    await processor(data);
+  } else {
+    logger.warn({ jobName: name }, 'No inline processor registered — job skipped');
+  }
+}
+
 export async function closeQueue() {
   if (_parcoQueue) {
     await _parcoQueue.close();
     _parcoQueue = null;
   }
-  await connection.quit();
+  if (_connection) {
+    await _connection.quit();
+    _connection = null;
+  }
 }

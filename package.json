@@ -13,6 +13,8 @@
     "start:worker": "NODE_ENV=production node --import tsx server/worker.ts",
     "start": "NODE_ENV=production PORT=5000 node --import tsx server/index.ts",
     "migrate": "npx prisma migrate deploy && npx prisma generate",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -32,6 +34,7 @@
     "@types/multer": "^2.0.0",
     "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.15.6",
+    "@types/supertest": "^7.2.0",
     "autoprefixer": "^10.4.23",
     "bullmq": "^5.70.1",
     "coinbase-commerce-node": "^1.0.4",
@@ -59,8 +62,10 @@
     "recharts": "^3.5.1",
     "stripe": "^20.0.0",
     "stripe-replit-sync": "^1.0.0",
+    "supertest": "^7.2.2",
     "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0",
+    "vitest": "^4.0.18",
     "zod": "^4.3.6",
     "zod-validation-error": "^5.0.0"
   },

@@ -31,11 +31,15 @@ S3_SECRET_ACCESS_KEY=...
 S3_REGION=auto
 ```
 
-### Worker (BullMQ)
+### Queue (Upstash Redis)
 
 ```
-REDIS_URL=redis://user:pass@host:6379
+REDIS_URL=rediss://default:TOKEN@ENDPOINT.upstash.io:6379
 ```
+
+If `REDIS_URL` is not set:
+- **Local dev**: Jobs are processed inline (synchronously in the API process). No Redis required.
+- **Production**: Enqueue endpoints return `412 Precondition Failed` with a clear error message.
 
 ### Blockchain (worker only)
 

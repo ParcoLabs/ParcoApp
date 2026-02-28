@@ -3,7 +3,7 @@ import { validateAuth } from '../middleware/auth';
 import { adminOnly, AuthenticatedRequest } from '../middleware/admin';
 import prisma from '../lib/prisma';
 import { isDemoMode, generateMockTxHash } from '../lib/demoMode';
-import { enqueue, JOB_NAMES } from '../lib/queue';
+import { enqueue, JOB_NAMES, QueueUnavailableError } from '../lib/queue';
 import { logger } from '../observability';
 
 const router = Router();

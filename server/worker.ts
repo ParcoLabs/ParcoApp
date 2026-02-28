@@ -1,5 +1,5 @@
 import { Worker, Job } from 'bullmq';
-import { connection, JOB_NAMES } from './lib/queue';
+import { getConnection, JOB_NAMES } from './lib/queue';
 import prisma from './lib/prisma';
 import { extractTextFromIssuanceDocument } from './services/docTextExtractor';
 import { extractFieldsFromText } from './services/llmExtraction';
@@ -423,6 +423,7 @@ async function main() {
   logger.info({ redis: process.env.REDIS_URL || 'redis://127.0.0.1:6379', concurrency: CONCURRENCY }, 'Worker config');
   logger.info({ processors: Object.keys(processors) }, 'Registered processors');
 
+  const connection = getConnection();
   await connection.connect();
   logger.info('[worker] Redis connected');
 

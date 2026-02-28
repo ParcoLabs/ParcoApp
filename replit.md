@@ -62,7 +62,7 @@ The frontend uses React, TailwindCSS for styling, and Recharts for data visualiz
 - Client-side routing with React Router DOM.
 - Custom Express.js backend for API services (entrypoint: `server/index.ts`).
 - Separate BullMQ worker process (entrypoint: `server/worker.ts`) for async job processing.
-- Queue infrastructure: BullMQ + ioredis (`server/lib/queue.ts`). Queue name: `parco`. Requires `REDIS_URL` env var.
+- Queue infrastructure: BullMQ + ioredis (`server/lib/queue.ts`). Queue name: `parco`. Uses `REDIS_URL` env var (Upstash Redis). If `REDIS_URL` missing: dev processes jobs inline, prod returns 412.
 - Job types: `DOC_EXTRACT`, `REPORT_DRAFT`, `DISTRIBUTION_PREP`, `BLOCKCHAIN_DEPLOY`, `BLOCKCHAIN_ALLOWLIST`, `BLOCKCHAIN_MINT`.
 - All jobs use idempotent handlers, exponential backoff (5s base), and 3 retries.
 - API enqueues jobs via `enqueue()` from `server/lib/queue.ts`; worker processes them independently.
@@ -76,7 +76,8 @@ The frontend uses React, TailwindCSS for styling, and Recharts for data visualiz
 - Storage routes: `POST /api/storage/issuance-docs/upload-url` (signed PUT URL), `GET /api/storage/issuance-docs/:docId/download-url` (signed GET URL).
 - Issuance roadmap framework supporting multiple regulatory tracks (e.g., SERIES_LLC, REG_CF, REG_A, REG_D).
 - Eligibility Engine performs checks based on state enablement, price caps, and document completeness.
-- npm scripts: `build` (vite + prisma generate), `start:api` (production API), `start:worker` (production worker), `migrate` (prisma migrate deploy).
+- npm scripts: `build` (vite + prisma generate), `start:api` (production API), `start:worker` (production worker), `migrate` (prisma migrate deploy), `test` (vitest run), `test:watch` (vitest).
+- Testing: vitest + supertest for API tests (`server/__tests__/`). Hardhat for smart contract tests (`test/`). CI: GitHub Actions `.github/workflows/ci.yml` (lint+typecheck, API tests, Hardhat tests).
 
 ### External Dependencies
 - **Clerk**: User authentication.
