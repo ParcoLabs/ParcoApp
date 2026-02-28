@@ -195,6 +195,9 @@ export const HoldingDetails: React.FC = () => {
   const [proposals, setProposals] = useState<GovernanceProposal[]>([]);
   const [reportingData, setReportingData] = useState<ReportingData | null>(null);
   const [reportingLoading, setReportingLoading] = useState(false);
+  const [investorGov, setInvestorGov] = useState<{ notices: any[]; votes: any[] } | null>(null);
+  const [investorGovLoading, setInvestorGovLoading] = useState(false);
+  const [castingVoteId, setCastingVoteId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchHolding = async () => {
@@ -275,6 +278,43 @@ export const HoldingDetails: React.FC = () => {
         .finally(() => setReportingLoading(false));
     }
   }, [activeTab, id, reportingData, reportingLoading]);
+
+  useEffect(() => {
+    if (activeTab === 'Reporting' && id && !investorGov && !investorGovLoading) {
+      setInvestorGovLoading(true);
+      fetch(`/api/servicing/investor/property/${id}/governance`, {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            setInvestorGov(data.data);
+          }
+        })
+        .catch(err => console.error('Error fetching investor governance:', err))
+        .finally(() => setInvestorGovLoading(false));
+    }
+  }, [activeTab, id, investorGov, investorGovLoading]);
+
+  const handleCastVote = async (voteId: string, optionKey: string) => {
+    setCastingVoteId(voteId);
+    try {
+      const res = await fetch(`/api/servicing/investor/votes/${voteId}/cast`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ optionKey }),
+      });
+      if (res.ok) {
+        setInvestorGov(null);
+      }
+    } catch (err) {
+      console.error('Error casting vote:', err);
+    } finally {
+      setCastingVoteId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -630,7 +670,58 @@ export const HoldingDetails: React.FC = () => {
 
                   <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-4 border border-brand-lightGray dark:border-[#3a3a3a]">
                     <h3 className="font-bold text-brand-dark dark:text-white mb-3">Notices & Votes</h3>
-                    <p className="text-sm text-brand-sage dark:text-gray-400">No notices or votes at this time.</p>
+                    {investorGovLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-brand-deep"></div>
+                      </div>
+                    ) : investorGov && (investorGov.notices.length > 0 || investorGov.votes.length > 0) ? (
+                      <div className="space-y-3">
+                        {investorGov.notices.map((notice: any) => (
+                          <div key={notice.id} className="p-3 border border-brand-lightGray dark:border-[#3a3a3a] rounded-lg">
+                            <p className="text-sm font-semibold text-brand-dark dark:text-white mb-1">{notice.title}</p>
+                            <p className="text-xs text-brand-sage dark:text-gray-400 whitespace-pre-wrap">{notice.bodyMarkdown}</p>
+                            <p className="text-[10px] text-brand-sage dark:text-gray-500 mt-1">
+                              {notice.publishedAt ? new Date(notice.publishedAt).toLocaleDateString() : ''}
+                            </p>
+                          </div>
+                        ))}
+                        {investorGov.votes.map((vote: any) => {
+                          const userBallot = vote.ballots?.find((b: any) => true);
+                          return (
+                            <div key={vote.id} className="p-3 border border-brand-mint dark:border-brand-deep/30 rounded-lg">
+                              <p className="text-sm font-semibold text-brand-dark dark:text-white mb-1">{vote.title}</p>
+                              <p className="text-xs text-brand-sage dark:text-gray-400 mb-2">{vote.description}</p>
+                              {userBallot ? (
+                                <p className="text-xs text-brand-medium dark:text-brand-mint font-medium">
+                                  <i className="fa-solid fa-check-circle mr-1"></i>
+                                  You voted: {(vote.options || []).find((o: any) => o.key === userBallot.optionKey)?.label || userBallot.optionKey}
+                                </p>
+                              ) : (
+                                <div className="flex flex-wrap gap-2">
+                                  {(vote.options || []).map((opt: any) => (
+                                    <button
+                                      key={opt.key}
+                                      onClick={() => handleCastVote(vote.id, opt.key)}
+                                      disabled={castingVoteId === vote.id}
+                                      className="px-3 py-1.5 text-xs font-medium bg-brand-deep hover:bg-brand-dark text-white rounded-lg transition-all disabled:opacity-50"
+                                    >
+                                      {castingVoteId === vote.id ? <i className="fa-solid fa-spinner fa-spin"></i> : opt.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              {vote.closesAt && (
+                                <p className="text-[10px] text-brand-sage dark:text-gray-500 mt-1">
+                                  Closes {new Date(vote.closesAt).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-brand-sage dark:text-gray-400">No notices or votes at this time.</p>
+                    )}
                   </div>
                 </>
               ) : (
@@ -1059,7 +1150,65 @@ export const HoldingDetails: React.FC = () => {
                             <i className="fa-solid fa-bell text-brand-medium dark:text-brand-mint mr-2"></i>
                             Notices & Votes
                           </h3>
-                          <p className="text-sm text-brand-sage dark:text-gray-400">No notices or votes at this time.</p>
+                          {investorGovLoading ? (
+                            <div className="flex items-center justify-center py-4">
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-brand-deep"></div>
+                            </div>
+                          ) : investorGov && (investorGov.notices.length > 0 || investorGov.votes.length > 0) ? (
+                            <div className="space-y-4">
+                              {investorGov.notices.map((notice: any) => (
+                                <div key={notice.id} className="p-4 border border-brand-lightGray dark:border-[#3a3a3a] rounded-lg">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <p className="font-semibold text-brand-dark dark:text-white">{notice.title}</p>
+                                    <span className="text-xs text-brand-sage dark:text-gray-500 whitespace-nowrap ml-3">
+                                      {notice.publishedAt ? new Date(notice.publishedAt).toLocaleDateString() : ''}
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-brand-sage dark:text-gray-400 whitespace-pre-wrap">{notice.bodyMarkdown}</p>
+                                </div>
+                              ))}
+                              {investorGov.votes.map((vote: any) => {
+                                const userBallot = vote.ballots?.find((b: any) => true);
+                                return (
+                                  <div key={vote.id} className="p-4 border-2 border-brand-mint dark:border-brand-deep/30 rounded-lg">
+                                    <div className="flex justify-between items-start mb-2">
+                                      <p className="font-semibold text-brand-dark dark:text-white">{vote.title}</p>
+                                      <span className="text-xs bg-brand-mint text-brand-deep px-2 py-0.5 rounded-full font-bold whitespace-nowrap ml-3">
+                                        {vote.status}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-brand-sage dark:text-gray-400 mb-3">{vote.description}</p>
+                                    {userBallot ? (
+                                      <p className="text-sm text-brand-medium dark:text-brand-mint font-medium">
+                                        <i className="fa-solid fa-check-circle mr-1"></i>
+                                        You voted: {(vote.options || []).find((o: any) => o.key === userBallot.optionKey)?.label || userBallot.optionKey}
+                                      </p>
+                                    ) : (
+                                      <div className="flex flex-wrap gap-2">
+                                        {(vote.options || []).map((opt: any) => (
+                                          <button
+                                            key={opt.key}
+                                            onClick={() => handleCastVote(vote.id, opt.key)}
+                                            disabled={castingVoteId === vote.id}
+                                            className="px-4 py-2 text-sm font-medium bg-brand-deep hover:bg-brand-dark text-white rounded-lg transition-all disabled:opacity-50"
+                                          >
+                                            {castingVoteId === vote.id ? <i className="fa-solid fa-spinner fa-spin"></i> : opt.label}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {vote.closesAt && (
+                                      <p className="text-xs text-brand-sage dark:text-gray-500 mt-2">
+                                        Closes {new Date(vote.closesAt).toLocaleDateString()}
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-brand-sage dark:text-gray-400">No notices or votes at this time.</p>
+                          )}
                         </div>
                       </div>
                     </>

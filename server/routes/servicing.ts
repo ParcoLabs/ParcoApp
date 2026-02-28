@@ -1298,4 +1298,337 @@ router.get(
   },
 );
 
+router.post(
+  '/property/:propertyId/kpi',
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { propertyId } = req.params;
+      const { occupancyRate, rentalIncomeCents, expensesCents, netProfitCents } = req.body;
+
+      if (isDemoMode(req)) {
+        return res.json({
+          success: true,
+          data: {
+            id: `demo_kpi_${Date.now()}`,
+            propertyId,
+            occupancyRate: occupancyRate ?? 95,
+            rentalIncomeCents: rentalIncomeCents ?? 450000,
+            expensesCents: expensesCents ?? 120000,
+            netProfitCents: netProfitCents ?? 330000,
+            createdAt: new Date().toISOString(),
+          },
+        });
+      }
+
+      const snapshot = await (prisma as any).servicingKpiSnapshot.create({
+        data: {
+          propertyId,
+          occupancyRate: occupancyRate ?? null,
+          rentalIncomeCents: rentalIncomeCents ?? null,
+          expensesCents: expensesCents ?? null,
+          netProfitCents: netProfitCents ?? null,
+        },
+      });
+
+      return res.json({ success: true, data: snapshot });
+    } catch (error: any) {
+      console.error('[servicing] Error creating KPI snapshot:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.get(
+  '/property/:propertyId/overview',
+  simpleAuth,
+  loadUserWithRole,
+  async (req: Request, res: Response) => {
+    try {
+      const { propertyId } = req.params;
+      const user = (req as AuthenticatedRequest).user;
+
+      if (isDemoMode(req)) {
+        const now = new Date();
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+        const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        const twoMonthsAgoEnd = new Date(now.getFullYear(), now.getMonth() - 1, 0);
+
+        return res.json({
+          success: true,
+          data: {
+            latestKPI: {
+              id: 'demo_kpi_1',
+              propertyId,
+              occupancyRate: 95,
+              rentalIncomeCents: 450000,
+              expensesCents: 120000,
+              netProfitCents: 330000,
+              createdAt: new Date(now.getTime() - 2 * 86400000).toISOString(),
+            },
+            nextDueCompliance: {
+              id: 'demo_comp_1',
+              propertyId,
+              key: 'annual_filing',
+              label: 'Annual LLC Filing',
+              cadence: 'ANNUAL',
+              status: 'PENDING',
+              dueAt: new Date(now.getTime() + 30 * 86400000).toISOString(),
+            },
+            latestReportRuns: [
+              {
+                id: 'demo_report_run_1',
+                propertyId,
+                periodStart: lastMonth.toISOString(),
+                periodEnd: lastMonthEnd.toISOString(),
+                status: 'PUBLISHED',
+                publishedAt: new Date(lastMonthEnd.getTime() + 5 * 86400000).toISOString(),
+                createdAt: lastMonthEnd.toISOString(),
+              },
+              {
+                id: 'demo_report_run_2',
+                propertyId,
+                periodStart: twoMonthsAgo.toISOString(),
+                periodEnd: twoMonthsAgoEnd.toISOString(),
+                status: 'PUBLISHED',
+                publishedAt: new Date(twoMonthsAgoEnd.getTime() + 5 * 86400000).toISOString(),
+                createdAt: twoMonthsAgoEnd.toISOString(),
+              },
+            ],
+            latestDistributions: [
+              {
+                id: 'demo_dist_run_1',
+                propertyId,
+                periodStart: lastMonth.toISOString(),
+                periodEnd: lastMonthEnd.toISOString(),
+                status: 'PAID',
+                totalAmountCents: 250000,
+                createdAt: lastMonthEnd.toISOString(),
+              },
+              {
+                id: 'demo_dist_run_2',
+                propertyId,
+                periodStart: twoMonthsAgo.toISOString(),
+                periodEnd: twoMonthsAgoEnd.toISOString(),
+                status: 'PAID',
+                totalAmountCents: 240000,
+                createdAt: twoMonthsAgoEnd.toISOString(),
+              },
+            ],
+            servicingSchedule: {
+              totalReportRuns: 2,
+              totalDistributionRuns: 2,
+              totalComplianceRequirements: 3,
+              pendingCompliance: 1,
+            },
+          },
+        });
+      }
+
+      const isAdmin = user?.role === 'ADMIN';
+      if (!isAdmin) {
+        const property = await prisma.property.findUnique({ where: { id: propertyId }, select: { ownerId: true } });
+        if (!property || property.ownerId !== user?.clerkId) {
+          return res.status(403).json({ success: false, error: 'Forbidden' });
+        }
+      }
+
+      const latestKPI = await (prisma as any).servicingKpiSnapshot.findFirst({
+        where: { propertyId },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const now = new Date();
+      const nextDueCompliance = await prisma.complianceRequirement.findFirst({
+        where: {
+          propertyId,
+          dueAt: { gt: now },
+          status: { not: 'COMPLETED' },
+        },
+        orderBy: { dueAt: 'asc' },
+      });
+
+      const latestReportRuns = await (prisma as any).servicingReportRun.findMany({
+        where: { propertyId },
+        orderBy: { periodEnd: 'desc' },
+        take: 3,
+      });
+
+      const latestDistributions = await (prisma as any).servicingDistributionRun.findMany({
+        where: { propertyId },
+        orderBy: { periodEnd: 'desc' },
+        take: 3,
+      });
+
+      const [totalReportRuns, totalDistributionRuns, totalComplianceRequirements, pendingCompliance] = await Promise.all([
+        (prisma as any).servicingReportRun.count({ where: { propertyId } }),
+        (prisma as any).servicingDistributionRun.count({ where: { propertyId } }),
+        prisma.complianceRequirement.count({ where: { propertyId } }),
+        prisma.complianceRequirement.count({ where: { propertyId, status: { not: 'COMPLETED' } } }),
+      ]);
+
+      return res.json({
+        success: true,
+        data: {
+          latestKPI,
+          nextDueCompliance,
+          latestReportRuns,
+          latestDistributions,
+          servicingSchedule: {
+            totalReportRuns,
+            totalDistributionRuns,
+            totalComplianceRequirements,
+            pendingCompliance,
+          },
+        },
+      });
+    } catch (error: any) {
+      console.error('[servicing] Error fetching overview:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.post(
+  '/investor/votes/:voteId/cast',
+  simpleAuth,
+  loadUserWithRole,
+  async (req: Request, res: Response) => {
+    try {
+      const { voteId } = req.params;
+      const { optionKey } = req.body;
+      const user = (req as AuthenticatedRequest).user;
+
+      if (!optionKey) {
+        return res.status(400).json({ success: false, error: 'optionKey is required' });
+      }
+
+      if (isDemoMode(req)) {
+        return res.json({
+          success: true,
+          data: {
+            id: `demo_ballot_${Date.now()}`,
+            voteId,
+            userId: user?.id || 'demo_user',
+            optionKey,
+            createdAt: new Date().toISOString(),
+          },
+        });
+      }
+
+      const vote = await (prisma as any).governanceVote.findUnique({ where: { id: voteId } });
+      if (!vote) {
+        return res.status(404).json({ success: false, error: 'Vote not found' });
+      }
+
+      if (vote.status !== 'OPEN') {
+        return res.status(400).json({ success: false, error: 'Vote is not open' });
+      }
+
+      const isAdmin = user?.role === 'ADMIN';
+      if (!isAdmin) {
+        const holding = await prisma.holding.findFirst({
+          where: { userId: user?.id, propertyId: vote.propertyId },
+        });
+        if (!holding) {
+          return res.status(403).json({ success: false, error: 'Forbidden: no holding for this property' });
+        }
+      }
+
+      const ballot = await (prisma as any).governanceBallot.create({
+        data: {
+          voteId,
+          userId: user!.id,
+          optionKey,
+        },
+      });
+
+      return res.json({ success: true, data: ballot });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        return res.status(409).json({ success: false, error: 'You have already voted' });
+      }
+      console.error('[servicing] Error casting ballot:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.get(
+  '/investor/property/:propertyId/governance',
+  simpleAuth,
+  loadUserWithRole,
+  async (req: Request, res: Response) => {
+    try {
+      const { propertyId } = req.params;
+      const user = (req as AuthenticatedRequest).user;
+      const demo = isDemoMode(req);
+
+      if (demo) {
+        return res.json({
+          success: true,
+          data: {
+            notices: [
+              {
+                id: 'demo_notice_1',
+                propertyId,
+                title: 'Q1 Property Update',
+                bodyMarkdown: 'All units remain occupied. HVAC maintenance completed on schedule.',
+                status: 'PUBLISHED',
+                publishedAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+                createdAt: new Date(Date.now() - 10 * 86400000).toISOString(),
+              },
+            ],
+            votes: [
+              {
+                id: 'demo_vote_1',
+                propertyId,
+                title: 'Approve landscaping upgrade',
+                description: 'Proposal to upgrade common area landscaping at an estimated cost of $5,000.',
+                options: [{ key: 'yes', label: 'Yes' }, { key: 'no', label: 'No' }],
+                status: 'OPEN',
+                closesAt: new Date(Date.now() + 14 * 86400000).toISOString(),
+                createdAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+                ballots: [],
+              },
+            ],
+          },
+        });
+      }
+
+      const isAdmin = user?.role === 'ADMIN';
+      if (!isAdmin) {
+        const holding = await prisma.holding.findFirst({
+          where: { userId: user?.id, propertyId },
+        });
+        if (!holding) {
+          return res.status(403).json({ success: false, error: 'Forbidden: no holding for this property' });
+        }
+      }
+
+      const [notices, votes] = await Promise.all([
+        (prisma as any).governanceNotice.findMany({
+          where: { propertyId, status: 'PUBLISHED' },
+          orderBy: { publishedAt: 'desc' },
+        }),
+        (prisma as any).governanceVote.findMany({
+          where: { propertyId, status: 'OPEN' },
+          orderBy: { createdAt: 'desc' },
+          include: {
+            ballots: {
+              where: { userId: user?.id },
+            },
+          },
+        }),
+      ]);
+
+      return res.json({ success: true, data: { notices, votes } });
+    } catch (error: any) {
+      console.error('[servicing] Error fetching investor governance:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
 export default router;

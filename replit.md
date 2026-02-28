@@ -52,6 +52,9 @@ The frontend uses React, TailwindCSS for styling, and Recharts for data visualiz
 - **Compliance Pack**: System for defining, applying, and tracking compliance requirements and evidence for tokenized properties.
 - **Servicing Distribution Runs**: `ServicingDistributionRun` and `ServicingDistributionLineItem` models for per-property distribution management. Routes: create (pro-rata by Holding), approve, pay (OFFCHAIN SENT), list. TokenizerPostDashboard Distributions panel. AuditEvent logging.
 - **Admin Compliance Dashboard**: `src/pages/admin/ComplianceDashboard.tsx` at `/admin/compliance`. Fetches due-soon compliance items with filters by status/property. Table with evidence upload and mark-complete actions.
+- **KPI Snapshots**: `ServicingKpiSnapshot` model captures occupancy rate, rental income, expenses, net profit per property. Admin endpoint `POST /api/servicing/property/:propertyId/kpi`. KPI input form on TokenizerPostDashboard.
+- **Servicing Overview**: `GET /api/servicing/property/:propertyId/overview` returns latest KPI, next due compliance, latest report runs, latest distributions, and servicing schedule summary. Displayed as "Servicing Overview" card on TokenizerPostDashboard.
+- **Governance Primitives**: `GovernanceNotice` (DRAFT/PUBLISHED), `GovernanceVote` (OPEN/CLOSED with JSON options), `GovernanceBallot` (unique per user+vote). Admin endpoints in `/api/admin/` for create/publish notices and create/close votes. `GET /api/admin/property/:propertyId/governance` lists all. Investor endpoints: `POST /api/servicing/investor/votes/:voteId/cast` and `GET /api/servicing/investor/property/:propertyId/governance`. Admin governance UI on TokenizerPostDashboard. Investor governance display on HoldingDetails Reporting tab.
 
 #### System Design Choices
 - Client-side routing with React Router DOM.

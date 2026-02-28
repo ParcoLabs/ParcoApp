@@ -112,6 +112,28 @@ export const TokenizerPostDashboard: React.FC = () => {
   const [distPeriodEnd, setDistPeriodEnd] = useState('');
   const [distTotalAmount, setDistTotalAmount] = useState('');
   const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
+  const [servicingOverview, setServicingOverview] = useState<any>(null);
+  const [overviewLoading, setOverviewLoading] = useState(false);
+  const [kpiOccupancy, setKpiOccupancy] = useState('');
+  const [kpiRentalIncome, setKpiRentalIncome] = useState('');
+  const [kpiExpenses, setKpiExpenses] = useState('');
+  const [kpiNetProfit, setKpiNetProfit] = useState('');
+  const [kpiSubmitting, setKpiSubmitting] = useState(false);
+  const [kpiMessage, setKpiMessage] = useState<string | null>(null);
+  const [showKpiForm, setShowKpiForm] = useState(false);
+
+  const [govNotices, setGovNotices] = useState<any[]>([]);
+  const [govVotes, setGovVotes] = useState<any[]>([]);
+  const [govLoading, setGovLoading] = useState(false);
+  const [govActionLoading, setGovActionLoading] = useState(false);
+  const [showNoticeForm, setShowNoticeForm] = useState(false);
+  const [noticeTitle, setNoticeTitle] = useState('');
+  const [noticeBody, setNoticeBody] = useState('');
+  const [showVoteForm, setShowVoteForm] = useState(false);
+  const [voteTitle, setVoteTitle] = useState('');
+  const [voteDescription, setVoteDescription] = useState('');
+  const [voteOptions, setVoteOptions] = useState<{ key: string; label: string }[]>([{ key: '', label: '' }, { key: '', label: '' }]);
+  const [voteClosesAt, setVoteClosesAt] = useState('');
 
   useEffect(() => {
     fetchSubmissions();
@@ -151,6 +173,8 @@ export const TokenizerPostDashboard: React.FC = () => {
       fetchStatements(propId);
       fetchMonthlyClose(propId);
       fetchDistributions(propId);
+      fetchServicingOverview(propId);
+      fetchGovernance(propId);
     }
     if (activeSubmission?.id) {
       fetchOfferingPacket(activeSubmission.id);
@@ -471,6 +495,192 @@ export const TokenizerPostDashboard: React.FC = () => {
     }
   };
 
+  const fetchServicingOverview = async (propertyId: string) => {
+    setOverviewLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/servicing/property/${propertyId}/overview`, {
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setServicingOverview(json.data || null);
+      }
+    } catch (error) {
+      console.error('Error fetching servicing overview:', error);
+    } finally {
+      setOverviewLoading(false);
+    }
+  };
+
+  const handleSubmitKpi = async () => {
+    const propId = activeSubmission?.propertyId || activeSubmission?.id;
+    if (!propId) return;
+    setKpiSubmitting(true);
+    setKpiMessage(null);
+    try {
+      const token = await getToken();
+      const body: any = {};
+      if (kpiOccupancy) body.occupancyRate = parseFloat(kpiOccupancy);
+      if (kpiRentalIncome) body.rentalIncomeCents = Math.round(parseFloat(kpiRentalIncome) * 100);
+      if (kpiExpenses) body.expensesCents = Math.round(parseFloat(kpiExpenses) * 100);
+      if (kpiNetProfit) body.netProfitCents = Math.round(parseFloat(kpiNetProfit) * 100);
+
+      const res = await fetch(`/api/servicing/property/${propId}/kpi`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setKpiMessage('KPI snapshot saved successfully');
+        setKpiOccupancy('');
+        setKpiRentalIncome('');
+        setKpiExpenses('');
+        setKpiNetProfit('');
+        setShowKpiForm(false);
+        fetchServicingOverview(propId);
+      } else {
+        setKpiMessage(`Error: ${json.error}`);
+      }
+    } catch (error) {
+      setKpiMessage('Failed to submit KPI snapshot');
+    } finally {
+      setKpiSubmitting(false);
+    }
+  };
+
+  const fetchGovernance = async (propertyId: string) => {
+    setGovLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/admin/property/${propertyId}/governance`, {
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setGovNotices(json.data?.notices || []);
+        setGovVotes(json.data?.votes || []);
+      }
+    } catch (error) {
+      console.error('Error fetching governance:', error);
+    } finally {
+      setGovLoading(false);
+    }
+  };
+
+  const handleCreateNotice = async () => {
+    const propId = activeSubmission?.propertyId || activeSubmission?.id;
+    if (!propId || !noticeTitle || !noticeBody) return;
+    setGovActionLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/admin/property/${propId}/notices`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: noticeTitle, bodyMarkdown: noticeBody }),
+      });
+      if (res.ok) {
+        fetchGovernance(propId);
+        setShowNoticeForm(false);
+        setNoticeTitle('');
+        setNoticeBody('');
+      }
+    } catch (error) {
+      console.error('Error creating notice:', error);
+    } finally {
+      setGovActionLoading(false);
+    }
+  };
+
+  const handlePublishNotice = async (noticeId: string) => {
+    setGovActionLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/admin/notices/${noticeId}/publish`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        const propId = activeSubmission?.propertyId || activeSubmission?.id;
+        if (propId) fetchGovernance(propId);
+      }
+    } catch (error) {
+      console.error('Error publishing notice:', error);
+    } finally {
+      setGovActionLoading(false);
+    }
+  };
+
+  const handleCreateVote = async () => {
+    const propId = activeSubmission?.propertyId || activeSubmission?.id;
+    if (!propId || !voteTitle || !voteDescription) return;
+    const filteredOptions = voteOptions.filter(o => o.key.trim() && o.label.trim());
+    if (filteredOptions.length < 2) return;
+    setGovActionLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/admin/property/${propId}/votes`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: voteTitle,
+          description: voteDescription,
+          options: filteredOptions,
+          closesAt: voteClosesAt || undefined,
+        }),
+      });
+      if (res.ok) {
+        fetchGovernance(propId);
+        setShowVoteForm(false);
+        setVoteTitle('');
+        setVoteDescription('');
+        setVoteOptions([{ key: '', label: '' }, { key: '', label: '' }]);
+        setVoteClosesAt('');
+      }
+    } catch (error) {
+      console.error('Error creating vote:', error);
+    } finally {
+      setGovActionLoading(false);
+    }
+  };
+
+  const handleCloseVote = async (voteId: string) => {
+    setGovActionLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/admin/votes/${voteId}/close`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        const propId = activeSubmission?.propertyId || activeSubmission?.id;
+        if (propId) fetchGovernance(propId);
+      }
+    } catch (error) {
+      console.error('Error closing vote:', error);
+    } finally {
+      setGovActionLoading(false);
+    }
+  };
+
+  const getGovStatusColor = (status: string) => {
+    switch (status) {
+      case 'DRAFT': return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300';
+      case 'PUBLISHED': return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300';
+      case 'OPEN': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300';
+      case 'CLOSED': return 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300';
+    }
+  };
+
   const getDistributionStatusColor = (status: string) => {
     switch (status) {
       case 'DRAFT': return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300';
@@ -638,6 +848,180 @@ export const TokenizerPostDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-brand-dark dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-chart-line text-brand-deep"></i>
+                Servicing Overview
+              </h3>
+              <button
+                onClick={() => setShowKpiForm(!showKpiForm)}
+                className="text-xs font-medium px-3 py-1.5 bg-brand-deep hover:bg-brand-dark text-white rounded-lg transition-all"
+              >
+                <i className="fa-solid fa-plus mr-1"></i>
+                Record KPI
+              </button>
+            </div>
+
+            {kpiMessage && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg text-sm text-blue-700 dark:text-blue-300">
+                {kpiMessage}
+              </div>
+            )}
+
+            {showKpiForm && (
+              <div className="mb-4 p-4 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg bg-brand-offWhite dark:bg-[#222]">
+                <h4 className="text-xs font-semibold text-brand-sage dark:text-gray-400 uppercase mb-3">New KPI Snapshot</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                  <div>
+                    <label className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase block mb-1">Occupancy Rate (%)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      value={kpiOccupancy}
+                      onChange={(e) => setKpiOccupancy(e.target.value)}
+                      placeholder="95"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase block mb-1">Rental Income ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={kpiRentalIncome}
+                      onChange={(e) => setKpiRentalIncome(e.target.value)}
+                      placeholder="4500.00"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase block mb-1">Expenses ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={kpiExpenses}
+                      onChange={(e) => setKpiExpenses(e.target.value)}
+                      placeholder="1200.00"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase block mb-1">Net Profit ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={kpiNetProfit}
+                      onChange={(e) => setKpiNetProfit(e.target.value)}
+                      placeholder="3300.00"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setShowKpiForm(false)}
+                    className="px-3 py-1.5 text-xs font-medium text-brand-sage dark:text-gray-400 hover:text-brand-dark dark:hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSubmitKpi}
+                    disabled={kpiSubmitting}
+                    className="px-4 py-1.5 text-xs font-semibold bg-brand-deep hover:bg-brand-dark text-white rounded-lg transition-all disabled:opacity-50"
+                  >
+                    {kpiSubmitting ? (
+                      <i className="fa-solid fa-spinner fa-spin"></i>
+                    ) : (
+                      'Save KPI'
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {overviewLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-deep"></div>
+              </div>
+            ) : servicingOverview ? (
+              <div className="space-y-4">
+                {servicingOverview.latestKPI && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-brand-sage dark:text-gray-400 uppercase mb-2">Latest KPI</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div className="p-3 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg">
+                        <p className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase">Occupancy</p>
+                        <p className="text-lg font-bold text-brand-dark dark:text-white">
+                          {servicingOverview.latestKPI.occupancyRate != null ? `${servicingOverview.latestKPI.occupancyRate}%` : '—'}
+                        </p>
+                      </div>
+                      <div className="p-3 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg">
+                        <p className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase">Rental Income</p>
+                        <p className="text-lg font-bold text-brand-dark dark:text-white">
+                          {servicingOverview.latestKPI.rentalIncomeCents != null ? `$${(servicingOverview.latestKPI.rentalIncomeCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
+                        </p>
+                      </div>
+                      <div className="p-3 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg">
+                        <p className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase">Expenses</p>
+                        <p className="text-lg font-bold text-brand-dark dark:text-white">
+                          {servicingOverview.latestKPI.expensesCents != null ? `$${(servicingOverview.latestKPI.expensesCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
+                        </p>
+                      </div>
+                      <div className="p-3 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg">
+                        <p className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase">Net Profit</p>
+                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                          {servicingOverview.latestKPI.netProfitCents != null ? `$${(servicingOverview.latestKPI.netProfitCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}` : '—'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {servicingOverview.nextDueCompliance && (
+                    <div className="p-3 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg">
+                      <h4 className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase mb-1">Next Due Compliance</h4>
+                      <p className="text-sm font-semibold text-brand-dark dark:text-white">{servicingOverview.nextDueCompliance.label}</p>
+                      <p className="text-xs text-brand-sage dark:text-gray-400">
+                        Due: {servicingOverview.nextDueCompliance.dueAt ? new Date(servicingOverview.nextDueCompliance.dueAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'No date'}
+                      </p>
+                      <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded mt-1 inline-block ${getStatusColor(servicingOverview.nextDueCompliance.status)}`}>
+                        {servicingOverview.nextDueCompliance.status}
+                      </span>
+                    </div>
+                  )}
+
+                  {servicingOverview.latestReportRuns && servicingOverview.latestReportRuns.length > 0 && (
+                    <div className="p-3 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg">
+                      <h4 className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase mb-1">Last Published Report</h4>
+                      <p className="text-sm font-semibold text-brand-dark dark:text-white">
+                        {new Date(servicingOverview.latestReportRuns[0].periodStart).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                      </p>
+                      <p className="text-xs text-brand-sage dark:text-gray-400">
+                        Period: {new Date(servicingOverview.latestReportRuns[0].periodStart).toLocaleDateString()} – {new Date(servicingOverview.latestReportRuns[0].periodEnd).toLocaleDateString()}
+                      </p>
+                      {servicingOverview.latestReportRuns[0].publishedAt && (
+                        <p className="text-[10px] text-brand-sage dark:text-gray-500 mt-1">
+                          Published {new Date(servicingOverview.latestReportRuns[0].publishedAt).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-sm text-brand-sage dark:text-gray-400">No servicing overview data available yet.</p>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1141,6 +1525,250 @@ export const TokenizerPostDashboard: React.FC = () => {
                     )}
                   </div>
                 ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-brand-dark dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-landmark text-brand-deep"></i>
+                Governance
+              </h3>
+            </div>
+
+            {govLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-deep"></div>
+              </div>
+            ) : (
+              <div className="space-y-5">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-brand-dark dark:text-white">Notices</h4>
+                    <button
+                      onClick={() => setShowNoticeForm(!showNoticeForm)}
+                      className="text-xs font-medium px-3 py-1.5 bg-brand-deep hover:bg-brand-dark text-white rounded-lg transition-all"
+                    >
+                      <i className="fa-solid fa-plus mr-1"></i>New Notice
+                    </button>
+                  </div>
+
+                  {showNoticeForm && (
+                    <div className="mb-3 p-4 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg bg-brand-offWhite dark:bg-[#222]">
+                      <div className="space-y-3 mb-3">
+                        <div>
+                          <label className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase block mb-1">Title</label>
+                          <input
+                            type="text"
+                            value={noticeTitle}
+                            onChange={(e) => setNoticeTitle(e.target.value)}
+                            placeholder="Notice title"
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase block mb-1">Body (Markdown)</label>
+                          <textarea
+                            value={noticeBody}
+                            onChange={(e) => setNoticeBody(e.target.value)}
+                            placeholder="Notice body content..."
+                            rows={4}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white resize-none"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => setShowNoticeForm(false)}
+                          className="px-3 py-1.5 text-xs font-medium text-brand-sage dark:text-gray-400 hover:text-brand-dark dark:hover:text-white transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleCreateNotice}
+                          disabled={govActionLoading || !noticeTitle || !noticeBody}
+                          className="px-4 py-1.5 text-xs font-semibold bg-brand-deep hover:bg-brand-dark text-white rounded-lg transition-all disabled:opacity-50"
+                        >
+                          {govActionLoading ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Create Notice'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {govNotices.length === 0 ? (
+                    <p className="text-xs text-brand-sage dark:text-gray-500">No notices yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {govNotices.map((notice: any) => (
+                        <div key={notice.id} className="flex items-center justify-between p-3 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-brand-dark dark:text-white truncate">{notice.title}</p>
+                            <p className="text-[10px] text-brand-sage dark:text-gray-400 truncate">{notice.bodyMarkdown?.substring(0, 80)}</p>
+                          </div>
+                          <div className="flex items-center gap-2 ml-3">
+                            <span className={`text-[10px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${getGovStatusColor(notice.status)}`}>
+                              {notice.status}
+                            </span>
+                            {notice.status === 'DRAFT' && (
+                              <button
+                                onClick={() => handlePublishNotice(notice.id)}
+                                disabled={govActionLoading}
+                                className="text-xs font-medium px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all disabled:opacity-50 whitespace-nowrap"
+                              >
+                                Publish
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t border-brand-lightGray dark:border-[#2a2a2a] pt-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-brand-dark dark:text-white">Votes</h4>
+                    <button
+                      onClick={() => setShowVoteForm(!showVoteForm)}
+                      className="text-xs font-medium px-3 py-1.5 bg-brand-deep hover:bg-brand-dark text-white rounded-lg transition-all"
+                    >
+                      <i className="fa-solid fa-plus mr-1"></i>New Vote
+                    </button>
+                  </div>
+
+                  {showVoteForm && (
+                    <div className="mb-3 p-4 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg bg-brand-offWhite dark:bg-[#222]">
+                      <div className="space-y-3 mb-3">
+                        <div>
+                          <label className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase block mb-1">Title</label>
+                          <input
+                            type="text"
+                            value={voteTitle}
+                            onChange={(e) => setVoteTitle(e.target.value)}
+                            placeholder="Vote title"
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase block mb-1">Description</label>
+                          <textarea
+                            value={voteDescription}
+                            onChange={(e) => setVoteDescription(e.target.value)}
+                            placeholder="Vote description..."
+                            rows={3}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white resize-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase block mb-1">Options</label>
+                          <div className="space-y-2">
+                            {voteOptions.map((opt, idx) => (
+                              <div key={idx} className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={opt.key}
+                                  onChange={(e) => {
+                                    const updated = [...voteOptions];
+                                    updated[idx] = { ...updated[idx], key: e.target.value };
+                                    setVoteOptions(updated);
+                                  }}
+                                  placeholder="Key (e.g. yes)"
+                                  className="w-1/3 px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white"
+                                />
+                                <input
+                                  type="text"
+                                  value={opt.label}
+                                  onChange={(e) => {
+                                    const updated = [...voteOptions];
+                                    updated[idx] = { ...updated[idx], label: e.target.value };
+                                    setVoteOptions(updated);
+                                  }}
+                                  placeholder="Label (e.g. Yes, approve)"
+                                  className="flex-1 px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white"
+                                />
+                                {voteOptions.length > 2 && (
+                                  <button
+                                    onClick={() => setVoteOptions(voteOptions.filter((_, i) => i !== idx))}
+                                    className="text-red-500 hover:text-red-700 text-xs p-1"
+                                  >
+                                    <i className="fa-solid fa-xmark"></i>
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                            <button
+                              onClick={() => setVoteOptions([...voteOptions, { key: '', label: '' }])}
+                              className="text-xs text-brand-deep hover:text-brand-dark font-medium"
+                            >
+                              <i className="fa-solid fa-plus mr-1"></i>Add Option
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase block mb-1">Closes At (optional)</label>
+                          <input
+                            type="datetime-local"
+                            value={voteClosesAt}
+                            onChange={(e) => setVoteClosesAt(e.target.value)}
+                            className="w-full px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={() => setShowVoteForm(false)}
+                          className="px-3 py-1.5 text-xs font-medium text-brand-sage dark:text-gray-400 hover:text-brand-dark dark:hover:text-white transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleCreateVote}
+                          disabled={govActionLoading || !voteTitle || !voteDescription || voteOptions.filter(o => o.key.trim() && o.label.trim()).length < 2}
+                          className="px-4 py-1.5 text-xs font-semibold bg-brand-deep hover:bg-brand-dark text-white rounded-lg transition-all disabled:opacity-50"
+                        >
+                          {govActionLoading ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Create Vote'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {govVotes.length === 0 ? (
+                    <p className="text-xs text-brand-sage dark:text-gray-500">No votes yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {govVotes.map((vote: any) => (
+                        <div key={vote.id} className="p-3 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-sm font-semibold text-brand-dark dark:text-white">{vote.title}</p>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[10px] font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${getGovStatusColor(vote.status)}`}>
+                                {vote.status}
+                              </span>
+                              {vote.status === 'OPEN' && (
+                                <button
+                                  onClick={() => handleCloseVote(vote.id)}
+                                  disabled={govActionLoading}
+                                  className="text-xs font-medium px-2.5 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-all disabled:opacity-50 whitespace-nowrap"
+                                >
+                                  Close
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-brand-sage dark:text-gray-400 mb-1">{vote.description}</p>
+                          <div className="flex items-center gap-3 text-[10px] text-brand-sage dark:text-gray-500">
+                            <span>{vote._count?.ballots ?? vote.ballots?.length ?? 0} ballot(s)</span>
+                            {vote.closesAt && (
+                              <span>Closes {new Date(vote.closesAt).toLocaleDateString()}</span>
+                            )}
+                            <span>Options: {(vote.options || []).map((o: any) => o.label).join(', ')}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

@@ -1149,6 +1149,229 @@ router.get('/engagement/summary', simpleAuth, adminOnly, async (req: Request, re
   }
 });
 
+router.post('/property/:propertyId/notices', simpleAuth, adminOnly, async (req: Request, res: Response) => {
+  try {
+    const { propertyId } = req.params;
+    const { title, bodyMarkdown } = req.body;
+
+    if (!title || !bodyMarkdown) {
+      return res.status(400).json({ error: 'title and bodyMarkdown are required' });
+    }
+
+    if (isDemoMode(req)) {
+      return res.json({
+        success: true,
+        data: {
+          id: `demo_notice_${Date.now()}`,
+          propertyId,
+          title,
+          bodyMarkdown,
+          status: 'DRAFT',
+          publishedAt: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    }
+
+    const notice = await (prisma as any).governanceNotice.create({
+      data: {
+        propertyId,
+        title,
+        bodyMarkdown,
+        status: 'DRAFT',
+      },
+    });
+
+    return res.json({ success: true, data: notice });
+  } catch (error: any) {
+    console.error('[admin] Error creating governance notice:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+router.post('/notices/:id/publish', simpleAuth, adminOnly, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (isDemoMode(req)) {
+      return res.json({
+        success: true,
+        data: {
+          id,
+          status: 'PUBLISHED',
+          publishedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    }
+
+    const notice = await (prisma as any).governanceNotice.findUnique({ where: { id } });
+    if (!notice) {
+      return res.status(404).json({ error: 'Notice not found' });
+    }
+
+    const updated = await (prisma as any).governanceNotice.update({
+      where: { id },
+      data: {
+        status: 'PUBLISHED',
+        publishedAt: new Date(),
+      },
+    });
+
+    return res.json({ success: true, data: updated });
+  } catch (error: any) {
+    console.error('[admin] Error publishing governance notice:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+router.post('/property/:propertyId/votes', simpleAuth, adminOnly, async (req: Request, res: Response) => {
+  try {
+    const { propertyId } = req.params;
+    const { title, description, options, closesAt } = req.body;
+
+    if (!title || !description || !options || !Array.isArray(options)) {
+      return res.status(400).json({ error: 'title, description, and options (array of {key, label}) are required' });
+    }
+
+    if (isDemoMode(req)) {
+      return res.json({
+        success: true,
+        data: {
+          id: `demo_vote_${Date.now()}`,
+          propertyId,
+          title,
+          description,
+          options,
+          status: 'OPEN',
+          closesAt: closesAt || null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          ballots: [],
+        },
+      });
+    }
+
+    const vote = await (prisma as any).governanceVote.create({
+      data: {
+        propertyId,
+        title,
+        description,
+        options,
+        status: 'OPEN',
+        closesAt: closesAt ? new Date(closesAt) : null,
+      },
+    });
+
+    return res.json({ success: true, data: vote });
+  } catch (error: any) {
+    console.error('[admin] Error creating governance vote:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+router.post('/votes/:id/close', simpleAuth, adminOnly, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    if (isDemoMode(req)) {
+      return res.json({
+        success: true,
+        data: {
+          id,
+          status: 'CLOSED',
+          updatedAt: new Date().toISOString(),
+        },
+      });
+    }
+
+    const vote = await (prisma as any).governanceVote.findUnique({ where: { id } });
+    if (!vote) {
+      return res.status(404).json({ error: 'Vote not found' });
+    }
+
+    const updated = await (prisma as any).governanceVote.update({
+      where: { id },
+      data: { status: 'CLOSED' },
+    });
+
+    return res.json({ success: true, data: updated });
+  } catch (error: any) {
+    console.error('[admin] Error closing governance vote:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
+router.get('/property/:propertyId/governance', simpleAuth, adminOnly, async (req: Request, res: Response) => {
+  try {
+    const { propertyId } = req.params;
+
+    if (isDemoMode(req)) {
+      return res.json({
+        success: true,
+        data: {
+          notices: [
+            {
+              id: 'demo_notice_1',
+              propertyId,
+              title: 'Q1 Property Update',
+              bodyMarkdown: 'All units remain occupied. HVAC maintenance completed on schedule.',
+              status: 'PUBLISHED',
+              publishedAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+              createdAt: new Date(Date.now() - 10 * 86400000).toISOString(),
+              updatedAt: new Date(Date.now() - 7 * 86400000).toISOString(),
+            },
+            {
+              id: 'demo_notice_2',
+              propertyId,
+              title: 'Upcoming Roof Inspection',
+              bodyMarkdown: 'Annual roof inspection scheduled for next month.',
+              status: 'DRAFT',
+              publishedAt: null,
+              createdAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+              updatedAt: new Date(Date.now() - 2 * 86400000).toISOString(),
+            },
+          ],
+          votes: [
+            {
+              id: 'demo_vote_1',
+              propertyId,
+              title: 'Approve landscaping upgrade',
+              description: 'Proposal to upgrade common area landscaping at an estimated cost of $5,000.',
+              options: [{ key: 'yes', label: 'Yes' }, { key: 'no', label: 'No' }],
+              status: 'OPEN',
+              closesAt: new Date(Date.now() + 14 * 86400000).toISOString(),
+              createdAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+              updatedAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+              _count: { ballots: 3 },
+            },
+          ],
+        },
+      });
+    }
+
+    const [notices, votes] = await Promise.all([
+      (prisma as any).governanceNotice.findMany({
+        where: { propertyId },
+        orderBy: { createdAt: 'desc' },
+      }),
+      (prisma as any).governanceVote.findMany({
+        where: { propertyId },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          _count: { select: { ballots: true } },
+        },
+      }),
+    ]);
+
+    return res.json({ success: true, data: { notices, votes } });
+  } catch (error: any) {
+    console.error('[admin] Error fetching governance data:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 router.get('/compliance/due-soon', simpleAuth, adminOnly, async (req: Request, res: Response) => {
   try {
     const windowDays = parseInt(req.query.windowDays as string) || 30;
