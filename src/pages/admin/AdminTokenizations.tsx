@@ -115,6 +115,7 @@ export const AdminTokenizations: React.FC = () => {
   const [packetLoading, setPacketLoading] = useState(false);
   const [packetGenerating, setPacketGenerating] = useState(false);
   const [packetStatusLoading, setPacketStatusLoading] = useState(false);
+  const [docRequirements, setDocRequirements] = useState<{ requiredDocTypes: string[]; uploadedDocTypes: string[]; missingDocTypes: string[] } | null>(null);
 
   const fetchSubmissions = async (page = 1) => {
     try {
@@ -167,6 +168,7 @@ export const AdminTokenizations: React.FC = () => {
           fetchIssuanceDocCount(json.data.id);
           fetchFields(json.data.id);
           fetchOfferingPacket(json.data.id);
+          fetchDocRequirements(json.data.id);
         }
       } else if (res.status === 404) {
         const createRes = await fetch(`/api/issuance/by-submission/${submissionId}/create`, {
@@ -176,7 +178,10 @@ export const AdminTokenizations: React.FC = () => {
         if (createRes.ok) {
           const json = await createRes.json();
           setIssuanceCase(json.data);
-          if (json.data?.id) fetchIssuanceDocCount(json.data.id);
+          if (json.data?.id) {
+            fetchIssuanceDocCount(json.data.id);
+            fetchDocRequirements(json.data.id);
+          }
         }
       }
     } catch (err) {
@@ -442,6 +447,18 @@ export const AdminTokenizations: React.FC = () => {
       console.error('Error fetching offering packet:', err);
     } finally {
       setPacketLoading(false);
+    }
+  };
+
+  const fetchDocRequirements = async (caseId: string) => {
+    try {
+      const res = await fetch(`/api/issuance/case/${caseId}/requirements`, { credentials: 'include' });
+      if (res.ok) {
+        const json = await res.json();
+        setDocRequirements(json.data || null);
+      }
+    } catch (err) {
+      console.error('Error fetching doc requirements:', err);
     }
   };
 
@@ -1044,16 +1061,38 @@ export const AdminTokenizations: React.FC = () => {
                       )}
                     </div>
 
-                    {issuanceCase.requiredDocTypes && issuanceCase.requiredDocTypes.length > 0 && (
+                    {docRequirements && docRequirements.requiredDocTypes.length > 0 && (
                       <div className="border-t border-gray-200 dark:border-[#444] pt-3">
-                        <p className="text-xs font-semibold text-gray-500 uppercase mb-2">Required Documents</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {issuanceCase.requiredDocTypes.map((docType: string) => (
-                            <span key={docType} className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-[10px] font-medium">
-                              {docType}
-                            </span>
-                          ))}
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-xs font-semibold text-gray-500 uppercase">Document Requirements</p>
+                          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                            docRequirements.missingDocTypes.length === 0
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                              : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
+                          }`}>
+                            {docRequirements.uploadedDocTypes.length}/{docRequirements.requiredDocTypes.length} present
+                          </span>
                         </div>
+                        <div className="space-y-1">
+                          {docRequirements.requiredDocTypes.map((docType: string) => {
+                            const isUploaded = docRequirements.uploadedDocTypes.includes(docType);
+                            return (
+                              <div key={docType} className="flex items-center gap-2 text-xs">
+                                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isUploaded ? 'bg-green-500' : 'bg-red-400'}`}></div>
+                                <span className="text-gray-700 dark:text-gray-300 font-medium">{docType}</span>
+                                <span className={`text-[10px] ml-auto ${isUploaded ? 'text-green-600 dark:text-green-400' : 'text-red-500 dark:text-red-400'}`}>
+                                  {isUploaded ? 'Uploaded' : 'Missing'}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        {docRequirements.missingDocTypes.length > 0 && (
+                          <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-2">
+                            <i className="fa-solid fa-triangle-exclamation mr-1"></i>
+                            {docRequirements.missingDocTypes.length} required document type{docRequirements.missingDocTypes.length > 1 ? 's' : ''} not yet uploaded
+                          </p>
+                        )}
                       </div>
                     )}
 

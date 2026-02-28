@@ -504,6 +504,64 @@ router.post(
 );
 
 router.get(
+  '/case/:caseId/requirements',
+  simpleAuth,
+  loadUserWithRole,
+  async (req: Request, res: Response) => {
+    try {
+      const { caseId } = req.params;
+      const user = (req as AuthenticatedRequest).user;
+
+      const issuanceCase = await prisma.issuanceCase.findUnique({
+        where: { id: caseId },
+        select: {
+          id: true,
+          track: true,
+          submission: { select: { tokenizerId: true } },
+        },
+      });
+
+      if (!issuanceCase) {
+        return res.status(404).json({ success: false, error: 'Issuance case not found' });
+      }
+
+      if (user && user.role !== 'ADMIN' && issuanceCase.submission.tokenizerId !== user.id) {
+        return res.status(403).json({ success: false, error: 'Forbidden' });
+      }
+
+      const template = await prisma.issuanceTemplate.findUnique({
+        where: { track: issuanceCase.track },
+      });
+
+      const requiredDocTypes: string[] = template ? (template.rules as any).requiredDocTypes || [] : [];
+      const criticalKeys: string[] = getCriticalKeys(issuanceCase.track);
+
+      const documents = await prisma.issuanceDocument.findMany({
+        where: { caseId },
+        select: { type: true },
+      });
+
+      const uploadedDocTypes = [...new Set(documents.map(d => d.type))];
+      const uploadedSet = new Set(uploadedDocTypes);
+      const missingDocTypes = requiredDocTypes.filter(t => !uploadedSet.has(t));
+
+      return res.json({
+        success: true,
+        data: {
+          requiredDocTypes,
+          uploadedDocTypes,
+          missingDocTypes,
+          criticalKeys,
+        },
+      });
+    } catch (error: any) {
+      console.error('[issuance] Error fetching requirements:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.get(
   '/case/:caseId/fields',
   simpleAuth,
   loadUserWithRole,

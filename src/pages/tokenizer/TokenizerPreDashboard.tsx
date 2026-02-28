@@ -77,6 +77,7 @@ export const TokenizerPreDashboard: React.FC = () => {
   const [showFlagModal, setShowFlagModal] = useState(false);
   const [flagMessage, setFlagMessage] = useState('');
   const [flagLoading, setFlagLoading] = useState(false);
+  const [requirements, setRequirements] = useState<{ requiredDocTypes: string[]; uploadedDocTypes: string[]; missingDocTypes: string[] } | null>(null);
 
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -196,6 +197,7 @@ export const TokenizerPreDashboard: React.FC = () => {
         if (json.data?.id) {
           fetchIssuanceDocs(json.data.id);
           fetchExtractedFields(json.data.id);
+          fetchRequirements(json.data.id);
         }
       } else if (res.status === 404) {
         const createRes = await fetch(`/api/issuance/by-submission/${submissionId}/create`, {
@@ -205,7 +207,10 @@ export const TokenizerPreDashboard: React.FC = () => {
         if (createRes.ok) {
           const json = await createRes.json();
           setIssuanceCase(json.data);
-          if (json.data?.id) fetchIssuanceDocs(json.data.id);
+          if (json.data?.id) {
+            fetchIssuanceDocs(json.data.id);
+            fetchRequirements(json.data.id);
+          }
         }
       }
     } catch (err) {
@@ -227,6 +232,21 @@ export const TokenizerPreDashboard: React.FC = () => {
       }
     } catch (err) {
       console.error('Error fetching extracted fields:', err);
+    }
+  };
+
+  const fetchRequirements = async (caseId: string) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/issuance/case/${caseId}/requirements`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setRequirements(json.data || null);
+      }
+    } catch (err) {
+      console.error('Error fetching requirements:', err);
     }
   };
 
@@ -563,6 +583,55 @@ export const TokenizerPreDashboard: React.FC = () => {
                       )}
                     </div>
                   ))}
+              </div>
+            </div>
+          )}
+
+          {requirements && requirements.missingDocTypes.length > 0 && (
+            <div className="bg-amber-50 dark:bg-amber-900/10 rounded-xl border border-amber-200 dark:border-amber-800/30 p-4 md:p-6">
+              <div className="flex items-center gap-2 mb-3">
+                <i className="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                <h2 className="text-base font-bold text-amber-800 dark:text-amber-300">Missing Documents</h2>
+                <span className="text-xs bg-amber-200 dark:bg-amber-800/40 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full font-medium">
+                  {requirements.missingDocTypes.length} remaining
+                </span>
+              </div>
+              <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
+                The following document types are required for your {issuanceCase?.track?.replace(/_/g, ' ') || 'issuance'} track. Upload them below to proceed.
+              </p>
+              <div className="space-y-2">
+                {requirements.missingDocTypes.map((docType) => {
+                  const typeLabels: Record<string, { label: string; docKey: string; description: string }> = {
+                    OWNERSHIP: { label: 'Ownership Documents', docKey: 'ownershipProof', description: 'Property deed, title, or proof of ownership' },
+                    LEGAL: { label: 'Legal Documents', docKey: 'leaseAgreements', description: 'Operating agreements, lease agreements, or legal filings' },
+                    FINANCIAL: { label: 'Financial Documents', docKey: 'bankStatements', description: 'Bank statements, tax records, or financial reports' },
+                    PROPERTY: { label: 'Property Documents', docKey: 'valuation', description: 'Appraisals, inspections, or property assessments' },
+                    IDENTITY: { label: 'Identity Documents', docKey: 'ownershipProof', description: 'Government-issued ID or identity verification' },
+                  };
+                  const info = typeLabels[docType] || { label: docType, docKey: 'ownershipProof', description: 'Required document' };
+                  return (
+                    <div key={docType} className="flex items-center justify-between bg-white dark:bg-[#1a1a1a] rounded-lg px-4 py-3 border border-amber-100 dark:border-amber-900/20">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-brand-dark dark:text-white">{info.label}</p>
+                        <p className="text-[10px] text-brand-sage dark:text-gray-400">{info.description}</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          const ref = fileInputRefs.current[info.docKey];
+                          if (ref) ref.click();
+                        }}
+                        className="ml-3 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 flex-shrink-0"
+                      >
+                        <i className="fa-solid fa-upload text-[10px]"></i>
+                        Upload
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-3 flex items-center gap-2 text-[10px] text-amber-600 dark:text-amber-500">
+                <i className="fa-solid fa-circle-info"></i>
+                <span>{requirements.uploadedDocTypes.length} of {requirements.requiredDocTypes.length} required document types uploaded</span>
               </div>
             </div>
           )}
