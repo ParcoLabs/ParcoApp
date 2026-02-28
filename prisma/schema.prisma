@@ -39,6 +39,7 @@ model User {
   addedAllowlistEntries   InvestorAllowlist[]        @relation("AllowlistAddedBy")
   investorStatements      InvestorStatement[]
   verifiedFields          VerifiedField[]
+  distributionLineItems   ServicingDistributionLineItem[]
 
   @@index([clerkId])
   @@index([email])
@@ -123,6 +124,7 @@ model Property {
   capTableSnapshots     CapTableSnapshot[]
   investorStatements    InvestorStatement[]
   servicingReportRuns   ServicingReportRun[]
+  servicingDistributionRuns ServicingDistributionRun[]
 
   @@index([status])
   @@index([propertyType])
@@ -1215,4 +1217,39 @@ model ReportApproval {
   reportRun        ServicingReportRun @relation(fields: [reportRunId], references: [id], onDelete: Cascade)
 
   @@index([reportRunId])
+}
+
+model ServicingDistributionRun {
+  id               String                        @id @default(cuid())
+  propertyId       String
+  periodStart      DateTime
+  periodEnd        DateTime
+  status           String                        @default("DRAFT")
+  totalAmountCents Int
+  notes            String?
+  createdAt        DateTime                      @default(now())
+  updatedAt        DateTime                      @updatedAt
+  property         Property                      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  lineItems        ServicingDistributionLineItem[]
+
+  @@index([propertyId])
+  @@index([status])
+  @@index([periodEnd])
+}
+
+model ServicingDistributionLineItem {
+  id          String                   @id @default(cuid())
+  runId       String
+  userId      String
+  amountCents Int
+  method      String                   @default("OFFCHAIN")
+  status      String                   @default("PENDING")
+  metadata    Json?
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+  run         ServicingDistributionRun  @relation(fields: [runId], references: [id], onDelete: Cascade)
+  user        User                     @relation(fields: [userId], references: [id])
+
+  @@index([runId])
+  @@index([userId])
 }

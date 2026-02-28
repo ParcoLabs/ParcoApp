@@ -17,6 +17,7 @@ const navItems: NavItem[] = [
   { id: 'properties', label: 'Properties', icon: 'fa-building', path: '/admin/properties' },
   { id: 'investors', label: 'Investors', icon: 'fa-users', path: '/admin/investors' },
   { id: 'rent', label: 'Rent Distribution', icon: 'fa-money-bill-wave', path: '/admin/rent' },
+  { id: 'compliance', label: 'Compliance', icon: 'fa-shield-check', path: '/admin/compliance' },
   { id: 'demo', label: 'Demo Tools', icon: 'fa-flask', path: '/admin/demo' },
 ];
 

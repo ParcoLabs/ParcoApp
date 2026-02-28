@@ -980,4 +980,322 @@ router.get(
   },
 );
 
+router.post(
+  '/property/:propertyId/distributions/create',
+  simpleAuth,
+  loadUserWithRole,
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { propertyId } = req.params;
+      const { periodStart, periodEnd, totalAmountCents } = req.body;
+      const user = (req as AuthenticatedRequest).user;
+
+      if (!periodStart || !periodEnd || !totalAmountCents) {
+        return res.status(400).json({ success: false, error: 'periodStart, periodEnd, and totalAmountCents are required' });
+      }
+
+      if (isDemoMode(req)) {
+        const demoHolders = [
+          { userId: 'demo_user_1', name: 'Alice Johnson', tokens: 150 },
+          { userId: 'demo_user_2', name: 'Bob Smith', tokens: 100 },
+          { userId: 'demo_user_3', name: 'Carol Williams', tokens: 75 },
+          { userId: 'demo_user_4', name: 'Dave Brown', tokens: 50 },
+          { userId: 'demo_user_5', name: 'Eve Davis', tokens: 125 },
+        ];
+        const totalTokens = demoHolders.reduce((sum, h) => sum + h.tokens, 0);
+        const runId = `demo_dist_run_${Date.now()}`;
+        const now = new Date().toISOString();
+        const lineItems = demoHolders.map((h, i) => ({
+          id: `demo_dli_${Date.now()}_${i}`,
+          runId,
+          userId: h.userId,
+          amountCents: Math.round((h.tokens / totalTokens) * totalAmountCents),
+          method: 'OFFCHAIN',
+          status: 'PENDING',
+          metadata: { name: h.name, tokens: h.tokens, totalTokens },
+          createdAt: now,
+          updatedAt: now,
+          user: { id: h.userId, email: `${h.name.toLowerCase().replace(' ', '.')}@demo.com`, firstName: h.name.split(' ')[0], lastName: h.name.split(' ')[1] },
+        }));
+        return res.json({
+          success: true,
+          data: {
+            id: runId,
+            propertyId,
+            periodStart,
+            periodEnd,
+            status: 'DRAFT',
+            totalAmountCents,
+            notes: null,
+            createdAt: now,
+            updatedAt: now,
+            lineItems,
+          },
+        });
+      }
+
+      const property = await (prisma.property as any).findUnique({
+        where: { id: propertyId },
+        include: {
+          holdings: {
+            include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+          },
+        },
+      });
+
+      if (!property) {
+        return res.status(404).json({ success: false, error: 'Property not found' });
+      }
+
+      const totalTokens = property.holdings.reduce((sum: number, h: any) => sum + h.quantity, 0);
+      if (totalTokens === 0) {
+        return res.status(400).json({ success: false, error: 'No holdings found for this property' });
+      }
+
+      const lineItemsData = property.holdings.map((h: any) => ({
+        userId: h.userId,
+        amountCents: Math.round((h.quantity / totalTokens) * totalAmountCents),
+        method: 'OFFCHAIN',
+        status: 'PENDING',
+      }));
+
+      const run = await (prisma as any).servicingDistributionRun.create({
+        data: {
+          propertyId,
+          periodStart: new Date(periodStart),
+          periodEnd: new Date(periodEnd),
+          totalAmountCents: Number(totalAmountCents),
+          status: 'DRAFT',
+          lineItems: {
+            create: lineItemsData,
+          },
+        },
+        include: {
+          lineItems: {
+            include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+          },
+        },
+      });
+
+      await (prisma as any).auditEvent.create({
+        data: {
+          type: 'DISTRIBUTION_CREATED',
+          entityId: run.id,
+          userId: user?.clerkId || null,
+          metadata: { propertyId, totalAmountCents, holdersCount: lineItemsData.length },
+        },
+      });
+
+      return res.json({ success: true, data: run });
+    } catch (error: any) {
+      console.error('[servicing] Error creating distribution run:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.post(
+  '/distributions/:id/approve',
+  simpleAuth,
+  loadUserWithRole,
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const user = (req as AuthenticatedRequest).user;
+
+      if (isDemoMode(req)) {
+        return res.json({
+          success: true,
+          data: { id, status: 'APPROVED', updatedAt: new Date().toISOString() },
+        });
+      }
+
+      const run = await (prisma as any).servicingDistributionRun.findUnique({ where: { id } });
+      if (!run) {
+        return res.status(404).json({ success: false, error: 'Distribution run not found' });
+      }
+      if (run.status !== 'DRAFT') {
+        return res.status(400).json({ success: false, error: 'Distribution must be in DRAFT status to approve' });
+      }
+
+      const updated = await (prisma as any).servicingDistributionRun.update({
+        where: { id },
+        data: { status: 'APPROVED' },
+        include: {
+          lineItems: {
+            include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+          },
+        },
+      });
+
+      await (prisma as any).auditEvent.create({
+        data: {
+          type: 'DISTRIBUTION_APPROVED',
+          entityId: id,
+          userId: user?.clerkId || null,
+          metadata: { propertyId: run.propertyId },
+        },
+      });
+
+      return res.json({ success: true, data: updated });
+    } catch (error: any) {
+      console.error('[servicing] Error approving distribution:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.post(
+  '/distributions/:id/pay',
+  simpleAuth,
+  loadUserWithRole,
+  adminOnly,
+  async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const user = (req as AuthenticatedRequest).user;
+
+      if (isDemoMode(req)) {
+        return res.json({
+          success: true,
+          data: { id, status: 'PAID', updatedAt: new Date().toISOString() },
+        });
+      }
+
+      const run = await (prisma as any).servicingDistributionRun.findUnique({ where: { id } });
+      if (!run) {
+        return res.status(404).json({ success: false, error: 'Distribution run not found' });
+      }
+      if (run.status !== 'APPROVED') {
+        return res.status(400).json({ success: false, error: 'Distribution must be in APPROVED status to pay' });
+      }
+
+      await (prisma as any).servicingDistributionLineItem.updateMany({
+        where: { runId: id },
+        data: { status: 'SENT', method: 'OFFCHAIN' },
+      });
+
+      const updated = await (prisma as any).servicingDistributionRun.update({
+        where: { id },
+        data: { status: 'PAID' },
+        include: {
+          lineItems: {
+            include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+          },
+        },
+      });
+
+      await (prisma as any).auditEvent.create({
+        data: {
+          type: 'DISTRIBUTION_PAID',
+          entityId: id,
+          userId: user?.clerkId || null,
+          metadata: { propertyId: run.propertyId },
+        },
+      });
+
+      return res.json({ success: true, data: updated });
+    } catch (error: any) {
+      console.error('[servicing] Error paying distribution:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
+router.get(
+  '/property/:propertyId/distributions',
+  simpleAuth,
+  loadUserWithRole,
+  async (req: Request, res: Response) => {
+    try {
+      const { propertyId } = req.params;
+      const user = (req as AuthenticatedRequest).user;
+
+      if (isDemoMode(req)) {
+        const now = new Date();
+        const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+        const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
+        const twoMonthsAgoEnd = new Date(now.getFullYear(), now.getMonth() - 1, 0);
+
+        const demoHolders = [
+          { userId: 'demo_user_1', name: 'Alice Johnson', tokens: 150 },
+          { userId: 'demo_user_2', name: 'Bob Smith', tokens: 100 },
+          { userId: 'demo_user_3', name: 'Carol Williams', tokens: 75 },
+          { userId: 'demo_user_4', name: 'Dave Brown', tokens: 50 },
+          { userId: 'demo_user_5', name: 'Eve Davis', tokens: 125 },
+        ];
+        const totalTokens = 500;
+
+        const makeLineItems = (runId: string, totalCents: number, status: string) =>
+          demoHolders.map((h, i) => ({
+            id: `${runId}_li_${i}`,
+            runId,
+            userId: h.userId,
+            amountCents: Math.round((h.tokens / totalTokens) * totalCents),
+            method: 'OFFCHAIN',
+            status,
+            metadata: { name: h.name, tokens: h.tokens, totalTokens },
+            createdAt: now.toISOString(),
+            updatedAt: now.toISOString(),
+            user: { id: h.userId, email: `${h.name.toLowerCase().replace(' ', '.')}@demo.com`, firstName: h.name.split(' ')[0], lastName: h.name.split(' ')[1] },
+          }));
+
+        const demoRuns = [
+          {
+            id: 'demo_dist_run_1',
+            propertyId,
+            periodStart: lastMonth.toISOString(),
+            periodEnd: lastMonthEnd.toISOString(),
+            status: 'DRAFT',
+            totalAmountCents: 250000,
+            notes: null,
+            createdAt: now.toISOString(),
+            updatedAt: now.toISOString(),
+            lineItems: makeLineItems('demo_dist_run_1', 250000, 'PENDING'),
+          },
+          {
+            id: 'demo_dist_run_2',
+            propertyId,
+            periodStart: twoMonthsAgo.toISOString(),
+            periodEnd: twoMonthsAgoEnd.toISOString(),
+            status: 'PAID',
+            totalAmountCents: 240000,
+            notes: null,
+            createdAt: twoMonthsAgo.toISOString(),
+            updatedAt: twoMonthsAgoEnd.toISOString(),
+            lineItems: makeLineItems('demo_dist_run_2', 240000, 'SENT'),
+          },
+        ];
+        return res.json({ success: true, data: demoRuns });
+      }
+
+      const isAdmin = user?.role === 'ADMIN';
+      if (!isAdmin) {
+        const property = await prisma.property.findUnique({ where: { id: propertyId }, select: { ownerId: true } });
+        if (!property || property.ownerId !== user?.clerkId) {
+          return res.status(403).json({ success: false, error: 'Forbidden' });
+        }
+      }
+
+      const runs = await (prisma as any).servicingDistributionRun.findMany({
+        where: { propertyId },
+        include: {
+          lineItems: {
+            include: { user: { select: { id: true, email: true, firstName: true, lastName: true } } },
+          },
+        },
+        orderBy: { periodEnd: 'desc' },
+      });
+
+      return res.json({ success: true, data: runs });
+    } catch (error: any) {
+      console.error('[servicing] Error listing distributions:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
 export default router;

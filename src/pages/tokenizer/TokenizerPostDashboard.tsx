@@ -104,6 +104,14 @@ export const TokenizerPostDashboard: React.FC = () => {
   const [monthlyCloseRuns, setMonthlyCloseRuns] = useState<any[]>([]);
   const [monthlyCloseLoading, setMonthlyCloseLoading] = useState(false);
   const [monthlyCloseActionLoading, setMonthlyCloseActionLoading] = useState(false);
+  const [distributionRuns, setDistributionRuns] = useState<any[]>([]);
+  const [distributionLoading, setDistributionLoading] = useState(false);
+  const [distributionActionLoading, setDistributionActionLoading] = useState(false);
+  const [showDistributionForm, setShowDistributionForm] = useState(false);
+  const [distPeriodStart, setDistPeriodStart] = useState('');
+  const [distPeriodEnd, setDistPeriodEnd] = useState('');
+  const [distTotalAmount, setDistTotalAmount] = useState('');
+  const [expandedRunId, setExpandedRunId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSubmissions();
@@ -142,6 +150,7 @@ export const TokenizerPostDashboard: React.FC = () => {
       fetchSnapshots(propId);
       fetchStatements(propId);
       fetchMonthlyClose(propId);
+      fetchDistributions(propId);
     }
     if (activeSubmission?.id) {
       fetchOfferingPacket(activeSubmission.id);
@@ -370,6 +379,104 @@ export const TokenizerPostDashboard: React.FC = () => {
       console.error('Error publishing:', error);
     } finally {
       setMonthlyCloseActionLoading(false);
+    }
+  };
+
+  const fetchDistributions = async (propertyId: string) => {
+    setDistributionLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/servicing/property/${propertyId}/distributions`, {
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        setDistributionRuns(json.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching distributions:', error);
+    } finally {
+      setDistributionLoading(false);
+    }
+  };
+
+  const handleCreateDistribution = async () => {
+    const propId = activeSubmission?.propertyId || activeSubmission?.id;
+    if (!propId || !distPeriodStart || !distPeriodEnd || !distTotalAmount) return;
+    setDistributionActionLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/servicing/property/${propId}/distributions/create`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          periodStart: distPeriodStart,
+          periodEnd: distPeriodEnd,
+          totalAmountCents: Math.round(parseFloat(distTotalAmount) * 100),
+        }),
+      });
+      if (res.ok) {
+        fetchDistributions(propId);
+        setShowDistributionForm(false);
+        setDistPeriodStart('');
+        setDistPeriodEnd('');
+        setDistTotalAmount('');
+      }
+    } catch (error) {
+      console.error('Error creating distribution:', error);
+    } finally {
+      setDistributionActionLoading(false);
+    }
+  };
+
+  const handleApproveDistribution = async (runId: string) => {
+    setDistributionActionLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/servicing/distributions/${runId}/approve`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        const propId = activeSubmission?.propertyId || activeSubmission?.id;
+        if (propId) fetchDistributions(propId);
+      }
+    } catch (error) {
+      console.error('Error approving distribution:', error);
+    } finally {
+      setDistributionActionLoading(false);
+    }
+  };
+
+  const handlePayDistribution = async (runId: string) => {
+    setDistributionActionLoading(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/servicing/distributions/${runId}/pay`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+      });
+      if (res.ok) {
+        const propId = activeSubmission?.propertyId || activeSubmission?.id;
+        if (propId) fetchDistributions(propId);
+      }
+    } catch (error) {
+      console.error('Error paying distribution:', error);
+    } finally {
+      setDistributionActionLoading(false);
+    }
+  };
+
+  const getDistributionStatusColor = (status: string) => {
+    switch (status) {
+      case 'DRAFT': return 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300';
+      case 'APPROVED': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300';
+      case 'PAID': return 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300';
+      default: return 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300';
     }
   };
 
@@ -864,6 +971,176 @@ export const TokenizerPostDashboard: React.FC = () => {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-brand-dark dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-money-bill-transfer text-brand-deep"></i>
+                Distributions
+              </h3>
+              <button
+                onClick={() => setShowDistributionForm(!showDistributionForm)}
+                className="text-xs font-medium px-3 py-1.5 bg-brand-deep hover:bg-brand-dark text-white rounded-lg transition-all"
+              >
+                <i className="fa-solid fa-plus mr-1"></i>
+                New Distribution
+              </button>
+            </div>
+
+            {showDistributionForm && (
+              <div className="mb-4 p-4 border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg bg-brand-offWhite dark:bg-[#222]">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                  <div>
+                    <label className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase block mb-1">Period Start</label>
+                    <input
+                      type="date"
+                      value={distPeriodStart}
+                      onChange={(e) => setDistPeriodStart(e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase block mb-1">Period End</label>
+                    <input
+                      type="date"
+                      value={distPeriodEnd}
+                      onChange={(e) => setDistPeriodEnd(e.target.value)}
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase block mb-1">Total Amount ($)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={distTotalAmount}
+                      onChange={(e) => setDistTotalAmount(e.target.value)}
+                      placeholder="2500.00"
+                      className="w-full px-3 py-2 text-sm rounded-lg border border-brand-lightGray dark:border-[#3a3a3a] bg-white dark:bg-[#1a1a1a] text-brand-dark dark:text-white"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setShowDistributionForm(false)}
+                    className="px-3 py-1.5 text-xs font-medium text-brand-sage dark:text-gray-400 hover:text-brand-dark dark:hover:text-white transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreateDistribution}
+                    disabled={distributionActionLoading || !distPeriodStart || !distPeriodEnd || !distTotalAmount}
+                    className="px-4 py-1.5 text-xs font-semibold bg-brand-deep hover:bg-brand-dark text-white rounded-lg transition-all disabled:opacity-50"
+                  >
+                    {distributionActionLoading ? (
+                      <i className="fa-solid fa-spinner fa-spin"></i>
+                    ) : (
+                      'Create Distribution'
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {distributionLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-deep"></div>
+              </div>
+            ) : distributionRuns.length === 0 ? (
+              <div className="text-center py-6">
+                <p className="text-sm text-brand-sage dark:text-gray-400">No distribution runs yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {distributionRuns.map((run: any) => (
+                  <div key={run.id} className="border border-brand-lightGray dark:border-[#2a2a2a] rounded-lg overflow-hidden">
+                    <div
+                      className="flex items-center justify-between p-3 cursor-pointer hover:bg-brand-offWhite dark:hover:bg-[#222] transition-colors"
+                      onClick={() => setExpandedRunId(expandedRunId === run.id ? null : run.id)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-brand-deep/10 dark:bg-brand-deep/20 flex items-center justify-center">
+                          <i className="fa-solid fa-money-bill-transfer text-brand-deep text-sm"></i>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-brand-dark dark:text-white">
+                            {new Date(run.periodStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – {new Date(run.periodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </p>
+                          <p className="text-xs text-brand-sage dark:text-gray-400">
+                            ${(run.totalAmountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })} · {run.lineItems?.length || 0} investors
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-medium px-2.5 py-1 rounded-full ${getDistributionStatusColor(run.status)}`}>
+                          {run.status}
+                        </span>
+                        {run.status === 'DRAFT' && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleApproveDistribution(run.id); }}
+                            disabled={distributionActionLoading}
+                            className="text-xs font-medium px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all disabled:opacity-50"
+                          >
+                            Approve
+                          </button>
+                        )}
+                        {run.status === 'APPROVED' && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handlePayDistribution(run.id); }}
+                            disabled={distributionActionLoading}
+                            className="text-xs font-medium px-2.5 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all disabled:opacity-50"
+                          >
+                            Pay
+                          </button>
+                        )}
+                        <i className={`fa-solid fa-chevron-${expandedRunId === run.id ? 'up' : 'down'} text-brand-sage dark:text-gray-500 text-xs`}></i>
+                      </div>
+                    </div>
+
+                    {expandedRunId === run.id && run.lineItems && (
+                      <div className="border-t border-brand-lightGray dark:border-[#2a2a2a] p-3 bg-brand-offWhite dark:bg-[#222]">
+                        <h4 className="text-[10px] font-semibold text-brand-sage dark:text-gray-400 uppercase mb-2">Line Item Breakdown</h4>
+                        <div className="space-y-2">
+                          {run.lineItems.map((item: any) => {
+                            const name = item.user
+                              ? `${item.user.firstName || ''} ${item.user.lastName || ''}`.trim() || item.user.email
+                              : item.metadata?.name || item.userId;
+                            return (
+                              <div key={item.id} className="flex items-center justify-between p-2 border border-brand-lightGray dark:border-[#3a3a3a] rounded-lg bg-white dark:bg-[#1a1a1a]">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-6 h-6 rounded-full bg-brand-sage/10 dark:bg-brand-sage/20 flex items-center justify-center">
+                                    <i className="fa-solid fa-user text-brand-sage text-[10px]"></i>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs font-medium text-brand-dark dark:text-white">{name}</p>
+                                    {item.metadata?.tokens && (
+                                      <p className="text-[10px] text-brand-sage dark:text-gray-500">{item.metadata.tokens} tokens</p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-xs font-semibold text-brand-dark dark:text-white">
+                                    ${(item.amountCents / 100).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                  </p>
+                                  <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded ${
+                                    item.status === 'SENT' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300' :
+                                    'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                                  }`}>
+                                    {item.status}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             )}
           </div>

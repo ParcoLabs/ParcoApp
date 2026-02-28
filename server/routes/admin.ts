@@ -1149,4 +1149,120 @@ router.get('/engagement/summary', simpleAuth, adminOnly, async (req: Request, re
   }
 });
 
+router.get('/compliance/due-soon', simpleAuth, adminOnly, async (req: Request, res: Response) => {
+  try {
+    const windowDays = parseInt(req.query.windowDays as string) || 30;
+
+    if (isDemoMode()) {
+      const now = new Date();
+      const demoItems = [
+        {
+          id: 'demo_cr_ds_1',
+          propertyId: 'demo_prop_1',
+          caseId: null,
+          key: 'monthly_kpi',
+          label: 'Monthly KPI Report',
+          cadence: 'MONTHLY',
+          status: 'PENDING',
+          dueAt: new Date(now.getTime() + 7 * 86400000).toISOString(),
+          notes: null,
+          evidence: [],
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+          property: { id: 'demo_prop_1', name: '1492 E 84th St' },
+        },
+        {
+          id: 'demo_cr_ds_2',
+          propertyId: 'demo_prop_1',
+          caseId: null,
+          key: 'quarterly_ops_update',
+          label: 'Quarterly Operations Update',
+          cadence: 'QUARTERLY',
+          status: 'IN_PROGRESS',
+          dueAt: new Date(now.getTime() + 14 * 86400000).toISOString(),
+          notes: 'Gathering data from property manager',
+          evidence: [
+            { id: 'demo_ev_ds_1', name: 'Q1_draft.pdf', url: '/uploads/demo/q1_draft.pdf', createdAt: now.toISOString() },
+          ],
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+          property: { id: 'demo_prop_1', name: '1492 E 84th St' },
+        },
+        {
+          id: 'demo_cr_ds_3',
+          propertyId: 'demo_prop_2',
+          caseId: null,
+          key: 'annual_audit',
+          label: 'Annual Financial Audit',
+          cadence: 'ANNUAL',
+          status: 'PENDING',
+          dueAt: new Date(now.getTime() + 21 * 86400000).toISOString(),
+          notes: null,
+          evidence: [],
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+          property: { id: 'demo_prop_2', name: '560 State St' },
+        },
+        {
+          id: 'demo_cr_ds_4',
+          propertyId: 'demo_prop_2',
+          caseId: null,
+          key: 'insurance_renewal',
+          label: 'Insurance Policy Renewal',
+          cadence: 'ANNUAL',
+          status: 'BLOCKED',
+          dueAt: new Date(now.getTime() + 5 * 86400000).toISOString(),
+          notes: 'Waiting for updated appraisal',
+          evidence: [],
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+          property: { id: 'demo_prop_2', name: '560 State St' },
+        },
+        {
+          id: 'demo_cr_ds_5',
+          propertyId: 'demo_prop_1',
+          caseId: null,
+          key: 'tax_filing',
+          label: 'Quarterly Tax Filing',
+          cadence: 'QUARTERLY',
+          status: 'COMPLETED',
+          dueAt: new Date(now.getTime() + 2 * 86400000).toISOString(),
+          notes: 'Filed on time',
+          evidence: [
+            { id: 'demo_ev_ds_2', name: 'tax_receipt.pdf', url: '/uploads/demo/tax_receipt.pdf', createdAt: now.toISOString() },
+          ],
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+          property: { id: 'demo_prop_1', name: '1492 E 84th St' },
+        },
+      ];
+      return res.json({ success: true, data: demoItems });
+    }
+
+    const now = new Date();
+    const cutoff = new Date(now.getTime() + windowDays * 86400000);
+
+    const requirements = await prisma.complianceRequirement.findMany({
+      where: {
+        dueAt: {
+          lte: cutoff,
+        },
+        status: { not: 'COMPLETED' },
+      },
+      include: {
+        evidence: true,
+        property: {
+          select: { id: true, name: true },
+        },
+      },
+      orderBy: { dueAt: 'asc' },
+    });
+
+    return res.json({ success: true, data: requirements });
+  } catch (error: any) {
+    console.error('[admin] Error fetching compliance due-soon:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 export default router;

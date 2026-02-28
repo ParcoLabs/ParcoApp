@@ -14,7 +14,7 @@ import { Settings } from './pages/Settings';
 import { DefiPage } from './pages/defi/DefiPage';
 import { PaymentMethods } from './pages/PaymentMethods';
 import { Governance } from './pages/Governance';
-import { AdminLayout, AdminTokenizations, AdminProperties, AdminInvestors, AdminRent, AdminDemo, AdminOverview, IssuancePipeline } from './pages/admin';
+import { AdminLayout, AdminTokenizations, AdminProperties, AdminInvestors, AdminRent, AdminDemo, AdminOverview, IssuancePipeline, ComplianceDashboard } from './pages/admin';
 import { MyProperties, TokenizerDashboard, TokenizerHome, TokenizerSettings, TokenizerLayout } from './pages/tokenizer';
 import { AuthProvider } from './context/AuthContext';
 import { DemoModeProvider } from './context/DemoModeContext';
@@ -160,6 +160,7 @@ const App: React.FC = () => {
               <Route path="investors" element={<AdminInvestors />} />
               <Route path="rent" element={<AdminRent />} />
               <Route path="demo" element={<AdminDemo />} />
+              <Route path="compliance" element={<ComplianceDashboard />} />
             </Route>
             
             <Route path="*" element={<Navigate to="/" replace />} />

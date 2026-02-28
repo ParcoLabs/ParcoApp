@@ -50,6 +50,8 @@ The frontend uses React, TailwindCSS for styling, and Recharts for data visualiz
 - **Investor Reporting Center**: Centralized access for investors to view monthly updates, reports, distributions, statements, and governance information.
 - **Offering Packet Generator**: Compiles verified and extracted data into a structured offering packet draft, with optional AI-driven investor-friendly language rewriting.
 - **Compliance Pack**: System for defining, applying, and tracking compliance requirements and evidence for tokenized properties.
+- **Servicing Distribution Runs**: `ServicingDistributionRun` and `ServicingDistributionLineItem` models for per-property distribution management. Routes: create (pro-rata by Holding), approve, pay (OFFCHAIN SENT), list. TokenizerPostDashboard Distributions panel. AuditEvent logging.
+- **Admin Compliance Dashboard**: `src/pages/admin/ComplianceDashboard.tsx` at `/admin/compliance`. Fetches due-soon compliance items with filters by status/property. Table with evidence upload and mark-complete actions.
 
 #### System Design Choices
 - Client-side routing with React Router DOM.
