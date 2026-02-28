@@ -6,10 +6,13 @@
   "scripts": {
     "dev": "vite",
     "dev:server": "tsx server/index.ts",
+    "dev:worker": "tsx server/worker.ts",
     "dev:all": "npm run dev & npm run dev:server",
-    "build": "vite build",
-    "build:all": "npm run build && npx prisma generate",
+    "build": "vite build && npx prisma generate",
+    "start:api": "NODE_ENV=production node --import tsx server/index.ts",
+    "start:worker": "NODE_ENV=production node --import tsx server/worker.ts",
     "start": "NODE_ENV=production PORT=5000 node --import tsx server/index.ts",
+    "migrate": "npx prisma migrate deploy",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -28,6 +31,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.15.6",
     "autoprefixer": "^10.4.23",
+    "bullmq": "^5.70.1",
     "coinbase-commerce-node": "^1.0.4",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -35,6 +39,7 @@
     "ethers": "^6.16.0",
     "express": "^5.1.0",
     "express-rate-limit": "^8.2.1",
+    "ioredis": "^5.10.0",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
     "openai": "^6.22.0",

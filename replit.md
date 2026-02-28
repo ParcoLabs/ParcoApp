@@ -60,7 +60,12 @@ The frontend uses React, TailwindCSS for styling, and Recharts for data visualiz
 
 #### System Design Choices
 - Client-side routing with React Router DOM.
-- Custom Express.js backend for API services.
+- Custom Express.js backend for API services (entrypoint: `server/index.ts`).
+- Separate BullMQ worker process (entrypoint: `server/worker.ts`) for async job processing.
+- Queue infrastructure: BullMQ + ioredis (`server/lib/queue.ts`). Queue name: `parco`. Requires `REDIS_URL` env var.
+- Job types: `DOC_EXTRACT`, `REPORT_DRAFT`, `DISTRIBUTION_PREP`, `BLOCKCHAIN_DEPLOY`, `BLOCKCHAIN_ALLOWLIST`, `BLOCKCHAIN_MINT`.
+- All jobs use idempotent handlers, exponential backoff (5s base), and 3 retries.
+- API enqueues jobs via `enqueue()` from `server/lib/queue.ts`; worker processes them independently.
 - Prisma ORM for atomic database operations.
 - Role-based access control implemented across smart contracts and backend.
 - Environment-based configuration for sensitive data.
@@ -68,6 +73,7 @@ The frontend uses React, TailwindCSS for styling, and Recharts for data visualiz
 - Document uploads handled via `multer` (local storage, with future R2 integration).
 - Issuance roadmap framework supporting multiple regulatory tracks (e.g., SERIES_LLC, REG_CF, REG_A, REG_D).
 - Eligibility Engine performs checks based on state enablement, price caps, and document completeness.
+- npm scripts: `build` (vite + prisma generate), `start:api` (production API), `start:worker` (production worker), `migrate` (prisma migrate deploy).
 
 ### External Dependencies
 - **Clerk**: User authentication.
@@ -84,3 +90,4 @@ The frontend uses React, TailwindCSS for styling, and Recharts for data visualiz
 - **OpenZeppelin Contracts**: Smart contract standards.
 - **Ethers.js**: Ethereum interaction.
 - **OpenAI (via Replit AI Integrations)**: AI document processing.
+- **BullMQ + ioredis**: Job queue for async processing (requires `REDIS_URL`).
