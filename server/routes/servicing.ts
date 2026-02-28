@@ -1631,4 +1631,61 @@ router.get(
   },
 );
 
+router.get(
+  '/investor/tax-documents',
+  simpleAuth,
+  loadUserWithRole,
+  async (req: Request, res: Response) => {
+    try {
+      const user = (req as any).user;
+      if (!user) {
+        return res.status(401).json({ success: false, error: 'Unauthorized' });
+      }
+
+      if (isDemoMode(req)) {
+        const now = new Date();
+        const currentYear = now.getFullYear();
+        return res.json({
+          success: true,
+          data: [
+            {
+              id: 'demo_tax_1',
+              userId: user.id,
+              propertyId: 'demo_prop_1',
+              year: currentYear - 1,
+              type: 'ANNUAL_SUMMARY',
+              url: '/api/tax-documents/demo_tax_1/download',
+              createdAt: new Date(currentYear, 0, 31).toISOString(),
+              property: { id: 'demo_prop_1', name: '1492 E 84th St' },
+            },
+            {
+              id: 'demo_tax_2',
+              userId: user.id,
+              propertyId: 'demo_prop_2',
+              year: currentYear - 1,
+              type: 'ANNUAL_SUMMARY',
+              url: '/api/tax-documents/demo_tax_2/download',
+              createdAt: new Date(currentYear, 0, 31).toISOString(),
+              property: { id: 'demo_prop_2', name: '560 State St' },
+            },
+          ],
+        });
+      }
+
+      const docs = await (prisma as any).taxDocument.findMany({
+        where: { userId: user.id },
+        include: {
+          property: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return res.json({ success: true, data: docs });
+    } catch (error: any) {
+      console.error('[servicing] Error fetching tax documents:', error);
+      return res.status(500).json({ success: false, error: error.message || 'Internal server error' });
+    }
+  },
+);
+
 export default router;

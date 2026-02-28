@@ -126,6 +126,9 @@ export const TokenizerPostDashboard: React.FC = () => {
   const [govVotes, setGovVotes] = useState<any[]>([]);
   const [govLoading, setGovLoading] = useState(false);
   const [govActionLoading, setGovActionLoading] = useState(false);
+  const [taxYear, setTaxYear] = useState(new Date().getFullYear() - 1);
+  const [taxGenerating, setTaxGenerating] = useState(false);
+  const [taxResult, setTaxResult] = useState<{ generated: number; documents: any[] } | null>(null);
   const [showNoticeForm, setShowNoticeForm] = useState(false);
   const [noticeTitle, setNoticeTitle] = useState('');
   const [noticeBody, setNoticeBody] = useState('');
@@ -668,6 +671,30 @@ export const TokenizerPostDashboard: React.FC = () => {
       console.error('Error closing vote:', error);
     } finally {
       setGovActionLoading(false);
+    }
+  };
+
+  const handleGenerateTaxPack = async () => {
+    const propId = activeSubmission?.propertyId || activeSubmission?.id;
+    if (!propId) return;
+    setTaxGenerating(true);
+    setTaxResult(null);
+    try {
+      const token = await getToken();
+      const res = await fetch(`/api/admin/property/${propId}/tax-pack/generate`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ year: taxYear }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTaxResult(data.data);
+      }
+    } catch (error) {
+      console.error('Error generating tax pack:', error);
+    } finally {
+      setTaxGenerating(false);
     }
   };
 
@@ -1771,6 +1798,54 @@ export const TokenizerPostDashboard: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-brand-dark dark:text-white flex items-center gap-2">
+                <i className="fa-solid fa-file-invoice-dollar text-brand-deep"></i>
+                Tax Documents
+              </h3>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-brand-sage dark:text-gray-400 mb-1">Tax Year</label>
+                  <input
+                    type="number"
+                    value={taxYear}
+                    onChange={(e) => setTaxYear(parseInt(e.target.value) || new Date().getFullYear() - 1)}
+                    min={2020}
+                    max={new Date().getFullYear()}
+                    className="w-full px-3 py-2 bg-white dark:bg-[#101010] border border-brand-lightGray dark:border-[#333] rounded-lg text-sm text-brand-dark dark:text-white"
+                  />
+                </div>
+                <button
+                  onClick={handleGenerateTaxPack}
+                  disabled={taxGenerating}
+                  className="px-4 py-2 bg-brand-deep text-white text-sm font-medium rounded-lg hover:bg-brand-deep/90 disabled:opacity-50"
+                >
+                  {taxGenerating ? 'Generating...' : 'Generate Annual Summary'}
+                </button>
+              </div>
+              {taxResult && (
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <p className="text-sm text-green-700 dark:text-green-300">
+                    Generated {taxResult.generated} document{taxResult.generated !== 1 ? 's' : ''} for {taxYear}.
+                  </p>
+                  {taxResult.documents.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {taxResult.documents.map((doc: any) => (
+                        <div key={doc.id} className="flex items-center gap-2 text-xs text-brand-sage dark:text-gray-400">
+                          <i className="fa-solid fa-file-lines text-brand-deep"></i>
+                          <span>Annual Summary - User {doc.userId.slice(0, 8)}...</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#2a2a2a] rounded-xl p-5">

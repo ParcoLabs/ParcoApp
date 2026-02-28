@@ -1488,4 +1488,77 @@ router.get('/compliance/due-soon', simpleAuth, adminOnly, async (req: Request, r
   }
 });
 
+router.post('/property/:propertyId/tax-pack/generate', simpleAuth, adminOnly, async (req: Request, res: Response) => {
+  try {
+    const { propertyId } = req.params;
+    const { year } = req.body;
+
+    if (!year || typeof year !== 'number') {
+      return res.status(400).json({ error: 'year (number) is required' });
+    }
+
+    if (isDemoMode(req)) {
+      const holders = [
+        { userId: 'demo_user_1', name: 'Demo Investor' },
+        { userId: 'demo_user_2', name: 'Jane Smith' },
+      ];
+      const docs = holders.map((h, i) => ({
+        id: `demo_tax_${year}_${i}`,
+        userId: h.userId,
+        propertyId,
+        year,
+        type: 'ANNUAL_SUMMARY',
+        url: `/api/tax-documents/demo_tax_${year}_${i}/download`,
+        createdAt: new Date().toISOString(),
+      }));
+      return res.json({ success: true, data: { generated: docs.length, documents: docs } });
+    }
+
+    const property = await prisma.property.findUnique({
+      where: { id: propertyId },
+      select: { id: true, name: true },
+    });
+    if (!property) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+
+    const holdings = await prisma.holding.findMany({
+      where: { propertyId },
+      select: { userId: true, quantity: true },
+    });
+
+    if (holdings.length === 0) {
+      return res.json({ success: true, data: { generated: 0, documents: [] } });
+    }
+
+    const docs = [];
+    for (const holding of holdings) {
+      const doc = await (prisma as any).taxDocument.upsert({
+        where: {
+          userId_propertyId_year_type: {
+            userId: holding.userId,
+            propertyId,
+            year,
+            type: 'ANNUAL_SUMMARY',
+          },
+        },
+        update: {},
+        create: {
+          userId: holding.userId,
+          propertyId,
+          year,
+          type: 'ANNUAL_SUMMARY',
+          url: `/api/tax-documents/property/${propertyId}/user/${holding.userId}/year/${year}/annual-summary`,
+        },
+      });
+      docs.push(doc);
+    }
+
+    return res.json({ success: true, data: { generated: docs.length, documents: docs } });
+  } catch (error: any) {
+    console.error('[admin] Error generating tax pack:', error);
+    return res.status(500).json({ error: error.message || 'Internal server error' });
+  }
+});
+
 export default router;

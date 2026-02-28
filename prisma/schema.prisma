@@ -41,6 +41,7 @@ model User {
   verifiedFields          VerifiedField[]
   distributionLineItems   ServicingDistributionLineItem[]
   governanceBallots       GovernanceBallot[]
+  taxDocuments            TaxDocument[]
 
   @@index([clerkId])
   @@index([email])
@@ -129,6 +130,7 @@ model Property {
   kpiSnapshots          ServicingKpiSnapshot[]
   governanceNotices     GovernanceNotice[]
   governanceVotes       GovernanceVote[]
+  taxDocuments          TaxDocument[]
 
   @@index([status])
   @@index([propertyType])
@@ -1317,4 +1319,21 @@ model GovernanceBallot {
   @@unique([voteId, userId])
   @@index([voteId])
   @@index([userId])
+}
+
+model TaxDocument {
+  id         String   @id @default(cuid())
+  userId     String
+  propertyId String
+  year       Int
+  type       String   @default("ANNUAL_SUMMARY")
+  url        String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, propertyId, year, type])
+  @@index([userId])
+  @@index([propertyId])
+  @@index([year])
 }

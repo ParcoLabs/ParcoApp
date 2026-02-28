@@ -198,6 +198,8 @@ export const HoldingDetails: React.FC = () => {
   const [investorGov, setInvestorGov] = useState<{ notices: any[]; votes: any[] } | null>(null);
   const [investorGovLoading, setInvestorGovLoading] = useState(false);
   const [castingVoteId, setCastingVoteId] = useState<string | null>(null);
+  const [taxDocs, setTaxDocs] = useState<any[]>([]);
+  const [taxDocsLoading, setTaxDocsLoading] = useState(false);
 
   useEffect(() => {
     const fetchHolding = async () => {
@@ -296,6 +298,26 @@ export const HoldingDetails: React.FC = () => {
         .finally(() => setInvestorGovLoading(false));
     }
   }, [activeTab, id, investorGov, investorGovLoading]);
+
+  useEffect(() => {
+    if (activeTab === 'Reporting' && !taxDocsLoading && taxDocs.length === 0) {
+      setTaxDocsLoading(true);
+      fetch('/api/servicing/investor/tax-documents', {
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            const propertyId = property?.id || id;
+            const filtered = (data.data || []).filter((d: any) => d.propertyId === propertyId);
+            setTaxDocs(filtered);
+          }
+        })
+        .catch(err => console.error('Error fetching tax documents:', err))
+        .finally(() => setTaxDocsLoading(false));
+    }
+  }, [activeTab, taxDocs.length, taxDocsLoading, property, id]);
 
   const handleCastVote = async (voteId: string, optionKey: string) => {
     setCastingVoteId(voteId);
@@ -721,6 +743,46 @@ export const HoldingDetails: React.FC = () => {
                       </div>
                     ) : (
                       <p className="text-sm text-brand-sage dark:text-gray-400">No notices or votes at this time.</p>
+                    )}
+                  </div>
+
+                  <div className="bg-white dark:bg-[#1a1a1a] rounded-xl p-4 border border-brand-lightGray dark:border-[#3a3a3a]">
+                    <h3 className="font-bold text-brand-dark dark:text-white mb-3">
+                      <i className="fa-solid fa-file-invoice-dollar mr-2 text-brand-deep"></i>
+                      Tax Documents
+                    </h3>
+                    {taxDocsLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-brand-deep"></div>
+                      </div>
+                    ) : taxDocs.length > 0 ? (
+                      <div className="space-y-2">
+                        {taxDocs.map((doc: any) => (
+                          <div key={doc.id} className="flex items-center justify-between p-3 border border-brand-lightGray dark:border-[#3a3a3a] rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <i className="fa-solid fa-file-lines text-brand-deep"></i>
+                              <div>
+                                <p className="text-sm font-medium text-brand-dark dark:text-white">
+                                  {doc.year} Annual Summary
+                                </p>
+                                <p className="text-xs text-brand-sage dark:text-gray-400">
+                                  {doc.property?.name || 'Property'} &middot; {new Date(doc.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <a
+                              href={doc.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-brand-deep hover:underline font-medium"
+                            >
+                              <i className="fa-solid fa-download mr-1"></i>Download
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-brand-sage dark:text-gray-400">No tax documents available yet.</p>
                     )}
                   </div>
                 </>
@@ -1208,6 +1270,46 @@ export const HoldingDetails: React.FC = () => {
                             </div>
                           ) : (
                             <p className="text-sm text-brand-sage dark:text-gray-400">No notices or votes at this time.</p>
+                          )}
+                        </div>
+
+                        <div className="bg-white dark:bg-[#1a1a1a] border border-brand-lightGray dark:border-[#3a3a3a] rounded-xl p-6">
+                          <h3 className="font-bold text-brand-dark dark:text-white mb-4">
+                            <i className="fa-solid fa-file-invoice-dollar text-brand-deep mr-2"></i>
+                            Tax Documents
+                          </h3>
+                          {taxDocsLoading ? (
+                            <div className="flex items-center justify-center py-4">
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-brand-deep"></div>
+                            </div>
+                          ) : taxDocs.length > 0 ? (
+                            <div className="space-y-3">
+                              {taxDocs.map((doc: any) => (
+                                <div key={doc.id} className="flex items-center justify-between p-4 border border-brand-lightGray dark:border-[#3a3a3a] rounded-lg">
+                                  <div className="flex items-center gap-3">
+                                    <i className="fa-solid fa-file-lines text-brand-deep text-lg"></i>
+                                    <div>
+                                      <p className="font-medium text-brand-dark dark:text-white">
+                                        {doc.year} Annual Summary
+                                      </p>
+                                      <p className="text-xs text-brand-sage dark:text-gray-400">
+                                        {doc.property?.name || 'Property'} &middot; Generated {new Date(doc.createdAt).toLocaleDateString()}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <a
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-brand-deep hover:underline font-medium"
+                                  >
+                                    <i className="fa-solid fa-download mr-1"></i>Download
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-brand-sage dark:text-gray-400">No tax documents available yet.</p>
                           )}
                         </div>
                       </div>
