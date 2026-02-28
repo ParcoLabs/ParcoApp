@@ -4,8 +4,51 @@ import prisma from './lib/prisma';
 import { extractTextFromIssuanceDocument } from './services/docTextExtractor';
 import { extractFieldsFromText } from './services/llmExtraction';
 import { deployRestrictedToken, registrySetAllowed, registryBatchSetAllowed, tokenMint } from './services/blockchain';
+import { logger } from './observability';
 
 const CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || '3', 10);
+
+async function markActionProcessing(actionRequestId: string) {
+  if (!actionRequestId) return;
+  await (prisma as any).blockchainActionRequest.update({
+    where: { id: actionRequestId },
+    data: { status: 'PROCESSING' },
+  });
+}
+
+async function markActionCompleted(actionRequestId: string, result: unknown) {
+  if (!actionRequestId) return;
+  await (prisma as any).blockchainActionRequest.update({
+    where: { id: actionRequestId },
+    data: { status: 'COMPLETED', result: result as any, completedAt: new Date() },
+  });
+  const action = await (prisma as any).blockchainActionRequest.findUnique({ where: { id: actionRequestId } });
+  await prisma.auditEvent.create({
+    data: {
+      type: 'BLOCKCHAIN_ACTION_COMPLETED',
+      entityId: actionRequestId,
+      userId: action?.requestedById || null,
+      metadata: { actionType: action?.type, propertyId: action?.propertyId, result },
+    },
+  });
+}
+
+async function markActionFailed(actionRequestId: string, error: string) {
+  if (!actionRequestId) return;
+  await (prisma as any).blockchainActionRequest.update({
+    where: { id: actionRequestId },
+    data: { status: 'FAILED', error, completedAt: new Date() },
+  });
+  const action = await (prisma as any).blockchainActionRequest.findUnique({ where: { id: actionRequestId } });
+  await prisma.auditEvent.create({
+    data: {
+      type: 'BLOCKCHAIN_ACTION_FAILED',
+      entityId: actionRequestId,
+      userId: action?.requestedById || null,
+      metadata: { actionType: action?.type, propertyId: action?.propertyId, error },
+    },
+  });
+}
 
 async function processDocExtract(job: Job) {
   const { caseId } = job.data as { caseId: string; idempotencyKey?: string };
@@ -261,65 +304,109 @@ async function processDistributionPrep(job: Job) {
 }
 
 async function processBlockchainDeploy(job: Job) {
-  const { name, symbol, allowlistRequired, lockupEndsAt } = job.data as {
+  const { actionRequestId, name, symbol, allowlistRequired, lockupEndsAt, propertyId } = job.data as {
+    actionRequestId: string;
     name: string;
     symbol: string;
     allowlistRequired?: boolean;
     lockupEndsAt?: number;
+    propertyId?: string;
     idempotencyKey?: string;
   };
 
-  console.log(`[worker:BLOCKCHAIN_DEPLOY] Deploying ${name} (${symbol})`);
+  try {
+    await markActionProcessing(actionRequestId);
+    logger.info({ actionRequestId, name, symbol }, 'BLOCKCHAIN_DEPLOY starting');
 
-  const result = await deployRestrictedToken({ name, symbol, allowlistRequired, lockupEndsAt });
+    const result = await deployRestrictedToken({ name, symbol, allowlistRequired, lockupEndsAt });
 
-  console.log(`[worker:BLOCKCHAIN_DEPLOY] Deployed registry=${result.registryAddress} token=${result.tokenAddress}`);
-  return result;
+    if (propertyId) {
+      const admin = await (prisma as any).blockchainActionRequest.findUnique({
+        where: { id: actionRequestId },
+        select: { requestedById: true },
+      });
+      await prisma.onchainDeployment.create({
+        data: {
+          propertyId,
+          chainId: 137,
+          tokenAddress: result.tokenAddress,
+          registryAddress: result.registryAddress,
+          deployedByUserId: admin?.requestedById || 'system',
+          deployedAt: new Date(),
+        },
+      });
+    }
+
+    await markActionCompleted(actionRequestId, result);
+    logger.info({ actionRequestId, tokenAddress: result.tokenAddress }, 'BLOCKCHAIN_DEPLOY completed');
+    return result;
+  } catch (err: any) {
+    await markActionFailed(actionRequestId, err.message);
+    throw err;
+  }
 }
 
 async function processBlockchainAllowlist(job: Job) {
-  const { registryAddress, investorAddresses, allowed } = job.data as {
+  const { actionRequestId, registryAddress, investorAddresses, allowed } = job.data as {
+    actionRequestId: string;
     registryAddress: string;
     investorAddresses: string[];
     allowed: boolean;
     idempotencyKey?: string;
   };
 
-  console.log(`[worker:BLOCKCHAIN_ALLOWLIST] Updating ${investorAddresses.length} addresses on ${registryAddress}`);
+  try {
+    await markActionProcessing(actionRequestId);
+    logger.info({ actionRequestId, count: investorAddresses.length }, 'BLOCKCHAIN_ALLOWLIST starting');
 
-  if (investorAddresses.length === 1) {
-    const txHash = await registrySetAllowed({
-      registryAddress,
-      investorAddress: investorAddresses[0],
-      allowed,
-    });
-    console.log(`[worker:BLOCKCHAIN_ALLOWLIST] tx=${txHash}`);
-    return { txHash };
+    let txHash: string;
+    if (investorAddresses.length === 1) {
+      txHash = await registrySetAllowed({
+        registryAddress,
+        investorAddress: investorAddresses[0],
+        allowed,
+      });
+    } else {
+      txHash = await registryBatchSetAllowed({
+        registryAddress,
+        investorAddresses,
+        allowed,
+      });
+    }
+
+    const result = { txHash };
+    await markActionCompleted(actionRequestId, result);
+    logger.info({ actionRequestId, txHash }, 'BLOCKCHAIN_ALLOWLIST completed');
+    return result;
+  } catch (err: any) {
+    await markActionFailed(actionRequestId, err.message);
+    throw err;
   }
-
-  const txHash = await registryBatchSetAllowed({
-    registryAddress,
-    investorAddresses,
-    allowed,
-  });
-  console.log(`[worker:BLOCKCHAIN_ALLOWLIST] tx=${txHash}`);
-  return { txHash };
 }
 
 async function processBlockchainMint(job: Job) {
-  const { tokenAddress, to, amount } = job.data as {
+  const { actionRequestId, tokenAddress, to, amount } = job.data as {
+    actionRequestId: string;
     tokenAddress: string;
     to: string;
     amount: string;
     idempotencyKey?: string;
   };
 
-  console.log(`[worker:BLOCKCHAIN_MINT] Minting ${amount} tokens to ${to} on ${tokenAddress}`);
+  try {
+    await markActionProcessing(actionRequestId);
+    logger.info({ actionRequestId, to, amount }, 'BLOCKCHAIN_MINT starting');
 
-  const txHash = await tokenMint({ tokenAddress, to, amount });
+    const txHash = await tokenMint({ tokenAddress, to, amount });
 
-  console.log(`[worker:BLOCKCHAIN_MINT] Minted tx=${txHash}`);
-  return { txHash };
+    const result = { txHash };
+    await markActionCompleted(actionRequestId, result);
+    logger.info({ actionRequestId, txHash }, 'BLOCKCHAIN_MINT completed');
+    return result;
+  } catch (err: any) {
+    await markActionFailed(actionRequestId, err.message);
+    throw err;
+  }
 }
 
 const processors: Record<string, (job: Job) => Promise<unknown>> = {
@@ -332,13 +419,12 @@ const processors: Record<string, (job: Job) => Promise<unknown>> = {
 };
 
 async function main() {
-  console.log('[worker] Starting Parco worker...');
-  console.log(`[worker] Redis: ${process.env.REDIS_URL || 'redis://127.0.0.1:6379'}`);
-  console.log(`[worker] Concurrency: ${CONCURRENCY}`);
-  console.log(`[worker] Processors: ${Object.keys(processors).join(', ')}`);
+  logger.info('[worker] Starting Parco worker...');
+  logger.info({ redis: process.env.REDIS_URL || 'redis://127.0.0.1:6379', concurrency: CONCURRENCY }, 'Worker config');
+  logger.info({ processors: Object.keys(processors) }, 'Registered processors');
 
   await connection.connect();
-  console.log('[worker] Redis connected');
+  logger.info('[worker] Redis connected');
 
   const worker = new Worker(
     'parco',
@@ -356,22 +442,19 @@ async function main() {
   );
 
   worker.on('completed', (job: Job) => {
-    console.log(`[worker] Job ${job.id} (${job.name}) completed`);
+    logger.info({ jobId: job.id, jobName: job.name }, 'Job completed');
   });
 
   worker.on('failed', (job: Job | undefined, err: Error) => {
-    console.error(`[worker] Job ${job?.id} (${job?.name}) failed: ${err.message}`);
-    if (job && job.attemptsMade < (job.opts?.attempts || 3)) {
-      console.log(`[worker] Will retry (attempt ${job.attemptsMade}/${job.opts?.attempts || 3})`);
-    }
+    logger.error({ jobId: job?.id, jobName: job?.name, err: err.message, attempt: job?.attemptsMade }, 'Job failed');
   });
 
   worker.on('error', (err: Error) => {
-    console.error('[worker] Worker error:', err.message);
+    logger.error({ err: err.message }, 'Worker error');
   });
 
   const shutdown = async (signal: string) => {
-    console.log(`[worker] Received ${signal}, shutting down gracefully...`);
+    logger.info({ signal }, 'Worker shutting down gracefully');
     await worker.close();
     await connection.quit();
     await prisma.$disconnect();
@@ -381,10 +464,10 @@ async function main() {
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
 
-  console.log('[worker] Ready and listening for jobs');
+  logger.info('[worker] Ready and listening for jobs');
 }
 
 main().catch((err) => {
-  console.error('[worker] Fatal error:', err);
+  logger.error({ err }, 'Worker fatal error');
   process.exit(1);
 });

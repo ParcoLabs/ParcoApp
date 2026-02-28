@@ -66,10 +66,11 @@ The frontend uses React, TailwindCSS for styling, and Recharts for data visualiz
 - Job types: `DOC_EXTRACT`, `REPORT_DRAFT`, `DISTRIBUTION_PREP`, `BLOCKCHAIN_DEPLOY`, `BLOCKCHAIN_ALLOWLIST`, `BLOCKCHAIN_MINT`.
 - All jobs use idempotent handlers, exponential backoff (5s base), and 3 retries.
 - API enqueues jobs via `enqueue()` from `server/lib/queue.ts`; worker processes them independently.
+- Blockchain signing isolated to worker process only. API creates `BlockchainActionRequest` (PENDING→PROCESSING→COMPLETED/FAILED) and enqueues job. Worker signs using pluggable `SignerProvider` (`server/services/signer.ts`): `env-key` (active), `kms` (scaffold), `fireblocks` (scaffold). All actions audited via `AuditEvent`.
 - Prisma ORM for atomic database operations.
 - Role-based access control implemented across smart contracts and backend.
 - Environment-based configuration for sensitive data.
-- Standard Vite + React project structure.
+- Standard Vite + React project structure. Frontend API base URL via `VITE_API_BASE_URL` (`src/lib/api.ts`).
 - Document storage: Cloudflare R2 via AWS SDK v3 (`server/storage/storage.ts`) with signed upload/download URLs. Legacy `multer` uploads still supported for backward compatibility. Env vars: `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`.
 - Observability: `pino` structured logger (`server/observability/logger.ts`), request ID middleware (`server/observability/requestId.ts`), centralized error handler (`server/observability/errorHandler.ts`). Admin system status at `GET /api/admin/system/status`.
 - Storage routes: `POST /api/storage/issuance-docs/upload-url` (signed PUT URL), `GET /api/storage/issuance-docs/:docId/download-url` (signed GET URL).

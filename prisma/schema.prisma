@@ -1337,3 +1337,24 @@ model TaxDocument {
   @@index([propertyId])
   @@index([year])
 }
+
+model BlockchainActionRequest {
+  id              String   @id @default(cuid())
+  type            String
+  propertyId      String?
+  requestedById   String?
+  payload         Json
+  status          String   @default("PENDING")
+  result          Json?
+  error           String?
+  idempotencyKey  String?  @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime?
+
+  @@index([type])
+  @@index([status])
+  @@index([propertyId])
+  @@index([requestedById])
+  @@index([createdAt])
+}

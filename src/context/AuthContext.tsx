@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, ReactNode } from 'react';
 import { useUser, useAuth as useClerkAuth, useClerk } from '@clerk/clerk-react';
 import { User, UserKycStatus } from '../types';
+import { API_BASE_URL } from '../lib/api';
 
 interface AuthContextType {
   user: User | null;
@@ -13,8 +14,6 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const API_BASE_URL = '';
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user: clerkUser, isLoaded: isClerkLoaded, isSignedIn } = useUser();

@@ -37,14 +37,15 @@ S3_REGION=auto
 REDIS_URL=redis://user:pass@host:6379
 ```
 
-### Blockchain (optional)
+### Blockchain (worker only)
 
 ```
-ALCHEMY_RPC_URL=https://polygon-mainnet.g.alchemy.com/v2/...
-OPERATOR_PRIVATE_KEY=0x...
+RPC_URL=https://polygon-mainnet.g.alchemy.com/v2/...
 DEPLOYER_PRIVATE_KEY=0x...
-POLYGON_NETWORK=mainnet
+SIGNER_PROVIDER=env-key
 ```
+
+**Important**: `DEPLOYER_PRIVATE_KEY` should only be set on the worker process, never on the API server. The API creates `BlockchainActionRequest` records and enqueues jobs; the worker performs actual signing. See `docs/BLOCKCHAIN_OPS.md` for details.
 
 ### AI (optional)
 
@@ -190,9 +191,9 @@ Set `REDIS_URL` to your Redis connection string.
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌──────────────┐
-│  Vite Build │     │  Express API │     │ BullMQ Worker│
-│  (static)   │────▶│  start:api   │────▶│ start:worker │
-│  dist/      │     │  port 3001   │     │              │
+│  Vercel     │     │  Render API  │     │ Render Worker│
+│  Frontend   │────▶│  parco-api   │────▶│ parco-worker │
+│  (static)   │     │  port 3001   │     │              │
 └─────────────┘     └──────┬───────┘     └──────┬───────┘
                            │                     │
                     ┌──────▼───────┐      ┌──────▼───────┐
@@ -205,3 +206,86 @@ Set `REDIS_URL` to your Redis connection string.
                     │  R2 Storage  │
                     └──────────────┘
 ```
+
+---
+
+## Deploy to Render (API + Worker)
+
+Render uses the `render.yaml` blueprint at the repo root.
+
+### Setup
+
+1. Connect your GitHub/GitLab repo to Render
+2. Render auto-detects `render.yaml` and creates two services:
+   - **parco-api** (web service) — Express API + static frontend
+   - **parco-worker** (background worker) — BullMQ job processor
+
+### Environment Variables
+
+Copy from `.env.render.api.example` and `.env.render.worker.example` into each service's environment settings in the Render dashboard.
+
+Key differences:
+- **API server**: Does NOT need `DEPLOYER_PRIVATE_KEY` or `RPC_URL`
+- **Worker**: Needs `DEPLOYER_PRIVATE_KEY`, `RPC_URL`, and `SIGNER_PROVIDER`
+- Both need `DATABASE_URL` and `REDIS_URL`
+
+### Database Migration
+
+After first deploy, run migrations via Render Shell or deploy hook:
+
+```bash
+npm run migrate
+```
+
+Render does not auto-run migrations. Add `npm run migrate` to the build command if desired:
+
+```yaml
+buildCommand: npm ci && npm run migrate && npm run build
+```
+
+### Health Check
+
+The API service uses `/api/healthz` as its health check path. Render will restart the service if the health check fails.
+
+---
+
+## Deploy Frontend to Vercel
+
+The frontend is a Vite SPA that can be deployed independently to Vercel.
+
+### Setup
+
+1. Import repo in Vercel dashboard
+2. Set framework preset to **Vite**
+3. Set build command: `npm run build`
+4. Set output directory: `dist`
+5. Set root directory: `.` (repo root)
+
+### Environment Variables
+
+Copy from `.env.vercel.example` into Vercel project settings:
+
+| Variable | Value |
+|----------|-------|
+| `VITE_API_BASE_URL` | `https://parco-api.onrender.com` (your Render API URL) |
+| `VITE_CLERK_PUBLISHABLE_KEY` | `pk_live_...` |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | `pk_live_...` |
+
+### SPA Routing
+
+The `vercel.json` at the repo root handles SPA fallback rewrites. All non-API routes are rewritten to `index.html` for client-side routing.
+
+### CORS
+
+Set `FRONTEND_URL` on the Render API service to your Vercel domain:
+
+```
+FRONTEND_URL=https://your-app.vercel.app
+```
+
+### Notes
+
+- The frontend uses `VITE_API_BASE_URL` to determine where to send API requests
+- In development (Replit), this defaults to empty string (same-origin, using Vite proxy)
+- In production (Vercel → Render), set it to the full Render API URL
+- Clerk and Stripe publishable keys must be set in both Vercel and Render environments
